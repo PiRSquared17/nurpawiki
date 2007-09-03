@@ -1,0 +1,118 @@
+body { 
+     font-family: Verdana,Geneva,Arial,Sans-serif; 
+	font-size: 12px; 
+	background-color : #FFFFFF 
+}
+
+img {
+    border: 0px none;
+}
+
+a:visited { color : #000080; ; text-decoration : underline; }
+a:link { color : #2222FF; ; text-decoration : underline; }
+a:hover { text-decoration : none; }
+
+a.cancel_edit {
+    color : Red;
+    font-weight:bold;
+}
+
+a.wiki_pri_lo  { background-color: #ada; }
+a.wiki_pri_med { background-color: #dda; }
+a.wiki_pri_hi  { background-color: #daa; }
+
+a.missing_page:visited { color : Red; text-decoration : underline; }
+a.missing_page:link    { color : Red; text-decoration : underline; }
+a.missing_page:hover   { color : Red; text-decoration : none; }
+
+/* Accesskey'd links -- first letter underlined */
+a.ak {	text-decoration: underline; }
+a.ak:hover { color:#2222FF; text-decoration: none;}
+a.ak:focus { color:#2222FF; text-decoration: none;}
+a.ak:first-letter { color:#2222FF; text-decoration: none; font-weight:bold; }
+
+a.palette0 { color:rgb(128, 6, 25); }
+a.palette1 { color:rgb(0, 104, 28); }
+a.palette2 { color:rgb(0, 148, 145); }
+a.palette3 { color:rgb(91, 16, 148); }
+a.palette4 { color:rgb(170, 107, 0); }
+a.palette5 { color:rgb(211, 0, 96); }
+a.palette6 { color:rgb(0, 91, 105); }
+a.palette7 { color:rgb(185, 0, 56); }
+a.palette8 { color:rgb(0, 98, 84); }
+a.palette9 { color:rgb(0, 104, 53); }
+a.palette10 { color:rgb(132, 102, 0); }
+a.palette11 { color:rgb(51, 0, 153); }
+
+
+
+.no_break {
+  white-space:nowrap;
+}
+
+/* TODO items */
+.todo_descr { color:#222; font-size : smaller; }
+.todo_descr_completed { color:#777; text-decoration : line-through; font-size: smaller; }
+
+.todo_pri_lo  { background-color: #cfc; }
+.todo_pri_med { background-color: #ffc; }
+.todo_pri_hi  { background-color: #fcc; }
+
+.todo_table_completed { text-decoration : line-through; color:#555; }
+.todo_table { font-size : smaller; }
+
+.todo_completed_row { background-color:#ddd; }
+
+.rm_odd_row  { background-color:#ddf; }
+.rm_even_row { background-color:#bbe; }
+.rm_table_heading { color:#777; font-size:smaller; text-align:right; font-style:italic; }
+
+.rm_edit { text-align:right; }
+
+.h_date_heading { color:#777; text-align:right; font-style:italic; }
+
+.act_date_input { text-align: center; background-color: #ccc; }
+
+
+/* Search results */
+.sr_link { font-size: 1.15em; }
+.sr_hilite { background-color: #ff9; }
+
+code { color : #000070 }
+pre { color :  #000070 }
+
+h4.entry { text-decoration: underline }
+h1 {
+  text-align: left;
+  color:#AF4040;
+}
+
+h1.left_aligned {
+  text-align: left; 
+}
+
+h4 {
+  margin-bottom:0px;
+  margin-top:0px;
+}
+
+h2 {color:#BF3030; }
+
+html, body {
+	margin: 0;
+	padding: 0;
+	}
+
+#navbar {
+	width: 300px;
+	float: left;
+	margin-left: 0px;
+	margin-top: 2px;
+	padding: 12px;
+}
+	
+	
+#content {
+	padding: 5px;
+	margin-left: 400px;
+}
