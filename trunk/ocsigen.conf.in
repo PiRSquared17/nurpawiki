@@ -30,9 +30,9 @@
     <host>  
     
       <site dir="" charset="utf-8">
-        <eliom module="/home/jhellsten/dev/nwiki/nurpawiki/site.cma">
+        <eliom module="nurpawiki/site.cma">
         </eliom>
-        <static dir="/home/jhellsten/dev/nwiki/nurpawiki/files" />
+        <static dir="nurpawiki/files" />
       </site>
 
 
