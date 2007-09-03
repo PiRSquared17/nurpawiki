@@ -81,7 +81,7 @@ let edit_todo_get_page = new_service ["edit_todo"] (opt (int "tid")) ()
 let edit_todo_page = 
   new_post_service
     ~fallback:edit_todo_get_page 
-    ~post_params:any () (*(list "tid" (bool "b" ** string "n")) ()*)
+    ~post_params:any ()
 
 let history_page = new_service ["history"] unit ()
 
@@ -551,9 +551,8 @@ module WikiML =
       else 
         a ~a:[a_title "Mark as completed!"]
           ~service:wiki_view_page ~sp:sp
-          [pcdata ""]
-          (*img ~alt:"Mark complete" 
-             ~src:(make_uri (static_dir sp) sp ["mark_complete.png"]) ()] *)
+          [img ~alt:"Mark complete" 
+             ~src:(make_uri (static_dir sp) sp ["mark_complete.png"]) ()]
           (page,(Some id,(None,(None, None))))
 
     let priority_arrow sp page id up_or_down =
@@ -845,18 +844,12 @@ let navbar_html sp ?(wiki_page_links=[]) ?(todo_list_table=[]) content =
       [img ~alt:"History" ~src:(make_uri (static_dir sp) sp ["home.png"]) ();
        pcdata "History"] () in
 
-(*  let search_input =
-    [get_form search_page sp
-       (fun (chain : ([`One of string] Eliom.param_name)) -> 
-          [p [(string_input ~a:[a_id "q"] chain);
-              submit_input "Search"]])] in*)
-
   let search_input =
     [get_form search_page sp
        (fun (chain : ([`One of string] Eliom.param_name)) -> 
           [p [string_input ~input_type:`Submit ~value:"Search" ();
-              textarea ~name:chain ~rows:1 ~cols:50
-                ~value:(pcdata "") ()]])] in
+              string_input ~input_type:`Text ~name:chain
+                ~value:"" ()]])] in
 
   let space = [pcdata " "] in
   [div ~a:[a_id "navbar"]
@@ -1053,33 +1046,30 @@ let view_scheduler_page sp =
       | _ -> assert false
     end in
     
-  let todo_table_html sp todos f =
+  let todo_table_html sp todos =
     let todo_in_pages =
       WikiDB.todos_in_pages (List.map (fun (_,todo) -> todo.t_id) todos) in
 
-    let todo_choices = 
-      List.map
-        (fun (heading,todo) ->
-           let todo_id_s = string_of_int todo.t_id in
-           (*[tr (td ~a:[a_class ["rm_table_heading"]] [pcdata heading]) []]*)
-           let pri_style = WikiML.priority_css_class todo.t_priority in
-           tr
-             (td ~a:[a_class ["rm_edit"]]
-                [a ~a:[a_title "Edit"] ~service:edit_todo_get_page ~sp:sp
-                   [img ~alt:"Edit" 
-                      ~src:(make_uri (static_dir sp) sp ["edit_small.png"]) ()]
-                   (Some todo.t_id)])
-             [td [any_checkbox ~name:("e-"^ todo_id_s) ~value:"0" ()];
-              (td ~a:[a_class ["no_break"; pri_style]] 
-                 [pcdata (prettify_activation_date todo.t_activation_date)]);
-              td ~a:[a_class [pri_style]] 
-                ([pcdata todo.t_descr] @ wiki_page_links sp todo_in_pages todo)])
-        todos in
+    List.map
+      (fun (heading,todo) ->
+         let todo_id_s = string_of_int todo.t_id in
+         (*[tr (td ~a:[a_class ["rm_table_heading"]] [pcdata heading]) []]*)
+         let pri_style = WikiML.priority_css_class todo.t_priority in
+         tr
+           (td ~a:[a_class ["rm_edit"]]
+              [a ~a:[a_title "Edit"] ~service:edit_todo_get_page ~sp:sp
+                 [img ~alt:"Edit" 
+                    ~src:(make_uri (static_dir sp) sp ["edit_small.png"]) ()]
+                 (Some todo.t_id)])
+           [td [any_checkbox ~name:("t-"^ todo_id_s) ~value:"0" ()];
+            (td ~a:[a_class ["no_break"; pri_style]] 
+               [pcdata (prettify_activation_date todo.t_activation_date)]);
+            td ~a:[a_class [pri_style]] 
+              ([pcdata todo.t_descr] @ wiki_page_links sp todo_in_pages todo)])
+      todos in
 
-    todo_choices in
-
-  let todo_section sp todos f =
-    (todo_table_html sp todos f) in
+  let todo_section sp todos =
+    (todo_table_html sp todos) in
 
   let upcoming_pending =
     WikiDB.query_upcoming_todos (None,None) in
@@ -1103,11 +1093,11 @@ let view_scheduler_page sp =
   (* TODO merge this HTML generation with other pages.  PROBLEM:
      don't know how to easily do that without duplicating the
      parameter passing of pages. *)
-  let table f = 
-    [p [any_input ~name:"tid" ~input_type:`Submit ~value:"Mass edit" ()];
+  let table () = 
+    [p [any_input ~input_type:`Submit ~value:"Mass edit" ()];
      table
        (tr (th []) [th []; th [pcdata "Activates on"]; th [pcdata "Todo"]])
-       (todo_section sp merged_todos f)] in
+       (todo_section sp merged_todos)] in
 
   let table' = 
     post_form edit_todo_page sp table None in
@@ -1130,16 +1120,7 @@ let service_save_todo_item =
        WikiDB.update_activation_date_for_todos todo_ids new_date;
        view_scheduler_page sp)
 
-let rec render_todo_editor sp todo_ids =
-
-  let todos_to_edit = 
-    List.filter_map
-      (fun (bool_id,id) -> 
-         None) todo_ids in
-(* TODO
-         if b then Some (int_of_string id) else None) todo_ids in
-*)
-
+let rec render_todo_editor sp todos_to_edit =
   let todos_str = String.concat "," (List.map string_of_int todos_to_edit) in
   let todos = WikiDB.query_todos_by_ids todos_to_edit in
 
@@ -1203,7 +1184,7 @@ let error_page sp msg =
 
 let render_todo_get_page sp = function
     Some todo_id ->
-      render_todo_editor sp [(true, string_of_int todo_id)]
+      render_todo_editor sp [todo_id]
   | None ->
       error_page sp "edit_todo_fallback with no 'tid'"
   
@@ -1211,13 +1192,39 @@ let _ =
   register edit_todo_get_page
     (fun sp todo_id () -> render_todo_get_page sp todo_id)
 
+let match_pcre_option rex s =
+  try Some (Pcre.extract ~rex s) with Not_found -> None
+
+let todo_id_re = Pcre.regexp "^t-([0-9]+)$"
+
+let parse_todo_ids todo_ids = 
+  try
+    List.map
+      (fun (todo_id_str,b) ->
+         Messages.errlog (P.sprintf "todo id '%s' b '%s'" todo_id_str b);
+         match match_pcre_option todo_id_re todo_id_str with
+           Some r ->
+             int_of_string r.(1)
+         | None ->
+             raise Not_found) todo_ids
+  with
+    Not_found ->
+      []
+       
+
 let _ =
   register edit_todo_page
     (fun sp single_tid (todo_ids : (string * string) list) ->
        if todo_ids = [] then
-         render_todo_get_page sp single_tid
+         begin
+           Messages.errlog "single todo";
+           render_todo_get_page sp single_tid
+         end
        else 
-         render_todo_editor sp todo_ids)
+         begin
+           Messages.errlog (P.sprintf "multiple todos %d\n" (List.length todo_ids));
+           render_todo_editor sp (parse_todo_ids todo_ids)
+         end)
 
 
 (* /scheduler *)
