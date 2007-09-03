@@ -1,0 +1,43 @@
+#!/bin/sh
+#------------------------------------------------------------------
+# Configure OCaml library paths based on information queried from
+# ocamlfind & command line and creates a configuration file for
+# Ocsigen.
+#------------------------------------------------------------------
+
+str_path=`ocamlfind query str`
+pcre_path=`ocamlfind query pcre`
+
+calendar_path=`ocamlfind query calendar`
+extlib_path=`ocamlfind query extlib`
+postgresql_path=`ocamlfind query postgresql`
+sqlite3_path=`ocamlfind query sqlite3`
+
+if [ "$DEBUG" != "" ]; then
+    echo $str_path
+    echo $pcre_path
+    echo $calendar_path
+    echo $extlib_path
+    echo $postgresql_path
+    echo $sqlite3_path
+fi
+
+if [ "$OCSIGEN_ROOT" = "" ]; then
+    echo
+    echo ERROR!
+    echo
+    echo OCSIGEN_ROOT environment variable must be set to the root of your 
+    echo Ocsigen src installation.
+    echo
+    exit 1
+fi
+
+cat ocsigen.conf.in | \
+    sed -e "s|%_OCSIGEN_ROOT_%|$OCSIGEN_ROOT|g" | \
+    sed -e "s|%_STR_CMA_%|${str_path}/str.cma|g" | \
+    sed -e "s|%_CALENDAR_CMA_%|${calendar_path}/calendar.cma|g" | \
+    sed -e "s|%_PCRE_CMA_%|${pcre_path}/pcre.cma|g" | \
+    sed -e "s|%_EXTLIB_CMA_%|${extlib_path}/extLib.cma|g" | \
+    sed -e "s|%_POSTGRESQL_CMA_%|${postgresql_path}/postgresql.cma|g" | \
+    sed -e "s|%_SQLITE3_CMA_%|${sqlite3_path}/sqlite3.cma|g"
+
