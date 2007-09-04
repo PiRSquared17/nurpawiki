@@ -9,7 +9,7 @@ NB: Unfortunately these instructions are not fully complete yet.  They describe 
 Get the latest version from http://www.ocsigen.org.  Easiest way to install it to use [http://godi.ocaml-programming.de/ GODI] to install it.
 
 == Install Postgresql & create a database ==
- # Install Postgresql (I do it from source and run it locally under my home directory)
+ # Install Postgresql with tsearch2.  I do compile from source and run the DB locally under my home directory)
  # Create a database called `nurpawiki`
 
 See DatabaseInstallation for more details.
