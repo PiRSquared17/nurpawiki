@@ -52,13 +52,19 @@ type search_result =
       sr_page_descr : string option;
     }
 
+let int_of_activity_type = function
+    AT_create_todo -> 1
+  | AT_complete_todo -> 2
+  | AT_work_on_todo -> 3
+  | AT_create_page -> 4
+  | AT_edit_page -> 5
 
-let activity_type_of_string = function
-    "create_todo" -> AT_create_todo
-  | "complete_todo" -> AT_complete_todo
-  | "work_on_todo" -> AT_work_on_todo
-  | "create_page" -> AT_create_page
-  | "edit_page" -> AT_edit_page
+let activity_type_of_int = function
+    1 -> AT_create_todo
+  | 2 -> AT_complete_todo
+  | 3 -> AT_work_on_todo
+  | 4 -> AT_create_page
+  | 5 -> AT_edit_page
   | _ -> assert false
 
 let (>>) f g = g f
@@ -153,15 +159,11 @@ module WikiDB =
                P.eprintf "psql failed : %s\n" "unknown";
                raise ex)
 
-    (* Sub-query for mapping activity strings into integers *)
-    let activity_id_of_activity activity = 
-      "(SELECT id FROM activities WHERE activity = '"^activity^"')"
-
     let insert_todo_activity todo_id ?(page_ids=None) activity =
       match page_ids with
         None ->
           "INSERT INTO activity_log(activity_id,todo_id) VALUES ("^
-            (activity_id_of_activity activity)^", "^todo_id^")"
+            (string_of_int (int_of_activity_type activity))^", "^todo_id^")"
       | Some pages ->
           let insert_pages = 
             List.map
@@ -171,13 +173,13 @@ module WikiDB =
               pages in
           let page_act_insert = String.concat "; " insert_pages in
           "INSERT INTO activity_log(activity_id,todo_id) VALUES ("^
-            (activity_id_of_activity activity)^", "^todo_id^"); "^
+            (string_of_int (int_of_activity_type activity))^", "^todo_id^"); "^
             page_act_insert
 
     let insert_save_page_activity (page_id : int) =
       let sql = "BEGIN;
 INSERT INTO activity_log(activity_id) 
-       VALUES ("^activity_id_of_activity "edit_page"^");
+       VALUES ("^(string_of_int (int_of_activity_type AT_edit_page))^");
 INSERT INTO activity_in_pages(activity_log_id,page_id) 
        VALUES (CURRVAL('activity_log_id_seq'), "^string_of_int page_id^");
 COMMIT" in
@@ -239,7 +241,8 @@ COMMIT" in
  INSERT INTO todos_in_pages(todo_id,page_id) values(CURRVAL('todos_id_seq'), "
         ^string_of_int page_id^");"^
         (insert_todo_activity 
-           "(SELECT CURRVAL('todos_id_seq'))" ~page_ids:(Some [page_id]) "create_todo")^";
+           "(SELECT CURRVAL('todos_id_seq'))" ~page_ids:(Some [page_id]) 
+           AT_create_todo)^";
  SELECT CURRVAL('todos_id_seq')" in
       let r = guarded_exec sql in
       (* Get ID of the inserted item: *)
@@ -312,7 +315,7 @@ COMMIT" in
       let ids = string_of_int id in
       let sql = "BEGIN;
 UPDATE todos SET completed = 't' where id="^ids^";"^
-        (insert_todo_activity ids ~page_ids "complete_todo")^"; COMMIT" in
+        (insert_todo_activity ids ~page_ids AT_complete_todo)^"; COMMIT" in
       ignore (guarded_exec sql)
 
     let task_priority id = 
@@ -370,18 +373,6 @@ UPDATE todos SET completed = 't' where id="^ids^";"^
         ^string_of_int page_id in
       ignore (guarded_exec sql)
 
-    let query_activities () = 
-      guarded_exec "SELECT id,activity FROM activities"
-      
-    let activity_id_to_string =
-      let r = query_activities () in
-      List.fold_left
-        (fun acc row ->
-           let id = int_of_string (List.nth row 0) in
-           let activity = List.nth row 1 in
-           IMap.add id (activity_type_of_string activity) acc)
-        IMap.empty r#get_all_lst
-
     let query_past_activity () =
       let sql =
         "SELECT activity_log.id,activity_id,activity_timestamp,todos.descr "^
@@ -397,7 +388,7 @@ UPDATE todos SET completed = 't' where id="^ids^";"^
              let time = List.nth row 2 in
              let descr = List.nth row 3 in
              { a_id = id;
-               a_activity = IMap.find (int_of_string act_id) activity_id_to_string;
+               a_activity = activity_type_of_int (int_of_string act_id);
                a_date = time;
                a_todo_descr = if descr = "" then None else Some descr; })
 
@@ -1371,7 +1362,8 @@ let _ =
            (head (title (pcdata "")) [])
            (body [p [pcdata "Empty page"]]))
     | "db1" ->
-        ignore (WikiDB.query_activities ());
+        (* TODO TODO add simple SQL query here *)
+(*        ignore (WikiDB.query_activities ());*)
         (html 
            (head (title (pcdata "")) [])
            (body [p [pcdata "Test one DB query"]]))
