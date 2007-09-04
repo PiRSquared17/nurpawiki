@@ -13,7 +13,7 @@ Get the latest version from http://www.ocsigen.org.  Easiest way to install it t
  # Create a database called `nurpawiki`
  # Install OCaml postgresql bindings from GODI
 
-See DatabaseInstallation for more details.
+See [DatabaseInstallation installing the database].
 
 == Get the source ==
 Get the source from SVN (see http://code.google.com/p/nurpawiki/source).
