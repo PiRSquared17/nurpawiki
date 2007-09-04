@@ -97,9 +97,42 @@ let benchmark_page = new_service ["benchmark"] (string "test") ()
 
 module WikiDB =
   struct
+    type db_config = 
+        {
+          db_name : string;
+          db_user : string;
+        }
+
+    open Simplexmlparser
+
+    let dbcfg =
+      let rec find_dbcfg = function
+          [Element ("database", attrs, _)] ->
+            let dbname = 
+              try (List.assoc "name" attrs)
+              with Not_found -> 
+                raise (Extensions.Error_in_config_file 
+                         "Expecting database.name attribute in Nurpawiki config") in
+            let dbuser = 
+              try (List.assoc "user" attrs)
+              with Not_found ->
+                raise (Extensions.Error_in_config_file 
+                         "Expecting database.user attribute in Nurpawiki config") in
+            (dbname,dbuser)
+        | _ -> 
+            raise (Extensions.Error_in_config_file ("Unexpected content inside Nurpawiki config")) in
+      let (dbname,dbuser) = find_dbcfg (Eliom.get_config ()) in
+      { 
+        db_name = dbname;
+        db_user = dbuser;
+      }
+
     let db_conn =
       try
-        new Psql.connection ~host:"localhost" ~dbname:"nurpawiki" ~user:"jhellsten" (*~password:"jhellsten"*) ()
+        Messages.errlog (P.sprintf "connecting to DB '%s' as user '%s'" 
+                           dbcfg.db_name dbcfg.db_user);
+        new Psql.connection ~host:"localhost" 
+          ~dbname:dbcfg.db_name  ~user:dbcfg.db_user ()
       with
         (Psql.Error e) as ex ->
           (match e with
