@@ -8,10 +8,19 @@ I don't know of any reasons why a system-wide installation of Postgresql wouldn'
 
 == Installing Postgresql ==
 
+=== Configure, build, install Postgresql ===
 {{{
 ./configure --prefix=$HOME/opt/postgresql-8.2.3
 make
 make install
+}}}
+
+=== Enable tsearch2 ===
+
+{{{
+cd contrib/tsearch2;
+make;
+make install;
 }}}
 
 == Create DB storage and our DB ==
@@ -31,7 +40,16 @@ You can now start Postgresql (Postgresql prints this after successful installati
 {{{
 Success. You can now start the database server using:
 
-    bin/postgres -D /Users/janne/opt/psql/data
+    bin/postgres -D $HOME/opt/psql/data
 or
-    bin/pg_ctl -D /Users/janne/opt/psql/data -l logfile start
+    bin/pg_ctl -D $HOME/opt/psql/data -l logfile start
+}}}
+
+== Install OCaml postgresql bindings ==
+OCaml's postgresql bindings will by default pick up the wrong Postgresql installation (the one in /usr/local) which might cause compilation to fail.
+
+To have GODI pick up the right Psql installation, run it like this:
+
+{{{
+env PATH=$HOME/opt/psql/bin:$PATH godi_console 
 }}}
