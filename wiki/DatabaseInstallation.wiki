@@ -1,0 +1,37 @@
+#summary Postgresql database setup for Nurpawiki
+
+= How to setup the Nurpawiki database with Postgresql =
+
+The installation procedure here explains a setup in which you install Postgresql from source into your home directory.  I'm successfully using this setup.  
+
+I don't know of any reasons why a system-wide installation of Postgresql wouldn't also work.
+
+== Installing Postgresql ==
+
+{{{
+./configure --prefix=$HOME/opt/postgresql-8.2.3
+make
+make install
+}}}
+
+== Create DB storage and our DB ==
+
+Note the use of UTF-8!
+
+{{{
+# Create data storage
+nurpamac:~/opt/postgresql-8.2.3 janne$ bin/initdb -E UTF-8 --locale=en_US.UTF-8 data
+
+# Create DB:
+nurpamac:~/opt/postgresql-8.2.3 janne$ ./bin/createdb -E UTF-8 nurpawiki
+}}}
+
+You can now start Postgresql (Postgresql prints this after successful installation):
+
+{{{
+Success. You can now start the database server using:
+
+    bin/postgres -D /Users/janne/opt/psql/data
+or
+    bin/pg_ctl -D /Users/janne/opt/psql/data -l logfile start
+}}}
