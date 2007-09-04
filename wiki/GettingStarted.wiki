@@ -1,0 +1,16 @@
+#summary How to get started with NurpaWiki
+
+= Installation =
+
+== Install Ocsigen ==
+
+Get the latest version from http://www.ocsigen.org.  Easiest way to install it to use [http://godi.ocaml-programming.de/ GODI] to install it.
+
+== Get the source ==
+Get the source from SVN (see http://code.google.com/p/nurpawiki/source).
+
+== Configure ==
+
+== Build Nurpawiki ==
+
+ # Install dependent libraries (see trunk/configure script for details)
