@@ -28,7 +28,7 @@ export OCSIGEN_ROOT=/path/to/built/ocsigen
 
 The script will complain if some of the dependent libraries are not installed via ocamlfind.
 
-At the moment, the OCSIGEN_ROOT directory needs to point to a directory with Ocsigen source + built modules.  This will need revising to account for Ocsigen installation done via GODI.
+At the moment, the OCSIGEN_ROOT variable needs to point to a directory with Ocsigen source + built modules.  This will need revising to account for Ocsigen installation done via GODI.
 
 The `configure` script creates a new Ocsigen configuration file that you need to pass to Ocsigen once its server starts up.
 
