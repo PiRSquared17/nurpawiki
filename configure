@@ -5,6 +5,8 @@
 # Ocsigen.
 #------------------------------------------------------------------
 
+set -e   # Bail out on errors
+
 str_path=`ocamlfind query str`
 pcre_path=`ocamlfind query pcre`
 
@@ -32,6 +34,24 @@ if [ "$OCSIGEN_ROOT" = "" ]; then
     exit 1
 fi
 
+if [ "$DBNAME" = "" ]; then
+    echo
+    echo ERROR!
+    echo
+    echo DBNAME environment variable must be set to point to your nurpawiki DB
+    echo
+    exit 1
+fi
+
+if [ "$DBUSER" = "" ]; then
+    echo
+    echo ERROR!
+    echo
+    echo DBUSER environment variable must be set to your nurpawiki DB username
+    echo
+    exit 1
+fi
+
 cat ocsigen.conf.in | \
     sed -e "s|%_OCSIGEN_ROOT_%|$OCSIGEN_ROOT|g" | \
     sed -e "s|%_STR_CMA_%|${str_path}/str.cma|g" | \
@@ -39,5 +59,7 @@ cat ocsigen.conf.in | \
     sed -e "s|%_PCRE_CMA_%|${pcre_path}/pcre.cma|g" | \
     sed -e "s|%_EXTLIB_CMA_%|${extlib_path}/extLib.cma|g" | \
     sed -e "s|%_POSTGRESQL_CMA_%|${postgresql_path}/postgresql.cma|g" | \
-    sed -e "s|%_SQLITE3_CMA_%|${sqlite3_path}/sqlite3.cma|g"
+    sed -e "s|%_SQLITE3_CMA_%|${sqlite3_path}/sqlite3.cma|g" | \
+    sed -e "s|%_DBNAME_%|${DBNAME}|g" | \
+    sed -e "s|%_DBUSER_%|${DBUSER}|g"
 
