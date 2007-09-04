@@ -19,8 +19,31 @@ See DatabaseInstallation for more details.
 Get the source from SVN (see http://code.google.com/p/nurpawiki/source).
 
 == Configure ==
- # Install dependent libraries (see trunk/configure script for details)
- 
+Run configure like so:
+
+{{{
+export OCSIGEN_ROOT=/path/to/built/ocsigen 
+./configure > nurpawiki.conf.local
+}}}
+
+The script will complain if some of the dependent libraries are not installed via ocamlfind.
+
+At the moment, the OCSIGEN_ROOT directory needs to point to a directory with Ocsigen source + built modules.  This will need revising to account for Ocsigen installation done via GODI.
+
+The `configure` script creates a new Ocsigen configuration file that you need to pass to Ocsigen once its server starts up.
+
 == Build Nurpawiki ==
 
 Run `make`.
+
+== Start server ==
+
+Run 
+
+{{{
+$OCSIGEN_ROOT/server/ocsigen -c nurpawiki.conf.local
+}}}
+
+== Test it! ==
+
+Point your browser to http://localhost:8080/view?p=WikiStart
