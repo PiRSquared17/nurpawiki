@@ -11,6 +11,7 @@ Get the latest version from http://www.ocsigen.org.  Easiest way to install it t
 == Install Postgresql & create a database ==
  # Install Postgresql with tsearch2.  I do compile from source and run the DB locally under my home directory)
  # Create a database called `nurpawiki`
+ # Install OCaml postgresql bindings from GODI
 
 See DatabaseInstallation for more details.
 
