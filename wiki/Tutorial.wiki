@@ -1,4 +1,4 @@
-#summary Tutorial on how to use Nurpawiki
+#summary Tutorial on how to get started with Nurpawiki
 
 = First page =
 
