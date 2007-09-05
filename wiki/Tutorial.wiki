@@ -17,4 +17,29 @@ http://nurpawiki.googlecode.com/svn/wiki/img/edited_start.png
 http://nurpawiki.googlecode.com/svn/wiki/img/saved_start.png
 
 
+= Adding to-dos ==
+
+Let's showcase the to-do feature of this wiki.  Let's make a page called "!NurpaWiki" and place the following contents on it:
+
+{{{
+= NurpaWiki project =
+
+This page is used to take notes & draft actions for the Nurpawiki SW project.
+
+== Ocsigen related ==
+* [todo Send an introduction e-mail to Ocsigen mailing list once build flow & documentation is good enough for public review]
+
+== Web documentation ==
+* [todo Write a short description of Nurpawiki on the Project Home]
+* [todo Take screenshots of Nurpawiki todo list]
+* [todo Take screenshots of Nurpawiki scheduler]
+}}}
+
+You will note that the wikitext conforms mostly to the one used in !MediaWiki.  However, there is one notable exception: the `[todo <text>]` tag.
+
+When you embed a `[todo]` in your wiki page, it will be picked up by the wiki parser and added to your global to-do list when you save the wiki page.
+
+Here's a screenshot to illustrate what happens after you've saved your wiki page along with your to-do items:
+
+http://nurpawiki.googlecode.com/svn/wiki/img/todolist1.png
 
