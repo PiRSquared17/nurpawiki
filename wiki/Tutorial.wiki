@@ -1,0 +1,20 @@
+#summary Tutorial on how to use Nurpawiki
+
+= Creating your very first page =
+
+The first thing to do after installing and starting Nurpawiki is to point your browser at http://localhost:8080/view?p=WikiStart.
+
+You will be greeted with an empty page:
+
+http://nurpawiki.googlecode.com/svn/wiki/img/empty_nurpawiki.png
+
+Click edit to edit the main page:
+
+http://nurpawiki.googlecode.com/svn/wiki/img/edited_start.png
+
+..and after pressing save:
+
+http://nurpawiki.googlecode.com/svn/wiki/img/saved_start.png
+
+
+
