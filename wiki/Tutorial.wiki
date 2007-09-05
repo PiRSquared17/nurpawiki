@@ -49,9 +49,9 @@ You can edit a task's priority by clicking the up/down arrows.  This will move i
 == Moving tasks to different wiki pages ==
 After saving the wiki page, you will note that your `[todo <text>]` tags got modified to include a task ID.  For example, a to-do in wikitext might now look like `[todo:4 Take screenshots of Nurpawiki todo list]`.  The number in `[todo:N <...>]` is the task ID and is used to uniquely identify a certain to-do item.
 
-If you want to move a certain to-do item to another wikipage, just copy&paste the `[todo:N <...>]` text into another wiki page and press save.
+If you want to move a certain to-do item to another wikipage, just copy&paste the `[todo:N <...>]` text into another wiki page and save.
 
-A single to-do can reside on several different wiki pages.  There's no reason to limit a to-do existence to only a single page.  In fact, it's very useful to associate a given task with several contexts (wiki pages).
+A single to-do can reside on several different wiki pages.  There's no reason to limit a to-do's existence to only a single page.  In fact, it's very useful to associate a given task with several contexts (wiki pages).
 
 = Scheduling tasks =
 To-do lists have a tendency to become very long over time.  The longer your to-do list gets, the harder it is to choose which tasks to complete any given day.  Prioritizing them helps, but even your high priority list might become long.  To reduce your daily load, you can trigger tasks to only appear on your to-do list after a certain date.
