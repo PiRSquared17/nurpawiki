@@ -19,7 +19,7 @@ http://nurpawiki.googlecode.com/svn/wiki/img/saved_start.png
 
 = Adding to-dos ==
 
-Let's showcase the to-do feature of this wiki.  Let's make a page called "!NurpaWiki" and place the following contents on it:
+We will now showcase the to-do feature of this wiki.  Let's make a page called "!NurpaWiki" and place the following contents on it:
 
 {{{
 = NurpaWiki project =
@@ -42,4 +42,8 @@ When you embed a `[todo]` in your wiki page, it will be picked up by the wiki pa
 Here's a screenshot to illustrate what happens after you've saved your wiki page along with your to-do items:
 
 http://nurpawiki.googlecode.com/svn/wiki/img/todolist1.png
+
+Note the to-do list table that appeared on the left navbar.  The to-do items you inserted into your wikitext got added onto your to-do list!  Their appearance also changed on the wiki page to indicate that they're tasks embedded onto your page.
+
+You can edit a task's priority by clicking the up/down arrows.  This will move it up on the left to-do list.  You can also mark it as completed by clicking the checkbox by the priority up/down buttons.  When you mark a to-do as completed, it will disappear from your to-do list but it will remain grayed on your wiki page.
 
