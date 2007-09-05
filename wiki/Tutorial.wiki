@@ -1,6 +1,6 @@
 #summary Tutorial on how to use Nurpawiki
 
-= Creating your very first page =
+= First page =
 
 The first thing to do after installing and starting Nurpawiki is to point your browser at http://localhost:8080/view?p=WikiStart.
 
@@ -15,7 +15,6 @@ http://nurpawiki.googlecode.com/svn/wiki/img/edited_start.png
 ..and after pressing save:
 
 http://nurpawiki.googlecode.com/svn/wiki/img/saved_start.png
-
 
 = Adding to-dos ==
 
@@ -47,10 +46,17 @@ Note the to-do list table that appeared on the left navbar.  The to-do items you
 
 You can edit a task's priority by clicking the up/down arrows.  This will move it up on the left to-do list.  You can also mark it as completed by clicking the checkbox by the priority up/down buttons.  When you mark a to-do as completed, it will disappear from your to-do list but it will remain grayed on your wiki page.
 
+== Moving tasks to different wiki pages ==
+After saving the wiki page, you will note that your `[todo <text>]` tags got modified to include a task ID.  For example, a to-do in wikitext might now look like `[todo:4 Take screenshots of Nurpawiki todo list]`.  The number in `[todo:N <...>]` is the task ID and is used to uniquely identify a certain to-do item.
+
+If you want to move a certain to-do item to another wikipage, just copy&paste the `[todo:N <...>]` text into another wiki page and press save.
+
+A single to-do can reside on several different wiki pages.  There's no reason to limit a to-do existence to only a single page.  In fact, it's very useful to associate a given task with several contexts (wiki pages).
+
 = Scheduling tasks =
 To-do lists have a tendency to become very long over time.  The longer your to-do list gets, the harder it is to choose which tasks to complete any given day.  Prioritizing them helps, but even your high priority list might become long.  To reduce your daily load, you can trigger tasks to only appear on your to-do list after a certain date.
 
-Another, perhaps more important use-case for to-do scheduling is reminder-style tasks that cannot really be completed until a certain date.  You don't want to see such tasks on your to-do list by that date but you don't want to forget about it either when the time has come to do something about the task.
+Another, perhaps more important use-case for to-do scheduling is reminder-style tasks that cannot really be completed until a certain date.  You don't want to see such tasks on your to-do list before you can actually do something about it but you still want to be reminded about it once you can actually do something about it.
 
 Nurpawiki has a feature called the Scheduler that can be used to move tasks around in time in order to have them appear on your to-do list only after a certain date.
 
@@ -59,10 +65,19 @@ Click on the "Scheduler" link on the upper left corner of the web page.  Here's 
 
 http://nurpawiki.googlecode.com/svn/wiki/img/scheduler.png
 
+=== Scheduling a single to-do ===
 To schedule a to-do, click on the small pencil icon to the left of a todo to edit it.  You will be taken to a "to-do editor":
 
 http://nurpawiki.googlecode.com/svn/wiki/img/todo_edit_schedule.png
 
-To edit the trigger date, click on the edit box below the to-do description.  A date selector popup will appear (show on the screenshot).  Select the date you want to assign to the task and click Save.
+To edit the trigger date, click on the edit box below the to-do description.  A date selector popup will appear (see the above screenshot).  Select the date you want to assign to the task and click Save.
 
 The above image show a task I cannot at the moment finish as I'm waiting for a certain GODI package to get fixed before I can proceed with my announcement.  I can just postpone the task for a few days.  It will pop up on my to-do list after a few days.  If the GODI package is then already working, I can complete the task and mark it as completed.  If I'm still unable to complete it, I can postpone it again using the Scheduler.
+
+=== Scheduling a batch of tasks ===
+Sometimes it's useful to assign a larger group of tasks the same trigger date.  To do this, tick off the checkboxes for the tasks you want to move and click the "Mass edit" button.
+
+= History =
+Sometimes it's useful to look back at your week and recall what wiki pages you worked on, what notes you were taking or what tasks you created or completed.
+
+Click on the History button to see a log of latest action in your wiki.
