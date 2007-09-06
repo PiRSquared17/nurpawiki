@@ -2,8 +2,6 @@
 
 = Installation =
 
-NB: Unfortunately these instructions are not fully complete yet.  They describe the overall outline of installation, but may not be complete enough for 100% successful installation.
-
 == Install Ocsigen ==
 
 Get the latest version from http://www.ocsigen.org.  Easiest way to install it to use [http://godi.ocaml-programming.de/ GODI] to install it.
