@@ -62,3 +62,5 @@ To have GODI pick up the right Psql installation, run it like this:
 {{{
 env PATH=$HOME/opt/psql/bin:$PATH godi_console 
 }}}
+
+In addition, you also need to configure conf-postgresql in GODI to point to the right Postgresql installation path (include & lib directories).
