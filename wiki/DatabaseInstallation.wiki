@@ -15,11 +15,18 @@ make
 make install
 }}}
 
+I've also made a symlink from the install dir to "psql" to simplify my command lines:
+
+{{{
+cd $HOME/opt
+ln -s postgresql-8.2.3 psql
+}}}
+
 === Enable tsearch2 ===
 
 {{{
-cd contrib/tsearch2;
-make;
+cd contrib/tsearch2
+make
 make install
 }}}
 
