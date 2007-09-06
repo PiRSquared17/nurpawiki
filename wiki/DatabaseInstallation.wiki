@@ -20,7 +20,7 @@ make install
 {{{
 cd contrib/tsearch2;
 make;
-make install;
+make install
 }}}
 
 == Create DB storage and our DB ==
@@ -30,9 +30,6 @@ Note the use of UTF-8!
 {{{
 # Create data storage
 nurpamac:~/opt/postgresql-8.2.3 janne$ ./bin/initdb -E UTF-8 --locale=en_US.UTF-8 data
-
-# Create DB:
-nurpamac:~/opt/postgresql-8.2.3 janne$ ./bin/createdb -E UTF-8 nurpawiki
 }}}
 
 You can now start Postgresql (Postgresql prints this after successful installation):
@@ -44,6 +41,12 @@ Success. You can now start the database server using:
 or
     bin/pg_ctl -D $HOME/opt/psql/data -l logfile start
 }}}
+
+{{{
+# Create DB:
+nurpamac:~/opt/postgresql-8.2.3 janne$ ./bin/createdb -E UTF-8 nurpawiki
+}}}
+
 
 == Setup Nurpawiki schema ==
 Run Postgresql schema setup script:
