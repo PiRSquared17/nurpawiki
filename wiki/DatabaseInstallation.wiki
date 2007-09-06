@@ -4,7 +4,7 @@
 
 The installation procedure here explains a setup in which you install Postgresql from source into your home directory.  I'm successfully using this setup.  
 
-I don't know of any reasons why a system-wide installation of Postgresql wouldn't also work.
+A system-wide installation of Postgresql should be doable, however I'm not sure how make tsearch2 work well with pre-built packages.  If you know, please let me know about.
 
 == Installing Postgresql ==
 
