@@ -6,7 +6,7 @@
 
 Get the latest version from http://www.ocsigen.org.  Easiest way to install it to use [http://godi.ocaml-programming.de/ GODI] to install it.
 
-It's very likely that all the packages install successfully only on Linux.  I run VMware on Windows and run Nurpawiki in Linux guest.
+It's very likely that all the packages install successfully only on Linux.  I use VMware on Windows and run Nurpawiki in a Linux guest.
 
 == Install Postgresql & create a database ==
  # Install Postgresql with tsearch2.  I do compile from source and run the DB locally under my home directory)
