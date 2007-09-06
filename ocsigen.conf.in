@@ -1,8 +1,8 @@
 <ocsigen>
   <server>
     <port>8080</port> <!-- The port for the server -->
-    <logdir>%_OCSIGEN_ROOT_%/var/log</logdir> <!-- Where log files are to be written -->
-    <datadir>%_OCSIGEN_ROOT_%/var/lib</datadir>
+    <logdir>./var/log</logdir> <!-- Where log files are to be written -->
+    <datadir>./var/lib</datadir>
 
     <user></user> <!-- The user who will run Ocsigen (not root!) -->
     <group></group> <!-- The group (not root!) -->
@@ -10,9 +10,7 @@
     <charset>utf-8</charset> <!-- Default charset for pages -->
 
     <!-- We need static files for icons and CSS -->
-    <extension module="%_OCSIGEN_ROOT_%/modules/staticmod.cmo">
-      <static dir="%_OCSIGEN_ROOT_%/files"/>
-    </extension>
+    <extension module="%_OCSIGEN_MODULES_%/staticmod.cmo" />
 
     <library module="%_STR_CMA_%"/>
     <library module="%_PCRE_CMA_%"/>
@@ -23,23 +21,23 @@
     <!-- Sqlite is needed by ocsipersist, which is used by Eliom: -->
     <extension module="%_SQLITE3_CMA_%"/>
 
-    <extension module="%_OCSIGEN_ROOT_%/modules/ocsipersist-sqlite.cma"/>
+    <extension module="%_OCSIGEN_MODULES_%/ocsipersist-sqlite.cma"/>
 
-    <extension module="%_OCSIGEN_ROOT_%/modules/eliom.cma"/>
+    <extension module="%_OCSIGEN_MODULES_%/eliom.cma"/>
 
     <host>  
     
       <site dir="" charset="utf-8">
-        <eliom module="nurpawiki/site.cma">
+        <eliom module="site.cma">
           <database name="%_DBNAME_%" user="%_DBUSER_%"/>
         </eliom>
-        <static dir="nurpawiki/files" />
+        <static dir="files" />
       </site>
 
 
     </host>
 
-    <commandpipe>%_OCSIGEN_ROOT_%/var/run/ocsigen_command</commandpipe>
+    <commandpipe>./var/run/ocsigen_command</commandpipe>
 
   </server>
   
