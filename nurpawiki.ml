@@ -710,12 +710,6 @@ module WikiML =
             else
               begin
                 let s = (String.sub s charpos ((String.length s)-charpos)) in
-                let len = String.length s in
-                P.eprintf "parsing: '";
-                for i = 0 to len-1 do
-                  P.eprintf "%i " (int_of_char s.[i])
-                done;
-                P.eprintf "'\n";
                 add_html acc (pcdata ("WIKI SYNTAX ERROR on line: '"^s^"'"))
               end
         in
@@ -1225,7 +1219,6 @@ let parse_todo_ids todo_ids =
   try
     List.map
       (fun (todo_id_str,b) ->
-         Messages.errlog (P.sprintf "todo id '%s' b '%s'" todo_id_str b);
          match match_pcre_option todo_id_re todo_id_str with
            Some r ->
              int_of_string r.(1)
@@ -1240,15 +1233,9 @@ let _ =
   register edit_todo_page
     (fun sp single_tid (todo_ids : (string * string) list) ->
        if todo_ids = [] then
-         begin
-           Messages.errlog "single todo";
-           render_todo_get_page sp single_tid
-         end
+         render_todo_get_page sp single_tid
        else 
-         begin
-           Messages.errlog (P.sprintf "multiple todos %d\n" (List.length todo_ids));
-           render_todo_editor sp (parse_todo_ids todo_ids)
-         end)
+         render_todo_editor sp (parse_todo_ids todo_ids))
 
 
 (* /scheduler *)
