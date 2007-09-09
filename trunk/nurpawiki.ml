@@ -998,7 +998,8 @@ let _ =
            let current_page_todos = WikiDB.query_page_todos page_id in
            (page_id,
             current_page_todos,
-            load_wiki_page page_id >> annotate_old_todo_items page_name current_page_todos)
+            load_wiki_page page_id >> 
+              annotate_old_todo_items page_name current_page_todos)
          else
            begin
              (WikiDB.new_wiki_page page_name, IMap.empty, [])
@@ -1068,23 +1069,34 @@ let view_scheduler_page sp =
     let todo_in_pages =
       WikiDB.todos_in_pages (List.map (fun (_,todo) -> todo.t_id) todos) in
 
-    List.map
-      (fun (heading,todo) ->
-         let todo_id_s = string_of_int todo.t_id in
-         (*[tr (td ~a:[a_class ["rm_table_heading"]] [pcdata heading]) []]*)
-         let pri_style = WikiML.priority_css_class todo.t_priority in
-         tr
-           (td ~a:[a_class ["rm_edit"]]
-              [a ~a:[a_title "Edit"] ~service:edit_todo_get_page ~sp:sp
-                 [img ~alt:"Edit" 
-                    ~src:(make_uri (static_dir sp) sp ["edit_small.png"]) ()]
-                 (Some todo.t_id)])
-           [td [any_checkbox ~name:("t-"^ todo_id_s) ~value:"0" ()];
-            (td ~a:[a_class ["no_break"; pri_style]] 
-               [pcdata (prettify_activation_date todo.t_activation_date)]);
-            td ~a:[a_class [pri_style]] 
-              ([pcdata todo.t_descr] @ wiki_page_links sp todo_in_pages todo)])
-      todos in
+    let prev_heading = ref "" in
+    let todo_rows = 
+      List.map
+        (fun (heading,todo) ->
+           let todo_id_s = string_of_int todo.t_id in
+           let heading_row =
+             if !prev_heading <> heading then
+               begin
+                 prev_heading := heading;
+                 [tr (td ~a:[a_class ["rm_table_heading"]] [pcdata heading]) []]
+               end
+             else
+               [] in
+           let pri_style = WikiML.priority_css_class todo.t_priority in
+           let todo_row =
+             tr
+               (td ~a:[a_class ["rm_edit"]]
+                  [a ~a:[a_title "Edit"] ~service:edit_todo_get_page ~sp:sp
+                     [img ~alt:"Edit" 
+                        ~src:(make_uri (static_dir sp) sp ["edit_small.png"]) ()]
+                     (Some todo.t_id)])
+               [td [any_checkbox ~name:("t-"^ todo_id_s) ~value:"0" ()];
+                (td ~a:[a_class ["no_break"; pri_style]] 
+                   [pcdata (prettify_activation_date todo.t_activation_date)]);
+                td ~a:[a_class [pri_style]] 
+                  ([pcdata todo.t_descr] @ wiki_page_links sp todo_in_pages todo)] in
+           heading_row @ [todo_row]) todos in
+    List.flatten todo_rows in
 
   let todo_section sp todos =
     (todo_table_html sp todos) in
