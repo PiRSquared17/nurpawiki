@@ -1,0 +1,5 @@
+#summary How to install Postgresql and the nurpawiki DB on Debian.
+
+= Configuring Postgresql for Nurpawiki =
+
+  * apt-get install postgresql
