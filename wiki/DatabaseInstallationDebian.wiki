@@ -3,4 +3,4 @@
 = Configuring Postgresql for Nurpawiki =
 
   * `apt-get install postgresql-8.1` (I've only tested with 8.x versions, so if the default is 7.4, something might not wrong)
-  * `apt-get install libpq-dev` (for OCaml bindings)
+  * `apt-get install libpq-dev` (for OCaml bindings, remember to install bindings package `godi-postgresql` from GODI)
