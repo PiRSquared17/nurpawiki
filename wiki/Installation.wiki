@@ -13,7 +13,9 @@ It's very likely that all the packages install successfully only on Linux.  I us
  # Create a database called `nurpawiki` and setup its schema
  # Install OCaml postgresql bindings from GODI
 
-See [DatabaseInstallation installing the database].
+See [DatabaseInstallationDebian Debian DB instructions] for instructions on installing using Debian's packages.
+
+See [DatabaseInstallation DB from source] for installing everything from source (not recommended).
 
 == Get the source ==
 Get the source from SVN (see http://code.google.com/p/nurpawiki/source).
