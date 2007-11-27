@@ -200,7 +200,7 @@ module WikiDB =
                P.eprintf "psql failed : %s\n" msg;
                raise ex
            | _ -> 
-               P.eprintf "psql failed : %s\n" "unknown";
+               P.eprintf "psql failed : %s\n" (Psql.string_of_error e);
                raise ex)
 
     let insert_todo_activity todo_id ?(page_ids=None) activity =
