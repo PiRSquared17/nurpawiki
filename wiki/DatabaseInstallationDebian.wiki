@@ -15,7 +15,7 @@ See [DatabaseInstallationHacks hacks] if you have reason to doubt this is not so
 
 === Install db and configure ===
 
-As `postgres`, do:
+As user `postgres`, do:
   * `createdb -h localhost -E UTF-8 nurpawiki`
   * `psql nurpawiki < nurpawiki/schema.psql` (setup nurpawiki schema with tsearch2)
 
