@@ -2,5 +2,11 @@
 
 = Configuring Postgresql for Nurpawiki =
 
-  * `apt-get install postgresql-8.1` (I've only tested with 8.x versions, so if the default is 7.4, something might not wrong)
+== Install Postgresql and postgresql OCaml bindings ==
+  * `apt-get install postgresql-contrib` (I've only tested with 8.x versions, so if the default is 7.4, something might not wrong)
   * `apt-get install libpq-dev` (for OCaml bindings, remember to install bindings package `godi-postgresql` from GODI)
+
+== Create DB & configure ==
+
+  * `createdb -E UTF-8 nurpawiki`
+  * `psql nurpawiki < /usr/share/postgresql/8.2/contrib/tsearch2.sql` (setup tsearch2)
