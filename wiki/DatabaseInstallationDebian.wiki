@@ -15,7 +15,7 @@ The following section explains how to force it.  If you're lucky, your databases
 === Hack to get the locale set up correctly ===
 DO NOT DO THIS UNLESS YOU MUST -- THIS WILL OVERRIDE YOUR DATABASE STORAGE COMPLETELY AND YOU WILL LOSE ANY OTHER DB INFORMATION YOU MIGHT HAVE.
 
-  * `initdb -E UTF-8 --locale=en_US.UTF-8 nurpawiki`
+  * ` /usr/lib/postgresql/8.2/bin/initdb -E UTF-8 --locale=en_US.UTF-8 -D /var/lib/postgresql/8.2/main/`
 
 === Install db and configure ===
   * `createdb -h localhost -E UTF-8 nurpawiki`
