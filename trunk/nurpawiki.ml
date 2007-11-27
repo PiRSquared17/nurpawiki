@@ -1,7 +1,11 @@
 
 open XHTML.M
-open Eliom
-open Eliom.Xhtml
+
+open Eliomsessions
+open Eliomparameters
+open Eliomservices
+open Eliompredefmod.Xhtml
+
 open Lwt
 open ExtList
 open ExtString
@@ -101,6 +105,7 @@ module WikiDB =
         {
           db_name : string;
           db_user : string;
+          db_port : string;
         }
 
     open Simplexmlparser
@@ -118,21 +123,27 @@ module WikiDB =
               with Not_found ->
                 raise (Extensions.Error_in_config_file 
                          "Expecting database.user attribute in Nurpawiki config") in
-            (dbname,dbuser)
+            let dbport = 
+              try (List.assoc "port" attrs)
+              with Not_found ->
+                raise (Extensions.Error_in_config_file 
+                         "Expecting database.port attribute in Nurpawiki config") in
+            (dbname,dbuser,dbport)
         | _ -> 
             raise (Extensions.Error_in_config_file ("Unexpected content inside Nurpawiki config")) in
-      let (dbname,dbuser) = find_dbcfg (Eliom.get_config ()) in
+      let (dbname,dbuser,dbport) = find_dbcfg (get_config ()) in
       { 
         db_name = dbname;
         db_user = dbuser;
+        db_port = dbport;
       }
 
     let db_conn =
       try
-        Messages.errlog (P.sprintf "connecting to DB '%s' as user '%s'" 
-                           dbcfg.db_name dbcfg.db_user);
-        new Psql.connection ~host:"localhost" 
-          ~dbname:dbcfg.db_name  ~user:dbcfg.db_user ()
+        Messages.errlog (P.sprintf "connecting to DB '%s' as user '%s' on port '%s'" 
+                           dbcfg.db_name dbcfg.db_user dbcfg.db_port);
+        new Psql.connection ~host:"localhost"
+          ~dbname:dbcfg.db_name ~user:dbcfg.db_user ~port:dbcfg.db_port ()
       with
         (Psql.Error e) as ex ->
           (match e with
@@ -646,7 +657,8 @@ module WikiML =
           let url = scheme^":"^page in
           let t = if text = "" then url else text in
           a (new_external_service 
-               ~url:[url]
+               ~prefix:url
+               ~path:[]
                ~get_params:unit
                ~post_params:unit ()) sp [pcdata t; ext_img] () in
 
@@ -765,13 +777,13 @@ let wikiml_to_html sp (page_id:int) (page_name:string) todo_data =
 (* Use this as the basis for all pages.  Includes CSS etc. *)
 let html_stub sp ?(javascript=[]) body_html =
   let script src = 
-    js_script ~a:[a_defer `Defer] ~uri:(make_uri (static_dir sp) sp [src]) in
-  let scripts = 
+    js_script ~a:[a_defer `Defer] ~uri:(make_uri (static_dir sp) sp [src]) () in
+  let scripts  = 
     script "nurpawiki.js" :: (List.map script javascript) in
   return 
     (html 
        (head (title (pcdata "")) 
-          (scripts @ [css_link (make_uri (static_dir sp) sp ["style.css"])]))
+          ((scripts) @ [css_link ~a:[] ~uri:(make_uri ~service:(static_dir sp) ~sp ["style.css"]) ()]))
        (body 
           body_html))
 
@@ -864,7 +876,7 @@ let navbar_html sp ?(wiki_page_links=[]) ?(todo_list_table=[]) content =
 
   let search_input =
     [get_form search_page sp
-       (fun (chain : ([`One of string] Eliom.param_name)) -> 
+       (fun (chain : ([`One of string] Eliomparameters.param_name)) -> 
           [p [string_input ~input_type:`Submit ~value:"Search" ();
               string_input ~input_type:`Text ~name:chain
                 ~value:"" ()]])] in
@@ -1090,7 +1102,7 @@ let view_scheduler_page sp =
                      [img ~alt:"Edit" 
                         ~src:(make_uri (static_dir sp) sp ["edit_small.png"]) ()]
                      (Some todo.t_id)])
-               [td [any_checkbox ~name:("t-"^ todo_id_s) ~value:"0" ()];
+               [td [raw_checkbox ~name:("t-"^ todo_id_s) ~value:"0" ()];
                 (td ~a:[a_class ["no_break"; pri_style]] 
                    [pcdata (prettify_activation_date todo.t_activation_date)]);
                 td ~a:[a_class [pri_style]] 
@@ -1124,7 +1136,7 @@ let view_scheduler_page sp =
      don't know how to easily do that without duplicating the
      parameter passing of pages. *)
   let table () = 
-    [p [any_input ~input_type:`Submit ~value:"Mass edit" ()];
+    [p [raw_input ~input_type:`Submit ~value:"Mass edit" ()];
      table
        (tr (th []) [th []; th [pcdata "Activates on"]; th [pcdata "Todo"]])
        (todo_section sp merged_todos)] in
@@ -1138,7 +1150,7 @@ let view_scheduler_page sp =
 
 let scheduler_page_discard_todo_id = 
   register_new_service
-    ~url:["scheduler"] ~get_params:(list "todo_ids" (int "tid"))
+    ~path:["scheduler"] ~get_params:(list "todo_ids" (int "tid"))
     (fun sp _ () -> view_scheduler_page sp)
 
 (* Save page as a result of /edit_todo?todo_id=ID *)
