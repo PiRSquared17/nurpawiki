@@ -8,5 +8,7 @@
 
 == Create DB & configure ==
 
-  * `createdb -E UTF-8 nurpawiki`
+  * `createdb -h localhost -E UTF-8 nurpawiki`
   * `psql nurpawiki < nurpawiki/schema.psql` (setup nurpawiki schema with tsearch2)
+
+Make sure you choose the right Postgresql port when running `configure` for Nurpawiki.
