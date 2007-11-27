@@ -12,6 +12,8 @@ When creating databases, you must ensure that the database will be in `en_US.UTF
 
 The following section explains how to force it.  If you're lucky, your databases are already in the right format.
 
+See http://sandbox.merjis.com/installation for further notes on tsearch2.  This module makes the setup quite a bit more complicated.
+
 === Hack to get the locale set up correctly ===
 DO NOT DO THIS UNLESS YOU MUST -- THIS WILL OVERRIDE YOUR DATABASE STORAGE COMPLETELY AND YOU WILL LOSE ANY OTHER DB INFORMATION YOU MIGHT HAVE.
 
