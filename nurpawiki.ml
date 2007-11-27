@@ -111,23 +111,17 @@ module WikiDB =
     open Simplexmlparser
 
     let dbcfg =
+      let get_attr_with_err attr attrs =
+        try (List.assoc attr attrs)
+        with Not_found -> 
+          raise (Extensions.Error_in_config_file 
+                   ("Expecting database."^attr^" attribute in Nurpawiki config")) in
+
       let rec find_dbcfg = function
           [Element ("database", attrs, _)] ->
-            let dbname = 
-              try (List.assoc "name" attrs)
-              with Not_found -> 
-                raise (Extensions.Error_in_config_file 
-                         "Expecting database.name attribute in Nurpawiki config") in
-            let dbuser = 
-              try (List.assoc "user" attrs)
-              with Not_found ->
-                raise (Extensions.Error_in_config_file 
-                         "Expecting database.user attribute in Nurpawiki config") in
-            let dbport = 
-              try (List.assoc "port" attrs)
-              with Not_found ->
-                raise (Extensions.Error_in_config_file 
-                         "Expecting database.port attribute in Nurpawiki config") in
+            let dbname = get_attr_with_err "name" attrs in
+            let dbuser = get_attr_with_err "user" attrs in
+            let dbport = get_attr_with_err "port" attrs in
             (dbname,dbuser,dbport)
         | _ -> 
             raise (Extensions.Error_in_config_file ("Unexpected content inside Nurpawiki config")) in
