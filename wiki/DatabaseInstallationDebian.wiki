@@ -15,6 +15,15 @@ See [DatabaseInstallationHacks hacks] if you have reason to doubt this is not so
 
 === Install db and configure ===
 
+Enable localhost access to the database without a password:
+
+Edit `/etc/postgresql/8.2/main/pg_hba.conf` like so (TODO what's a better way to do this??!):
+
+{{{
+-host    all         all         127.0.0.1/32          md5
++host    all         all         127.0.0.1/32          trust
+}}}
+
 As user `postgres`, do:
   * `createdb -h localhost -E UTF-8 nurpawiki`
   * `psql nurpawiki < nurpawiki/schema.psql` (setup nurpawiki schema with tsearch2)
