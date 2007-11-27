@@ -151,7 +151,7 @@ module WikiDB =
                P.eprintf "psql failed : %s\n" msg;
                raise ex
            | _ -> 
-               P.eprintf "psql failed : %s\n" "unknown";
+               P.eprintf "psql failed : %s\n" (Psql.string_of_error e);
                raise ex)
       | _ -> assert false
 
