@@ -9,4 +9,4 @@
 == Create DB & configure ==
 
   * `createdb -E UTF-8 nurpawiki`
-  * `psql nurpawiki < /usr/share/postgresql/8.2/contrib/tsearch2.sql` (setup tsearch2)
+  * `psql nurpawiki < nurpawiki/schema.psql` (setup nurpawiki schema with tsearch2)
