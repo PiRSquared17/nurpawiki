@@ -20,8 +20,8 @@ Enable localhost access to the database without a password:
 Edit `/etc/postgresql/8.2/main/pg_hba.conf` like so (TODO what's a better way to do this??!):
 
 {{{
--host    all         all         127.0.0.1/32          md5
-+host    all         all         127.0.0.1/32          trust
+- host    all         all         127.0.0.1/32          md5
++ host    all         all         127.0.0.1/32          trust
 }}}
 
 As user `postgres`, do:
@@ -29,3 +29,5 @@ As user `postgres`, do:
   * `psql nurpawiki < nurpawiki/schema.psql` (setup nurpawiki schema with tsearch2)
 
 Make sure you choose the right Postgresql port when running `configure` for Nurpawiki.
+
+And you're done!
