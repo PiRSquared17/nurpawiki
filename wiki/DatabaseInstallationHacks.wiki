@@ -2,7 +2,7 @@
 
 = Hacks to force tsearch2 to work =
 
-The following section explains how to a certain locale on Debian.  If you're lucky, your databases are already in the right format.
+The following section explains how to a certain locale on Debian.  If you're lucky, your databases are already configured to use a compatible locale.
 
 See http://sandbox.merjis.com/installation for further notes on tsearch2.  This module makes the setup quite a bit more complicated.
 
