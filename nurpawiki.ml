@@ -495,6 +495,8 @@ let () =
   Eliompredefmod.Actions.register 
     ~service:task_side_effect_action task_side_effect_action_handler
 
+let make_static_uri sp name =
+  make_uri (static_dir sp) sp name
 
 (* Deal with Wiki markup *)
 module WikiML =
@@ -604,7 +606,7 @@ module WikiML =
     let complete_todo sp page completed id =
       let img_html = 
         [img ~alt:"Mark complete" 
-           ~src:(make_uri (static_dir sp) sp ["mark_complete.png"]) ()] in
+           ~src:(make_static_uri sp ["mark_complete.png"]) ()] in
       let complete_task_link sp task_id =
         run_task_side_effect 
           ~a:[a_title "Mark as completed!"] ~sp img_html task_id "c" in
@@ -620,7 +622,7 @@ module WikiML =
         else 
           ("Lower priority!", "arrow_down.png", "down") in
       let arrow_img =
-        img ~alt:"Logo" ~src:(make_uri (static_dir sp) sp [arrow_img]) () in
+        img ~alt:"Logo" ~src:(make_static_uri sp [arrow_img]) () in
       run_task_side_effect
         ~a:[a_title title] ~sp [arrow_img] id action
 
@@ -665,7 +667,7 @@ module WikiML =
       let wikilink scheme page text = 
         let ext_img = 
           img ~alt:"External link" 
-            ~src:(make_uri (static_dir sp) sp ["external_link.png"]) () in
+            ~src:(make_static_uri sp ["external_link.png"]) () in
         if scheme = "wiki" || scheme = "" then
           let t = if text = "" then page else text in
           if WikiDB.wiki_page_exists page then
@@ -798,7 +800,7 @@ let wikiml_to_html sp (page_id:int) (page_name:string) todo_data =
 (* Use this as the basis for all pages.  Includes CSS etc. *)
 let html_stub sp ?(javascript=[]) body_html =
   let script src = 
-    js_script ~a:[a_defer `Defer] ~uri:(make_uri (static_dir sp) sp [src]) () in
+    js_script ~a:[a_defer `Defer] ~uri:(make_static_uri sp [src]) () in
   let scripts  = 
     script "nurpawiki.js" :: (List.map script javascript) in
   return 
@@ -887,12 +889,12 @@ let navbar_html sp ?(wiki_page_links=[]) ?(todo_list_table=[]) content =
   let scheduler_link =
     a ~service:scheduler_page
       ~a:[a_accesskey 'r'; a_class ["ak"]] ~sp:sp 
-      [img ~alt:"Scheduler" ~src:(make_uri (static_dir sp) sp ["calendar.png"]) ();
+      [img ~alt:"Scheduler" ~src:(make_static_uri sp ["calendar.png"]) ();
        pcdata "Scheduler"] () in
   let history_link =
     a ~service:history_page
       ~a:[a_accesskey 'r'; a_class ["ak"]] ~sp:sp 
-      [img ~alt:"History" ~src:(make_uri (static_dir sp) sp ["home.png"]) ();
+      [img ~alt:"History" ~src:(make_static_uri sp ["home.png"]) ();
        pcdata "History"] () in
 
   let search_input =
@@ -905,7 +907,7 @@ let navbar_html sp ?(wiki_page_links=[]) ?(todo_list_table=[]) content =
   let space = [pcdata " "] in
   [div ~a:[a_id "navbar"]
      ([home_link 
-         [img ~alt:"Home" ~src:(make_uri (static_dir sp) sp ["home.png"]) ();
+         [img ~alt:"Home" ~src:(make_static_uri sp ["home.png"]) ();
           pcdata "Home"]] @ 
         space @ [scheduler_link] @ 
          space @ [history_link] @ space @ wiki_page_links @
@@ -916,7 +918,7 @@ let navbar_html sp ?(wiki_page_links=[]) ?(todo_list_table=[]) content =
 let wiki_page_menu_html sp page content =
   let edit_link = 
     [a ~service:wiki_edit_page ~sp:sp ~a:[a_accesskey '1'; a_class ["ak"]]
-       [img ~alt:"Edit" ~src:(make_uri (static_dir sp) sp ["edit.png"]) ();
+       [img ~alt:"Edit" ~src:(make_static_uri sp ["edit.png"]) ();
         pcdata "Edit page"] page] in
   let printable_link =
     [a ~service:wiki_view_page ~sp:sp
@@ -1118,7 +1120,7 @@ let view_scheduler_page sp =
                (td ~a:[a_class ["rm_edit"]]
                   [a ~a:[a_title "Edit"] ~service:edit_todo_get_page ~sp:sp
                      [img ~alt:"Edit" 
-                        ~src:(make_uri (static_dir sp) sp ["edit_small.png"]) ()]
+                        ~src:(make_static_uri sp ["edit_small.png"]) ()]
                      (Some todo.t_id)])
                [td [raw_checkbox ~name:("t-"^ todo_id_s) ~value:"0" ()];
                 (td ~a:[a_class ["no_break"; pri_style]] 
@@ -1480,4 +1482,3 @@ let _ =
     (fun sp search_str () ->
        gen_search_page sp search_str)
 
-  
