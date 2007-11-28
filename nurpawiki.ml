@@ -77,9 +77,6 @@ let newline_re = Str.regexp "\n"
 
 let wiki_view_page = 
   new_service ["view"] ((string "p")
-                        ** (opt (int "completed_todo_id"))
-                        ** (opt (int "up_pri"))
-                        ** (opt (int "down_pri"))
                         ** (opt (bool "printable"))) ()
 
 let wiki_edit_page = new_service ["edit"] (string "p") ()
@@ -474,6 +471,31 @@ let date_of_date_time_string s =
       assert false
     end
 
+
+let task_side_effect_action_handler sp (task_id,action) () =
+  begin
+    match action with
+      "c" ->
+        WikiDB.complete_task task_id
+    | "up" ->
+       WikiDB.up_task_priority task_id
+    | "down" ->
+        WikiDB.down_task_priority task_id
+    | _ -> assert false
+  end;
+  return []
+
+let task_side_effect_action = 
+  Eliomservices.new_coservice'
+    ~get_params:((Eliomparameters.int "task_id") ** 
+                   (Eliomparameters.string "action"))
+    ()
+
+let () =
+  Eliompredefmod.Actions.register 
+    ~service:task_side_effect_action task_side_effect_action_handler
+
+
 (* Deal with Wiki markup *)
 module WikiML =
   struct
@@ -573,37 +595,42 @@ module WikiML =
               | `NoWiki lines -> ("<pre>" :: lines) @ ["</pre>"])
            preproc_lines)
 
+    let run_task_side_effect ~a ~sp link_text task_id task_action =
+      Eliompredefmod.Xhtml.a  
+          ~a
+          ~service:task_side_effect_action ~sp link_text (task_id,task_action)
+
     (* Todo item manipulation HTML *)
     let complete_todo sp page completed id =
+      let img_html = 
+        [img ~alt:"Mark complete" 
+           ~src:(make_uri (static_dir sp) sp ["mark_complete.png"]) ()] in
+      let complete_task_link sp task_id =
+        run_task_side_effect 
+          ~a:[a_title "Mark as completed!"] ~sp img_html task_id "c" in
       if completed then
-        pcdata "" (* TODO redundant *)
+        pcdata ""
       else 
-        a ~a:[a_title "Mark as completed!"]
-          ~service:wiki_view_page ~sp:sp
-          [img ~alt:"Mark complete" 
-             ~src:(make_uri (static_dir sp) sp ["mark_complete.png"]) ()]
-          (page,(Some id,(None,(None, None))))
-
+        complete_task_link sp id
+          
     let priority_arrow sp page id up_or_down =
-      let (title,arrow_img,params) = 
+      let (title,arrow_img,action) = 
         if up_or_down then 
-          ("Raise priority!", "arrow_up.png", (Some id, (None, None)))
+          ("Raise priority!", "arrow_up.png", "up")
         else 
-          ("Lower priority!", "arrow_down.png", (None, (Some id, None))) in
+          ("Lower priority!", "arrow_down.png", "down") in
       let arrow_img =
         img ~alt:"Logo" ~src:(make_uri (static_dir sp) sp [arrow_img]) () in
-      a ~a:[a_title title] ~service:wiki_view_page ~sp:sp 
-        [arrow_img] (page,(None,params))
+      run_task_side_effect
+        ~a:[a_title title] ~sp [arrow_img] id action
 
-    let up_arrow sp page id = priority_arrow sp page id true
-
-    let down_arrow sp page id = priority_arrow sp page id false
 
     let mod_priorities sp page completed pri id =
       if completed then 
         []
       else 
-        [up_arrow sp page id; down_arrow sp page id]
+        [priority_arrow sp page id true; 
+         priority_arrow sp page id false]
 
     let todo_modify_buttons sp page todo_id todo =
       let completed = todo.t_completed in
@@ -642,11 +669,11 @@ module WikiML =
         if scheme = "wiki" || scheme = "" then
           let t = if text = "" then page else text in
           if WikiDB.wiki_page_exists page then
-            a wiki_view_page sp [pcdata t] (page,(None,(None,(None,None))))
+            a wiki_view_page sp [pcdata t] (page,None)
           else 
             a ~a:[a_class ["missing_page"]] 
               ~service:wiki_view_page ~sp:sp [pcdata t] 
-              (page,(None,(None,(None,None))))
+              (page,None)
         else (* External link *)
           let url = scheme^":"^page in
           let t = if text = "" then url else text in
@@ -799,7 +826,7 @@ let todo_page_links_of_pages sp ?(colorize=false) ?(link_css_class=None) ?(inser
     | None -> [a_class color_css] in
   let link page = 
     a ~a:(attrs page) ~service:wiki_view_page ~sp:sp [pcdata page.p_descr]
-      (urlify_wiki_page_descr page.p_descr,(None,(None,(None,None)))) in
+      (urlify_wiki_page_descr (page.p_descr,None)) in
   let rec insert_commas acc = function
       (x::_::xs) as lst ->
         insert_commas (pcdata ", "::x::acc) (List.tl lst)
@@ -856,7 +883,7 @@ let navbar_html sp ?(wiki_page_links=[]) ?(todo_list_table=[]) content =
   let home_link link_text =
     a ~service:wiki_view_page 
       ~a:[a_accesskey 'h'; a_class ["ak"]] ~sp:sp link_text 
-      ("WikiStart", (None, (None,(None,None)))) in
+      ("WikiStart", None) in
   let scheduler_link =
     a ~service:scheduler_page
       ~a:[a_accesskey 'r'; a_class ["ak"]] ~sp:sp 
@@ -894,7 +921,7 @@ let wiki_page_menu_html sp page content =
   let printable_link =
     [a ~service:wiki_view_page ~sp:sp
        ~a:[a_accesskey 'p'; a_class ["ak"]] [pcdata "Print"]
-       (page, (None, (None,(None,Some true))))] in
+       (page, Some true)] in
   let todo_list = 
     todo_list_table_html sp page (WikiDB.query_all_active_todos ()) in
   navbar_html sp ~wiki_page_links:(edit_link @ [br ()] @ printable_link)
@@ -971,7 +998,7 @@ let service_save_page_post =
   register_new_post_service
     ~fallback:wiki_view_page
     ~post_params:(string "value")
-    (fun sp (page,(_,(_,_))) value -> 
+    (fun sp (page,_) value -> 
        (* Check if there are any new or removed [todo:#id] tags and
           updated DB page mappings accordingly: *)
        let wikitext = Str.split newline_re value >> WikiML.preprocess in
@@ -1017,11 +1044,11 @@ let _ =
            (fun chain -> 
               [(p [string_input ~input_type:`Submit ~value:"Save" (); 
                    cancel_link wiki_view_page sp
-                     (page_name,(None, (None,(None,None))));
+                     (page_name,None);
                    br ();
                    textarea ~name:chain ~rows:30 ~cols:80 
                      ~value:(pcdata wikitext) ()])])
-           (page_name,(None, (None,(None,None)))) in
+           (page_name,None) in
        html_stub sp
          (wiki_page_contents_html sp page_id page_name page_todos 
             ~content:[f] ()))
@@ -1029,12 +1056,9 @@ let _ =
 (* /view?p=Page *)
 let _ = 
   register wiki_view_page
-    (fun sp (page_name,(completed_todo_id, (up_pri,(down_pri,printable)))) () ->
+    (fun sp (page_name,printable) () ->
        (* If user requested task/TODO completion, complete the task in
           DB: *)
-       Option.may WikiDB.complete_task completed_todo_id;
-       Option.may WikiDB.up_task_priority up_pri;
-       Option.may WikiDB.down_task_priority down_pri;
        match WikiDB.find_page_id page_name with
          Some page_id ->
            view_page sp page_id page_name ~printable
@@ -1442,7 +1466,7 @@ let _ =
                 let link descr = 
                   a ~a:[a_class ["sr_link"]] ~service:wiki_view_page ~sp:sp 
                     [pcdata descr]
-                    (urlify_wiki_page_descr descr,(None,(None,(None,None)))) in
+                    (urlify_wiki_page_descr descr,None) in
                 [p ([link (Option.get sr.sr_page_descr); br ()] @ 
                       html_of_headline sr.sr_headline)]
             | SR_todo -> assert false) search_results) in
