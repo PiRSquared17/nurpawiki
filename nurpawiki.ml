@@ -637,17 +637,14 @@ module WikiML =
           ~service:task_side_effect_action ~sp link_text (task_id,task_action)
 
     (* Todo item manipulation HTML *)
-    let complete_todo sp completed id =
+    let complete_todo sp id =
       let img_html = 
         [img ~alt:"Mark complete" 
            ~src:(make_static_uri sp ["mark_complete.png"]) ()] in
       let complete_task_link sp task_id =
-        run_task_side_effect 
-          ~a:[a_title "Mark as completed!"] ~sp img_html task_id "c" in
-      if completed then
-        pcdata ""
-      else 
-        complete_task_link sp id
+        [run_task_side_effect 
+           ~a:[a_title "Mark as completed!"] ~sp img_html task_id "c"] in
+      complete_task_link sp id
           
     let priority_arrow sp id up_or_down =
       let (title,arrow_img,action) = 
@@ -661,25 +658,22 @@ module WikiML =
         ~a:[a_title title] ~sp [arrow_img] id action
 
 
-    let mod_priorities sp completed pri id =
-      if completed then 
-        []
-      else 
-        [priority_arrow sp id true; 
-         priority_arrow sp id false]
+    let mod_priorities sp pri id =
+      [priority_arrow sp id true; 
+       priority_arrow sp id false]
 
-    let todo_editor_link sp completed todo_id page =
-      if completed then 
-        [] 
-      else
-        todo_edit_img_link sp (ET_view page) todo_id
+    let todo_editor_link sp todo_id page =
+      todo_edit_img_link sp (ET_view page) todo_id
         
     let todo_modify_buttons sp page todo_id todo =
       let completed = todo.t_completed in
       span ~a:[a_class ["no_break"]]
-        ((mod_priorities sp completed todo.t_priority todo_id) @
-           [complete_todo sp completed todo_id] @
-           (todo_editor_link sp completed todo_id page))
+        (if completed then
+           []
+         else 
+           (mod_priorities sp todo.t_priority todo_id @
+              complete_todo sp todo_id @
+              todo_editor_link sp todo_id page))
 
 
     let translate_list items =
