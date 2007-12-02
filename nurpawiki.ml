@@ -71,6 +71,31 @@ let activity_type_of_int = function
   | 5 -> AT_edit_page
   | _ -> assert false
 
+let match_pcre_option rex s =
+  try Some (Pcre.extract ~rex s) with Not_found -> None
+
+type et_cont = 
+    ET_scheduler
+  | ET_view of string
+
+let et_cont_view_re = Pcre.regexp "^v_(.*)$"
+
+let string_of_et_cont = function
+    ET_scheduler -> "s"
+  | ET_view src_page -> "v_"^src_page
+
+let et_cont_of_string s = 
+  if s = "s" then
+    ET_scheduler
+  else 
+    begin
+      match match_pcre_option et_cont_view_re s with
+        None -> 
+          raise (Failure "et_cont_of_string")
+      | Some s ->
+          ET_view s.(1)
+    end
+
 let (>>) f g = g f
 
 let newline_re = Str.regexp "\n"
@@ -83,7 +108,10 @@ let wiki_edit_page = new_service ["edit"] (string "p") ()
 
 let scheduler_page = new_service ["scheduler"] unit ()
 
-let edit_todo_get_page = new_service ["edit_todo"] (opt (int "tid")) ()
+let edit_todo_get_page = new_service ["edit_todo"] 
+  ((Eliomparameters.user_type 
+      et_cont_of_string string_of_et_cont "src_service") **
+     (opt (int "tid"))) ()
 
 let edit_todo_page = 
   new_post_service
@@ -498,6 +526,12 @@ let () =
 let make_static_uri sp name =
   make_uri (static_dir sp) sp name
 
+let todo_edit_img_link sp page_cont task_id =
+  [a ~a:[a_title "Edit"] ~service:edit_todo_get_page ~sp:sp
+     [img ~alt:"Edit" 
+        ~src:(make_static_uri sp ["edit_small.png"]) ()]
+     (page_cont, Some task_id)]
+
 (* Deal with Wiki markup *)
 module WikiML =
   struct
@@ -603,7 +637,7 @@ module WikiML =
           ~service:task_side_effect_action ~sp link_text (task_id,task_action)
 
     (* Todo item manipulation HTML *)
-    let complete_todo sp page completed id =
+    let complete_todo sp completed id =
       let img_html = 
         [img ~alt:"Mark complete" 
            ~src:(make_static_uri sp ["mark_complete.png"]) ()] in
@@ -615,7 +649,7 @@ module WikiML =
       else 
         complete_task_link sp id
           
-    let priority_arrow sp page id up_or_down =
+    let priority_arrow sp id up_or_down =
       let (title,arrow_img,action) = 
         if up_or_down then 
           ("Raise priority!", "arrow_up.png", "up")
@@ -627,22 +661,27 @@ module WikiML =
         ~a:[a_title title] ~sp [arrow_img] id action
 
 
-    let mod_priorities sp page completed pri id =
+    let mod_priorities sp completed pri id =
       if completed then 
         []
       else 
-        [priority_arrow sp page id true; 
-         priority_arrow sp page id false]
+        [priority_arrow sp id true; 
+         priority_arrow sp id false]
 
+    let todo_editor_link sp completed todo_id page =
+      if completed then 
+        [] 
+      else
+        todo_edit_img_link sp (ET_view page) todo_id
+        
     let todo_modify_buttons sp page todo_id todo =
       let completed = todo.t_completed in
       span ~a:[a_class ["no_break"]]
-        ((mod_priorities sp page completed todo.t_priority todo_id) @
-           (if not completed then
-              []
-            else []) @
-           [complete_todo sp page completed todo_id])
-    
+        ((mod_priorities sp completed todo.t_priority todo_id) @
+           [complete_todo sp completed todo_id] @
+           (todo_editor_link sp completed todo_id page))
+
+
     let translate_list items =
       let add_ul t lst = 
         t @ [ul (List.hd lst) (List.tl lst)] in
@@ -1055,20 +1094,21 @@ let _ =
          (wiki_page_contents_html sp page_id page_name page_todos 
             ~content:[f] ()))
 
+let view_wiki_page sp (page_name,printable) =
+  match WikiDB.find_page_id page_name with
+    Some page_id ->
+      view_page sp page_id page_name ~printable
+  | None ->
+      let f = 
+        a wiki_edit_page sp [pcdata "Create new page"] page_name in
+      html_stub sp
+        (wiki_page_menu_html sp page_name [f])
+
 (* /view?p=Page *)
 let _ = 
   register wiki_view_page
     (fun sp (page_name,printable) () ->
-       (* If user requested task/TODO completion, complete the task in
-          DB: *)
-       match WikiDB.find_page_id page_name with
-         Some page_id ->
-           view_page sp page_id page_name ~printable
-       | None ->
-           let f = 
-             a wiki_edit_page sp [pcdata "Create new page"] page_name in
-           html_stub sp
-             (wiki_page_menu_html sp page_name [f]))
+       view_wiki_page sp (page_name,printable))
 
 let clamp_date_to_today date =
   let today = Date.today () in
@@ -1118,10 +1158,7 @@ let view_scheduler_page sp =
            let todo_row =
              tr
                (td ~a:[a_class ["rm_edit"]]
-                  [a ~a:[a_title "Edit"] ~service:edit_todo_get_page ~sp:sp
-                     [img ~alt:"Edit" 
-                        ~src:(make_static_uri sp ["edit_small.png"]) ()]
-                     (Some todo.t_id)])
+                  (todo_edit_img_link sp ET_scheduler todo.t_id))
                [td [raw_checkbox ~name:("t-"^ todo_id_s) ~value:"0" ()];
                 (td ~a:[a_class ["no_break"; pri_style]] 
                    [pcdata (prettify_activation_date todo.t_activation_date)]);
@@ -1162,27 +1199,37 @@ let view_scheduler_page sp =
        (todo_section sp merged_todos)] in
 
   let table' = 
-    post_form edit_todo_page sp table None in
+    post_form edit_todo_page sp table (ET_scheduler, None) in
 
   html_stub sp
     (navbar_html sp 
        ([h1 [pcdata "Road ahead"]] @ [table']))
 
+let render_edit_todo_cont_page sp = function
+    ET_scheduler -> 
+      view_scheduler_page sp
+  | ET_view wiki_page ->
+      view_wiki_page sp (wiki_page,None)
+
 let scheduler_page_discard_todo_id = 
   register_new_service
-    ~path:["scheduler"] ~get_params:(list "todo_ids" (int "tid"))
-    (fun sp _ () -> view_scheduler_page sp)
-
+    ~path:["scheduler"] 
+    ~get_params:((Eliomparameters.user_type 
+                   et_cont_of_string string_of_et_cont "src_service") **
+                   (list "todo_ids" (int "tid")))
+    (fun sp (src_page_cont,_) () -> 
+       render_edit_todo_cont_page sp src_page_cont)
+         
 (* Save page as a result of /edit_todo?todo_id=ID *)
 let service_save_todo_item =
   register_new_post_service
     ~fallback:scheduler_page_discard_todo_id
     ~post_params:(string "activation_date")
-    (fun sp todo_ids new_date ->
+    (fun sp (src_page_cont, todo_ids) new_date ->
        WikiDB.update_activation_date_for_todos todo_ids new_date;
-       view_scheduler_page sp)
+       render_edit_todo_cont_page sp src_page_cont)
 
-let rec render_todo_editor sp todos_to_edit =
+let rec render_todo_editor sp (src_page_cont, todos_to_edit) =
   let todos_str = String.concat "," (List.map string_of_int todos_to_edit) in
   let todos = WikiDB.query_todos_by_ids todos_to_edit in
 
@@ -1201,6 +1248,11 @@ let rec render_todo_editor sp todos_to_edit =
     let todo_in_pages =
       WikiDB.todos_in_pages (List.map (fun todo -> todo.t_id) todos) in
 
+    let cancel_page cont = 
+      match cont with
+        ET_scheduler -> cancel_link scheduler_page sp ()
+      | ET_view wiki -> cancel_link wiki_view_page sp (wiki,None) in
+      
     post_form service_save_todo_item sp
       (fun chain -> 
          [table 
@@ -1225,7 +1277,8 @@ let rec render_todo_editor sp todos_to_edit =
                          ~a:[a_id "activation_date"; 
                              a_class ["act_date_input"];
                              a_value smallest_date_str] ~value:"" ();
-                       cancel_link scheduler_page sp ()]]])]) todos_to_edit in
+                       cancel_page src_page_cont]]])]) 
+      (src_page_cont, todos_to_edit) in
   let heading = [pcdata ("Edit TODOs "^todos_str)] in
   let help_str = 
     pcdata "NOTE: Below activation date will be assigned for all the items" in
@@ -1244,18 +1297,16 @@ let rec render_todo_editor sp todos_to_edit =
 let error_page sp msg =
   html_stub sp [h1 [pcdata ("ERROR: "^msg)]]
 
-let render_todo_get_page sp = function
+let render_todo_get_page sp (src_page_cont, todo) = 
+  match todo with
     Some todo_id ->
-      render_todo_editor sp [todo_id]
+      render_todo_editor sp (src_page_cont, [todo_id])
   | None ->
       error_page sp "edit_todo_fallback with no 'tid'"
   
 let _ =
   register edit_todo_get_page
-    (fun sp todo_id () -> render_todo_get_page sp todo_id)
-
-let match_pcre_option rex s =
-  try Some (Pcre.extract ~rex s) with Not_found -> None
+    (fun sp get_params () -> render_todo_get_page sp get_params)
 
 let todo_id_re = Pcre.regexp "^t-([0-9]+)$"
 
@@ -1275,11 +1326,11 @@ let parse_todo_ids todo_ids =
 
 let _ =
   register edit_todo_page
-    (fun sp single_tid (todo_ids : (string * string) list) ->
+    (fun sp (src_page_cont, single_tid) (todo_ids : (string * string) list) ->
        if todo_ids = [] then
-         render_todo_get_page sp single_tid
+         render_todo_get_page sp (src_page_cont, single_tid)
        else 
-         render_todo_editor sp (parse_todo_ids todo_ids))
+         render_todo_editor sp (src_page_cont, (parse_todo_ids todo_ids)))
 
 
 (* /scheduler *)
