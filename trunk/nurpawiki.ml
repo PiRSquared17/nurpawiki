@@ -1296,8 +1296,11 @@ let render_todo_get_page sp (src_page_cont, todo) =
     Some todo_id ->
       render_todo_editor sp (src_page_cont, [todo_id])
   | None ->
-      error_page sp "edit_todo_fallback with no 'tid'"
-  
+      (* Bogus input as we didn't get any todos to edit..  But let's
+         just take the user back to where he came from rather than
+         issueing an error message. *)
+      render_edit_todo_cont_page sp src_page_cont
+        
 let _ =
   register edit_todo_get_page
     (fun sp get_params () -> render_todo_get_page sp get_params)
@@ -1316,7 +1319,7 @@ let parse_todo_ids todo_ids =
   with
     Not_found ->
       []
-       
+        
 
 let _ =
   register edit_todo_page
