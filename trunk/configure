@@ -54,7 +54,7 @@ if [ "$DBPORT" = "" ]; then
     echo
     echo ERROR!
     echo
-    echo DBPORT environment variable must be set to your nurpawiki DB username
+    echo DBPORT environment variable must be set to your nurpawiki DB port
     echo
     exit 1
 fi
