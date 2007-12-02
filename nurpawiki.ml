@@ -994,6 +994,7 @@ let check_new_and_removed_todos page_id lines =
          | `NoWiki _ -> acc) [] lines in
   WikiDB.update_page_todos page_id (List.map int_of_string page_todos)
 
+
 (* Insert new TODOs from the wiki ML into DB and replace [todo descr]
    by [todo:ID] *)
 let convert_new_todo_items page =
@@ -1006,6 +1007,33 @@ let convert_new_todo_items page =
                        let id = WikiDB.new_todo page descr in
                        "[todo:"^id^" "^descr^"]") line)
        | (`NoWiki _) as x -> x)
+
+(* Save page as a result of /edit?p=Page *)
+let service_save_page_post =
+  register_new_post_service
+    ~fallback:wiki_view_page
+    ~post_params:(string "value")
+    (fun sp (page,_) value -> 
+       (* Check if there are any new or removed [todo:#id] tags and
+          updated DB page mappings accordingly: *)
+       let wikitext = Str.split newline_re value >> WikiML.preprocess in
+       let page_id = WikiDB.page_id_of_page_name page in
+       check_new_and_removed_todos page_id wikitext;
+       (* Convert [todo Description] items into [todo:ID] format, save
+          descriptions to database and save the wiki page contents. *)
+       let wiki_plaintext = 
+         convert_new_todo_items page_id wikitext >>
+           WikiML.wikitext_of_preprocessed_lines in
+       (* Log activity: *)
+       WikiDB.insert_save_page_activity page_id;
+       WikiDB.save_wiki_page page_id wiki_plaintext;
+       view_page sp page_id page ~printable:(Some false))
+
+(* Use to create a "cancel" button for user submits *)
+let cancel_link service sp params =
+  a ~a:[a_class ["cancel_edit"]] ~service:service ~sp:sp 
+    [pcdata "Cancel"] 
+    params
 
 (* Convert [todo:ID] into [todo:ID 'Description'] before going into
    Wiki page edit textarea. *)
@@ -1026,34 +1054,6 @@ let annotate_old_todo_items page page_todos (lines : WikiML.preproc_line list) =
                    "[todo:"^id^" "^completed^descr^"]") line)
        | (`NoWiki line) as x ->
            x) lines
-
-(* Save page as a result of /edit?p=Page *)
-let service_save_page_post =
-  register_new_post_service
-    ~fallback:wiki_view_page
-    ~post_params:(string "value")
-    (fun sp (page,_) value -> 
-       (* Check if there are any new or removed [todo:#id] tags and
-          updated DB page mappings accordingly: *)
-       let wikitext = Str.split newline_re value >> WikiML.preprocess in
-       let page_id = WikiDB.page_id_of_page_name page in
-       check_new_and_removed_todos page_id wikitext;
-       (* Convert [todo Description] items into [todo:ID] format, save
-          descriptions to database and save the wiki page contents. *)
-       let edited_wiki_page =
-         convert_new_todo_items page_id wikitext in
-       let wiki_plaintext = 
-         WikiML.wikitext_of_preprocessed_lines edited_wiki_page in
-       (* Log activity: *)
-       WikiDB.insert_save_page_activity page_id;
-       WikiDB.save_wiki_page page_id wiki_plaintext;
-       view_page sp page_id page ~printable:(Some false))
-
-(* Use to create a "cancel" button for user submits *)
-let cancel_link service sp params =
-  a ~a:[a_class ["cancel_edit"]] ~service:service ~sp:sp 
-    [pcdata "Cancel"] 
-    params
 
 (* /edit?p=Page *)
 let _ =
