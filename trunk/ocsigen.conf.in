@@ -23,12 +23,12 @@
     <extension module="%_SQLITE3_CMA_%"/>
 
     <extension module="%_OCSIGEN_MODULES_%/ocsipersist-sqlite.cma"/>
-
     <extension module="%_OCSIGEN_MODULES_%/eliom.cma"/>
+    <extension module="%_OCSIGEN_MODULES_%/redirectmod.cmo"/>
 
     <host>  
-    
       <site dir="" charset="utf-8">
+        <redirect regexp="$" dest="/view?p=WikiStart"/>
         <eliom module="site.cma">
           <database name="%_DBNAME_%" user="%_DBUSER_%" port="%_DBPORT_%"/>
         </eliom>
