@@ -534,6 +534,13 @@ let todo_edit_img_link sp page_cont task_id =
         ~src:(make_static_uri sp ["edit_small.png"]) ()]
      (page_cont, Some task_id)]
 
+let complete_task_img_link sp task_id =
+  let img_html = 
+    [img ~alt:"Mark complete" 
+       ~src:(make_static_uri sp ["mark_complete.png"]) ()] in
+  Eliompredefmod.Xhtml.a ~service:task_side_effect_complete_action
+    ~a:[a_title "Mark as completed!"] ~sp img_html task_id
+
 (* Deal with Wiki markup *)
 module WikiML =
   struct
@@ -635,13 +642,7 @@ module WikiML =
 
     (* Todo item manipulation HTML *)
     let complete_todo sp id =
-      let img_html = 
-        [img ~alt:"Mark complete" 
-           ~src:(make_static_uri sp ["mark_complete.png"]) ()] in
-      let complete_task_link sp task_id =
-        [Eliompredefmod.Xhtml.a ~service:task_side_effect_complete_action
-           ~a:[a_title "Mark as completed!"] ~sp img_html task_id] in
-      complete_task_link sp id
+      [complete_task_img_link sp id]
           
     let priority_arrow sp id up_or_down =
       let (title,arrow_img,dir) = 
@@ -1152,6 +1153,7 @@ let view_scheduler_page sp =
                (td ~a:[a_class ["rm_edit"]]
                   (todo_edit_img_link sp ET_scheduler todo.t_id))
                [td [raw_checkbox ~name:("t-"^ todo_id_s) ~value:"0" ()];
+                td [complete_task_img_link sp todo.t_id];
                 (td ~a:[a_class ["no_break"; pri_style]] 
                    [pcdata (prettify_activation_date todo.t_activation_date)]);
                 td ~a:[a_class [pri_style]] 
@@ -1187,7 +1189,7 @@ let view_scheduler_page sp =
   let table () = 
     [p [raw_input ~input_type:`Submit ~value:"Mass edit" ()];
      table
-       (tr (th []) [th []; th [pcdata "Activates on"]; th [pcdata "Todo"]])
+       (tr (th []) [th []; th []; th [pcdata "Activates on"]; th [pcdata "Todo"]])
        (todo_section sp merged_todos)] in
 
   let table' = 
