@@ -500,28 +500,30 @@ let date_of_date_time_string s =
     end
 
 
-let task_side_effect_action_handler sp (task_id,action) () =
-  begin
-    match action with
-      "c" ->
-        WikiDB.complete_task task_id
-    | "up" ->
-       WikiDB.up_task_priority task_id
-    | "down" ->
-        WikiDB.down_task_priority task_id
-    | _ -> assert false
-  end;
+let task_side_effect_complete sp task_id () =
+  WikiDB.complete_task task_id;
   return []
 
-let task_side_effect_action = 
-  Eliomservices.new_coservice'
-    ~get_params:((Eliomparameters.int "task_id") ** 
-                   (Eliomparameters.string "action"))
-    ()
+let task_side_effect_mod_priority sp (task_id, dir) () =
+  if dir = false then 
+    WikiDB.down_task_priority task_id
+  else 
+    WikiDB.up_task_priority task_id;
+  return []
+
+
+let task_side_effect_complete_action = 
+  Eliomservices.new_coservice' ~get_params:(Eliomparameters.int "task_id") ()
+
+let task_side_effect_mod_priority_action = 
+  Eliomservices.new_coservice' ~get_params:((Eliomparameters.int "task_id") **
+                                              Eliomparameters.bool "dir") ()
 
 let () =
   Eliompredefmod.Actions.register 
-    ~service:task_side_effect_action task_side_effect_action_handler
+    ~service:task_side_effect_complete_action task_side_effect_complete;
+  Eliompredefmod.Actions.register 
+    ~service:task_side_effect_mod_priority_action task_side_effect_mod_priority
 
 let make_static_uri sp name =
   make_uri (static_dir sp) sp name
@@ -631,31 +633,27 @@ module WikiML =
               | `NoWiki lines -> ("<pre>" :: lines) @ ["</pre>"])
            preproc_lines)
 
-    let run_task_side_effect ~a ~sp link_text task_id task_action =
-      Eliompredefmod.Xhtml.a  
-          ~a
-          ~service:task_side_effect_action ~sp link_text (task_id,task_action)
-
     (* Todo item manipulation HTML *)
     let complete_todo sp id =
       let img_html = 
         [img ~alt:"Mark complete" 
            ~src:(make_static_uri sp ["mark_complete.png"]) ()] in
       let complete_task_link sp task_id =
-        [run_task_side_effect 
-           ~a:[a_title "Mark as completed!"] ~sp img_html task_id "c"] in
+        [Eliompredefmod.Xhtml.a ~service:task_side_effect_complete_action
+           ~a:[a_title "Mark as completed!"] ~sp img_html task_id] in
       complete_task_link sp id
           
     let priority_arrow sp id up_or_down =
-      let (title,arrow_img,action) = 
+      let (title,arrow_img,dir) = 
         if up_or_down then 
-          ("Raise priority!", "arrow_up.png", "up")
+          ("Raise priority!", "arrow_up.png", true)
         else 
-          ("Lower priority!", "arrow_down.png", "down") in
+          ("Lower priority!", "arrow_down.png", false) in
       let arrow_img =
         img ~alt:"Logo" ~src:(make_static_uri sp [arrow_img]) () in
-      run_task_side_effect
-        ~a:[a_title title] ~sp [arrow_img] id action
+      Eliompredefmod.Xhtml.a
+        ~a:[a_title title] ~service:task_side_effect_mod_priority_action
+        ~sp [arrow_img] (id,dir)
 
 
     let mod_priorities sp pri id =
