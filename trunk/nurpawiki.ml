@@ -686,10 +686,9 @@ module WikiML =
         (if completed then
            []
          else 
-           (mod_priorities sp todo.t_priority todo_id @
-              complete_todo sp todo_id @
-              todo_editor_link sp todo_id page))
-
+           (todo_editor_link sp todo_id page @
+              mod_priorities sp todo.t_priority todo_id @
+              complete_todo sp todo_id))
 
     let translate_list items =
       let add_ul t lst = 
