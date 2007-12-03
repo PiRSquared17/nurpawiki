@@ -26,66 +26,10 @@ open Lwt
 open ExtList
 open ExtString
 
+open Types
+
 module Psql = Postgresql
 module P = Printf
-
-module OrdInt = struct type t = int let compare a b = compare a b end
-module IMap = Map.Make (OrdInt)
-
-type todo = 
-    {
-      t_id : int;
-      t_descr : string;
-      t_completed : bool;
-      t_priority : int;
-      t_activation_date : string;
-    }
-
-type page = 
-    {
-      p_id : int;
-      p_descr : string;
-    }
-
-type activity_type = 
-    AT_create_todo
-  | AT_complete_todo
-  | AT_work_on_todo
-  | AT_create_page
-  | AT_edit_page
-
-type activity =
-    {
-      a_id : int;
-      a_activity : activity_type;
-      a_date : string;
-      a_todo_descr : string option;
-    }
-
-type search_result_type = SR_page | SR_todo
-
-type search_result =
-    {
-      sr_id : int;
-      sr_headline : string;
-      sr_result_type : search_result_type;
-      sr_page_descr : string option;
-    }
-
-let int_of_activity_type = function
-    AT_create_todo -> 1
-  | AT_complete_todo -> 2
-  | AT_work_on_todo -> 3
-  | AT_create_page -> 4
-  | AT_edit_page -> 5
-
-let activity_type_of_int = function
-    1 -> AT_create_todo
-  | 2 -> AT_complete_todo
-  | 3 -> AT_work_on_todo
-  | 4 -> AT_create_page
-  | 5 -> AT_edit_page
-  | _ -> assert false
 
 let match_pcre_option rex s =
   try Some (Pcre.extract ~rex s) with Not_found -> None
@@ -140,356 +84,6 @@ let search_page = new_service ["search"] (string "q") ()
 
 let benchmark_page = new_service ["benchmark"] (string "test") ()
 
-module WikiDB =
-  struct
-    type db_config = 
-        {
-          db_name : string;
-          db_user : string;
-          db_port : string;
-        }
-
-    open Simplexmlparser
-
-    let dbcfg =
-      let get_attr_with_err attr attrs =
-        try (List.assoc attr attrs)
-        with Not_found -> 
-          raise (Extensions.Error_in_config_file 
-                   ("Expecting database."^attr^" attribute in Nurpawiki config")) in
-
-      let rec find_dbcfg = function
-          [Element ("database", attrs, _)] ->
-            let dbname = get_attr_with_err "name" attrs in
-            let dbuser = get_attr_with_err "user" attrs in
-            let dbport = get_attr_with_err "port" attrs in
-            (dbname,dbuser,dbport)
-        | _ -> 
-            raise (Extensions.Error_in_config_file ("Unexpected content inside Nurpawiki config")) in
-      let (dbname,dbuser,dbport) = find_dbcfg (get_config ()) in
-      { 
-        db_name = dbname;
-        db_user = dbuser;
-        db_port = dbport;
-      }
-
-    let db_conn =
-      try
-        Messages.errlog (P.sprintf "connecting to DB '%s' as user '%s' on port '%s'" 
-                           dbcfg.db_name dbcfg.db_user dbcfg.db_port);
-        new Psql.connection ~host:"localhost"
-          ~dbname:dbcfg.db_name ~user:dbcfg.db_user ~port:dbcfg.db_port ()
-      with
-        (Psql.Error e) as ex ->
-          (match e with
-             Psql.Connection_failure msg -> 
-               P.eprintf "psql failed : %s\n" msg;
-               raise ex
-           | _ -> 
-               P.eprintf "psql failed : %s\n" (Psql.string_of_error e);
-               raise ex)
-      | _ -> assert false
-
-    (* Escape a string for SQL query *)
-    let escape s =
-      let b = Buffer.create (String.length s) in
-      String.iter 
-        (function
-             '\\' -> Buffer.add_string b "\\\\"
-           | '\'' -> Buffer.add_string b "''"
-           | '"' -> Buffer.add_string b "\""
-           | c -> Buffer.add_char b c) s;
-      Buffer.contents b
-        
-    (* Use this tuple format when querying TODOs to be parsed by
-       parse_todo_result *)
-    let todo_tuple_format = "id,descr,completed,priority,activation_date" 
-
-    let todo_of_row row = 
-      let id = int_of_string (List.nth row 0) in
-      let descr = List.nth row 1 in
-      let completed = (List.nth row 2) = "t" in
-      let pri = List.nth row 3 in
-      {
-        t_id = id;
-        t_descr = descr; 
-        t_completed = completed;
-        t_priority = int_of_string pri;
-        t_activation_date =  List.nth row 4;
-      }
-      
-    let parse_todo_result res = 
-      List.fold_left 
-        (fun acc row ->
-           let id = int_of_string (List.nth row 0) in
-           IMap.add id (todo_of_row row) acc)
-        IMap.empty res#get_all_lst
-
-    let guarded_exec query =
-      try
-        db_conn#exec query
-      with
-        (Psql.Error e) as ex ->
-          (match e with
-             Psql.Connection_failure msg -> 
-               P.eprintf "psql failed : %s\n" msg;
-               raise ex
-           | _ -> 
-               P.eprintf "psql failed : %s\n" (Psql.string_of_error e);
-               raise ex)
-
-    let insert_todo_activity todo_id ?(page_ids=None) activity =
-      match page_ids with
-        None ->
-          "INSERT INTO activity_log(activity_id,todo_id) VALUES ("^
-            (string_of_int (int_of_activity_type activity))^", "^todo_id^")"
-      | Some pages ->
-          let insert_pages = 
-            List.map
-              (fun page_id -> 
-                 "INSERT INTO activity_in_pages(activity_log_id,page_id) "^
-                   "VALUES (CURRVAL('activity_log_id_seq'), "^string_of_int page_id^")")
-              pages in
-          let page_act_insert = String.concat "; " insert_pages in
-          "INSERT INTO activity_log(activity_id,todo_id) VALUES ("^
-            (string_of_int (int_of_activity_type activity))^", "^todo_id^"); "^
-            page_act_insert
-
-    let insert_save_page_activity (page_id : int) =
-      let sql = "BEGIN;
-INSERT INTO activity_log(activity_id) 
-       VALUES ("^(string_of_int (int_of_activity_type AT_edit_page))^");
-INSERT INTO activity_in_pages(activity_log_id,page_id) 
-       VALUES (CURRVAL('activity_log_id_seq'), "^string_of_int page_id^");
-COMMIT" in
-      ignore (guarded_exec sql)
-
-    let query_todos_by_ids todo_ids = 
-      if todo_ids <> [] then
-        let ids = String.concat "," (List.map string_of_int todo_ids) in
-        let r = guarded_exec ("SELECT "^todo_tuple_format^" from todos WHERE id IN ("^ids^")") in
-        List.map todo_of_row (r#get_all_lst)
-      else
-        []
-
-    let update_activation_date_for_todos todo_ids new_date =
-      if todo_ids <> [] then
-        let ids = String.concat "," (List.map string_of_int todo_ids) in
-        let sql = 
-          "UPDATE todos SET activation_date = '"^new_date^"' WHERE id IN ("^
-            ids^")" in
-        ignore (guarded_exec sql)
-
-
-    (* Query TODOs and sort by priority & completeness *)
-    let query_all_active_todos () =
-      let r = guarded_exec
-        ("SELECT "^todo_tuple_format^" FROM todos "^
-           "WHERE activation_date <= current_date AND completed = 'f' "^
-           "ORDER BY completed,priority,id") in
-      List.map todo_of_row r#get_all_lst
-
-    let query_upcoming_todos date_criterion =
-      let date_comparison =
-        let dayify d = 
-          "'"^string_of_int d^" days'" in
-        match date_criterion with
-          (None,Some days) -> 
-            "(activation_date > now()) AND (now()+interval "^dayify days^
-              " >= activation_date)"
-        | (Some d1,Some d2) ->
-            let sd1 = dayify d1 in
-            let sd2 = dayify d2 in
-            "(activation_date > now()+interval "^sd1^") AND (now()+interval "^sd2^
-              " >= activation_date)"
-        | (Some d1,None) ->
-            let sd1 = dayify d1 in
-            "(activation_date > now()+interval "^sd1^")"
-        | (None,None) -> 
-            "activation_date <= now()" in
-      let r = guarded_exec
-        ("SELECT "^todo_tuple_format^" FROM todos "^
-           "WHERE "^date_comparison^" AND completed='f' ORDER BY activation_date,priority,id") in
-      List.map todo_of_row r#get_all_lst
-      
-    let new_todo page_id descr =
-      (* TODO: could wrap this into BEGIN .. COMMIT if I knew how to
-         return the data from the query! *)
-      let sql = 
-"INSERT INTO todos(descr) values('"^escape descr^"'); 
- INSERT INTO todos_in_pages(todo_id,page_id) values(CURRVAL('todos_id_seq'), "
-        ^string_of_int page_id^");"^
-        (insert_todo_activity 
-           "(SELECT CURRVAL('todos_id_seq'))" ~page_ids:(Some [page_id]) 
-           AT_create_todo)^";
- SELECT CURRVAL('todos_id_seq')" in
-      let r = guarded_exec sql in
-      (* Get ID of the inserted item: *)
-      (r#get_tuple 0).(0)
-
-    (* Mapping from a todo_id to page list *)
-    let todos_in_pages todo_ids =
-      (* Don't query if the list is empty: *)
-      if todo_ids = [] then
-        IMap.empty
-      else 
-        let ids = String.concat "," (List.map string_of_int todo_ids) in
-        let sql = 
-          "SELECT todo_id,page_id,page_descr "^
-            "FROM todos_in_pages,pages WHERE todo_id IN ("^ids^") AND page_id = pages.id" in
-        let r = guarded_exec sql in
-        let rows = r#get_all_lst in
-        List.fold_left
-          (fun acc row ->
-             let todo_id = int_of_string (List.nth row 0) in
-             let page_id = int_of_string (List.nth row 1) in
-             let page_descr = List.nth row 2 in
-             let lst = try IMap.find todo_id acc with Not_found -> [] in
-             IMap.add todo_id ({ p_id = page_id; p_descr = page_descr }::lst) acc)
-          IMap.empty rows
-
-    (* TODO must not query ALL activities.  Later we only want to
-       currently visible activities => pages available. *)
-    let query_activity_in_pages () =
-      let sql = "SELECT activity_log_id,page_id,page_descr FROM activity_in_pages,pages WHERE page_id = pages.id" in
-      let r = guarded_exec sql in
-      List.fold_left
-        (fun acc row ->
-           let act_id = int_of_string (List.nth row 0) in
-           let page_id = int_of_string (List.nth row 1) in
-           let page_descr = List.nth row 2 in
-           let lst = try IMap.find act_id acc with Not_found -> [] in
-           IMap.add act_id ({ p_id = page_id; p_descr = page_descr }::lst) acc) 
-        IMap.empty (r#get_all_lst)
-        
-    (* Collect todos in the current page *)
-    let query_page_todos page_id =
-      let sql = "SELECT "^todo_tuple_format^" FROM todos where id in "^
-        "(SELECT todo_id FROM todos_in_pages WHERE page_id = "^string_of_int page_id^")" in
-      let r = guarded_exec sql in
-      parse_todo_result r
-
-    (* Make sure todos are assigned to correct pages and that pages
-       don't contain old todos moved to other pages or removed. *)
-    let update_page_todos page_id todos =
-      let page_id' = string_of_int page_id in
-      let sql = 
-        "BEGIN;
- DELETE FROM todos_in_pages WHERE page_id = "^page_id'^";"^
-          (String.concat "" 
-             (List.map 
-                (fun todo_id ->
-                   "INSERT INTO todos_in_pages(todo_id,page_id)"^
-                     " values("^(string_of_int todo_id)^", "^page_id'^");")
-                todos)) ^
-          "COMMIT" in
-      ignore (guarded_exec sql)                        
-
-    (* Mark task as complete and set completion date for today *)
-    let complete_task id =
-      let page_ids =
-        try 
-          Some (List.map (fun p -> p.p_id) (IMap.find id (todos_in_pages [id])))
-        with Not_found -> None in
-      let ids = string_of_int id in
-      let sql = "BEGIN;
-UPDATE todos SET completed = 't' where id="^ids^";"^
-        (insert_todo_activity ids ~page_ids AT_complete_todo)^"; COMMIT" in
-      ignore (guarded_exec sql)
-
-    let task_priority id = 
-      let sql = "SELECT priority FROM todos WHERE id = "^string_of_int id in
-      let r = guarded_exec sql in
-      int_of_string (r#get_tuple 0).(0)
-
-    (* TODO offset_task_priority can probably be written in one
-       query instead of two (i.e., first one SELECT and then UPDATE
-       based on that. *)
-    let offset_task_priority id incr =
-      let pri = min (max (task_priority id + incr) 1) 3 in
-      let sql = 
-        "UPDATE todos SET priority = '"^(string_of_int pri)^
-          "' where id="^string_of_int id in
-      ignore (guarded_exec sql)
-
-    let up_task_priority id =
-      offset_task_priority id (-1)
-
-    let down_task_priority id =
-      offset_task_priority id 1
-
-    let new_wiki_page page =
-      let sql = 
-        "INSERT INTO pages (page_descr) VALUES ('"^escape page^"');"^
-          "INSERT INTO wikitext (page_id,page_text) "^
-          "       VALUES ((SELECT CURRVAL('pages_id_seq')), ''); "^
-          "SELECT CURRVAL('pages_id_seq')" in
-      let r = guarded_exec sql in
-      int_of_string ((r#get_tuple 0).(0))
-
-    let find_page_id descr =
-      let sql = 
-        "SELECT id FROM pages WHERE page_descr = '"^escape descr^"' LIMIT 1" in
-      let r = guarded_exec sql in
-      if r#ntuples = 0 then None else Some (int_of_string (r#get_tuple 0).(0))
-
-    let page_id_of_page_name descr =
-      Option.get (find_page_id descr)
-
-    let wiki_page_exists page_descr =
-      find_page_id page_descr <> None
-
-    let load_wiki_page page_id = 
-      let sql = "SELECT page_text FROM wikitext WHERE page_id="^string_of_int page_id^" LIMIT 1" in
-      let r = guarded_exec sql in
-      (r#get_tuple 0).(0)
-
-    let save_wiki_page page_id lines =
-      let escaped = escape (String.concat "\n" lines) in
-      (* E in query is escape string constant *)
-      let sql =
-        "UPDATE wikitext SET page_text = E'"^escaped^"' WHERE page_id = "
-        ^string_of_int page_id in
-      ignore (guarded_exec sql)
-
-    let query_past_activity () =
-      let sql =
-        "SELECT activity_log.id,activity_id,activity_timestamp,todos.descr "^
-          "FROM activity_log LEFT OUTER JOIN todos "^
-          "ON activity_log.todo_id = todos.id AND activity_log.activity_timestamp < now() "^
-          "ORDER BY activity_timestamp DESC" in
-      let r = guarded_exec sql in
-      r#get_all_lst >>
-        List.map
-          (fun row ->
-             let id = int_of_string (List.nth row 0) in
-             let act_id = List.nth row 1 in
-             let time = List.nth row 2 in
-             let descr = List.nth row 3 in
-             { a_id = id;
-               a_activity = activity_type_of_int (int_of_string act_id);
-               a_date = time;
-               a_todo_descr = if descr = "" then None else Some descr; })
-
-    (* Search features *)
-    let search_wikipage str =
-      let escaped_ss = escape str in
-      let sql = 
-        "SELECT page_id,headline,page_descr FROM findwikipage('"^escaped_ss^"') "^
-          "LEFT OUTER JOIN pages on page_id = pages.id ORDER BY rank DESC" in
-      let r = guarded_exec sql in
-      r#get_all_lst >>
-        List.map
-          (fun row ->
-             let id = int_of_string (List.nth row 0) in
-             let hl = List.nth row 1 in
-             { sr_id = id; 
-               sr_headline = hl; 
-               sr_page_descr = Some (List.nth row 2);
-               sr_result_type = SR_page })
-
-  end
-
 let iso_date_re = Str.regexp "\\([0-9]+\\)-\\([0-9]+\\)-\\([0-9]+\\)"
 
 let date_of_string s = 
@@ -517,14 +111,15 @@ let date_of_date_time_string s =
 
 
 let task_side_effect_complete sp task_id () =
-  WikiDB.complete_task task_id;
+  (* TODO!!! wrong user_id hardcoded here! *)
+  Database.complete_task 0 task_id;
   return []
 
 let task_side_effect_mod_priority sp (task_id, dir) () =
   if dir = false then 
-    WikiDB.down_task_priority task_id
+    Database.down_task_priority task_id
   else 
-    WikiDB.up_task_priority task_id;
+    Database.up_task_priority task_id;
   return []
 
 
@@ -716,7 +311,7 @@ module WikiML =
             ~src:(make_static_uri sp ["external_link.png"]) () in
         if scheme = "wiki" || scheme = "" then
           let t = if text = "" then page else text in
-          if WikiDB.wiki_page_exists page then
+          if Database.wiki_page_exists page then
             a wiki_view_page sp [pcdata t] (page,None)
           else 
             a ~a:[a_class ["missing_page"]] 
@@ -836,7 +431,7 @@ module WikiML =
 
 let load_wiki_page page_id =
   let lines = 
-    WikiDB.load_wiki_page page_id >> Str.split newline_re in
+    Database.load_wiki_page page_id >> Str.split newline_re in
   let preprocd = WikiML.preprocess lines in
   preprocd
 
@@ -888,7 +483,7 @@ let todo_page_links sp todo_in_pages ?(colorize=false) ?(link_css_class=None) ?(
 let todo_list_table_html sp cur_page todos =
   (* Which pages contain TODOs, mapping from todo_id -> {pages} *)
   let todo_in_pages =
-    WikiDB.todos_in_pages (List.map (fun todo -> todo.t_id) todos) in
+    Database.todos_in_pages (List.map (fun todo -> todo.t_id) todos) in
   let todo_page_link todo =
     let descr = todo.t_descr in
     let page_links =
@@ -916,7 +511,7 @@ let todo_list_table_html sp cur_page todos =
               td [(WikiML.todo_modify_buttons sp cur_page id todo)]]))
        todos)
 
-let navbar_html sp ~username ?(wiki_page_links=[]) ?(todo_list_table=[]) content =
+let navbar_html sp ~credentials ?(wiki_page_links=[]) ?(todo_list_table=[]) content =
   let home_link link_text =
     a ~service:wiki_view_page 
       ~a:[a_accesskey 'h'; a_class ["ak"]] ~sp:sp link_text 
@@ -940,7 +535,7 @@ let navbar_html sp ~username ?(wiki_page_links=[]) ?(todo_list_table=[]) content
                 ~value:"" ()]])] in
 
   let user_greeting = 
-    [pcdata ("Howdy "^username^"!")] in
+    [pcdata ("Howdy "^credentials.user_login^"!")] in
 
   let space = [pcdata " "] in
   [div ~a:[a_id "navbar"]
@@ -953,7 +548,7 @@ let navbar_html sp ~username ?(wiki_page_links=[]) ?(todo_list_table=[]) content
    div ~a:[a_id "content"]
      content]
 
-let wiki_page_menu_html sp ~username page content =
+let wiki_page_menu_html sp ~credentials page content =
   let edit_link = 
     [a ~service:wiki_edit_page ~sp:sp ~a:[a_accesskey '1'; a_class ["ak"]]
        [img ~alt:"Edit" ~src:(make_static_uri sp ["edit.png"]) ();
@@ -963,22 +558,22 @@ let wiki_page_menu_html sp ~username page content =
        ~a:[a_accesskey 'p'; a_class ["ak"]] [pcdata "Print"]
        (page, Some true)] in
   let todo_list = 
-    todo_list_table_html sp page (WikiDB.query_all_active_todos ()) in
-  navbar_html sp ~username ~wiki_page_links:(edit_link @ [br ()] @ printable_link)
+    todo_list_table_html sp page (Database.query_all_active_todos ()) in
+  navbar_html sp ~credentials ~wiki_page_links:(edit_link @ [br ()] @ printable_link)
         ~todo_list_table:[todo_list] content
 
 let wiki_page_contents_html sp page_id page_name todo_data ?(content=[]) () =
   wiki_page_menu_html sp page_name
     (content @ wikiml_to_html sp page_id page_name todo_data)
 
-let view_page sp ~username page_id page_name ~printable =
-  let todos = WikiDB.query_page_todos page_id in
+let view_page sp ~credentials page_id page_name ~printable =
+  let todos = Database.query_page_todos page_id in
   if printable <> None && Option.get printable = true then
     let page_content = wikiml_to_html sp page_id page_name todos in
     html_stub sp page_content
   else 
     html_stub sp
-      (wiki_page_contents_html sp ~username page_id page_name todos ())
+      (wiki_page_contents_html sp ~credentials page_id page_name todos ())
       
 let new_todo_re = 
   Str.regexp ("\\[todo \\("^WikiML. accepted_chars^"\\)\\]")
@@ -998,19 +593,20 @@ let check_new_and_removed_todos page_id lines =
                  Not_found -> acc in
              loop acc 0
          | `NoWiki _ -> acc) [] lines in
-  WikiDB.update_page_todos page_id (List.map int_of_string page_todos)
+  Database.update_page_todos page_id (List.map int_of_string page_todos)
 
 
 (* Insert new TODOs from the wiki ML into DB and replace [todo descr]
    by [todo:ID] *)
-let convert_new_todo_items page =
+let convert_new_todo_items credentials page =
+  let owner_id = credentials.user_id in
   List.map
     (function
          `Wiki line -> 
            `Wiki (Str.global_substitute new_todo_re
                     (fun str -> 
                        let descr = Str.matched_group 1 str in
-                       let id = WikiDB.new_todo page descr in
+                       let id = Database.new_todo page owner_id descr in
                        "[todo:"^id^" "^descr^"]") line)
        | (`NoWiki _) as x -> x)
 
@@ -1021,21 +617,21 @@ let service_save_page_post =
     ~post_params:(string "value")
     (fun sp (page,_) value -> 
        Session.with_user_login sp
-         (fun username sp ->
+         (fun credentials sp ->
             (* Check if there are any new or removed [todo:#id] tags and
                updated DB page mappings accordingly: *)
             let wikitext = Str.split newline_re value >> WikiML.preprocess in
-            let page_id = WikiDB.page_id_of_page_name page in
+            let page_id = Database.page_id_of_page_name page in
             check_new_and_removed_todos page_id wikitext;
             (* Convert [todo Description] items into [todo:ID] format, save
                descriptions to database and save the wiki page contents. *)
             let wiki_plaintext = 
-              convert_new_todo_items page_id wikitext >>
+              convert_new_todo_items credentials page_id wikitext >>
                 WikiML.wikitext_of_preprocessed_lines in
             (* Log activity: *)
-            WikiDB.insert_save_page_activity page_id;
-            WikiDB.save_wiki_page page_id wiki_plaintext;
-            view_page sp ~username page_id page ~printable:(Some false)))
+            Database.insert_save_page_activity credentials.user_id page_id;
+            Database.save_wiki_page page_id wiki_plaintext;
+            view_page sp ~credentials page_id page ~printable:(Some false)))
 
 (* Use to create a "cancel" button for user submits *)
 let cancel_link service sp params =
@@ -1068,18 +664,18 @@ let _ =
   register wiki_edit_page
     (fun sp page_name () -> 
        Session.with_user_login sp
-         (fun username sp ->
+         (fun credentials sp ->
             let (page_id,page_todos,preproc_wikitext) = 
-              if WikiDB.wiki_page_exists page_name then
-                let page_id = WikiDB.page_id_of_page_name page_name in
-                let current_page_todos = WikiDB.query_page_todos page_id in
+              if Database.wiki_page_exists page_name then
+                let page_id = Database.page_id_of_page_name page_name in
+                let current_page_todos = Database.query_page_todos page_id in
                 (page_id,
                  current_page_todos,
                  load_wiki_page page_id >> 
                    annotate_old_todo_items page_name current_page_todos)
               else
                 begin
-                  (WikiDB.new_wiki_page page_name, IMap.empty, [])
+                  (Database.new_wiki_page page_name, IMap.empty, [])
                 end in
             let wikitext = 
               String.concat "\n" (WikiML.wikitext_of_preprocessed_lines preproc_wikitext) in
@@ -1094,25 +690,25 @@ let _ =
                           ~value:(pcdata wikitext) ()])])
                 (page_name,None) in
             html_stub sp
-              (wiki_page_contents_html sp ~username page_id page_name page_todos 
+              (wiki_page_contents_html sp ~credentials page_id page_name page_todos 
                  ~content:[f] ())))
 
-let view_wiki_page sp ~username (page_name,printable) =
-  match WikiDB.find_page_id page_name with
+let view_wiki_page sp ~credentials (page_name,printable) =
+  match Database.find_page_id page_name with
     Some page_id ->
-      view_page sp ~username page_id page_name ~printable
+      view_page sp ~credentials page_id page_name ~printable
   | None ->
       let f = 
         a wiki_edit_page sp [pcdata "Create new page"] page_name in
       html_stub sp
-        (wiki_page_menu_html sp ~username page_name [f])
+        (wiki_page_menu_html sp ~credentials page_name [f])
 
 (* /view?p=Page *)
 let _ = 
   register wiki_view_page
     (fun sp (page_name,printable) () ->
        Session.with_user_login sp
-         (fun username sp -> view_wiki_page sp ~username (page_name,printable)))
+         (fun credentials sp -> view_wiki_page sp ~credentials (page_name,printable)))
 
 
 let clamp_date_to_today date =
@@ -1132,7 +728,7 @@ let wiki_page_links sp todo_in_pages todo =
 
 let view_scheduler_page sp =
 
-  let scheduler_page_internal sp ~username =
+  let scheduler_page_internal sp ~credentials =
     let today = Date.today () in
     let prettify_activation_date d =
       let d = date_of_string d in
@@ -1146,7 +742,7 @@ let view_scheduler_page sp =
     
     let todo_table_html sp todos =
       let todo_in_pages =
-        WikiDB.todos_in_pages (List.map (fun (_,todo) -> todo.t_id) todos) in
+        Database.todos_in_pages (List.map (fun (_,todo) -> todo.t_id) todos) in
 
       let prev_heading = ref "" in
       let todo_rows = 
@@ -1179,15 +775,15 @@ let view_scheduler_page sp =
       (todo_table_html sp todos) in
 
     let upcoming_pending =
-      WikiDB.query_upcoming_todos (None,None) in
+      Database.query_upcoming_todos (None,None) in
     let upcoming_tomorrow =
-      WikiDB.query_upcoming_todos (None,Some 1) in
+      Database.query_upcoming_todos (None,Some 1) in
     let upcoming_todos_7_days =
-      WikiDB.query_upcoming_todos (Some 1,Some 7) in
+      Database.query_upcoming_todos (Some 1,Some 7) in
     let upcoming_todos_14_days =
-      WikiDB.query_upcoming_todos (Some 7, Some 14) in
+      Database.query_upcoming_todos (Some 7, Some 14) in
     let upcoming_all = 
-      WikiDB.query_upcoming_todos (Some 14, None) in
+      Database.query_upcoming_todos (Some 14, None) in
 
     let mark_todo_hdr h = List.map (fun e -> (h, e)) in
     let merged_todos = 
@@ -1210,18 +806,18 @@ let view_scheduler_page sp =
       post_form edit_todo_page sp table (ET_scheduler, None) in
     
     html_stub sp
-      (navbar_html sp ~username
+      (navbar_html sp ~credentials
          ([h1 [pcdata "Road ahead"]] @ [table'])) in
   Session.with_user_login sp
-    (fun username sp -> 
-       scheduler_page_internal sp username)
+    (fun credentials sp -> 
+       scheduler_page_internal sp credentials)
   
 
-let render_edit_todo_cont_page sp ~username = function
+let render_edit_todo_cont_page sp ~credentials = function
     ET_scheduler -> 
       view_scheduler_page sp
   | ET_view wiki_page ->
-      view_wiki_page sp ~username (wiki_page,None)
+      view_wiki_page sp ~credentials (wiki_page,None)
 
 let scheduler_page_discard_todo_id = 
   register_new_service
@@ -1231,8 +827,8 @@ let scheduler_page_discard_todo_id =
                    (list "todo_ids" (int "tid")))
     (fun sp (src_page_cont,_) () -> 
        Session.with_user_login sp
-         (fun username sp ->
-            render_edit_todo_cont_page sp ~username src_page_cont))
+         (fun credentials sp ->
+            render_edit_todo_cont_page sp ~credentials src_page_cont))
          
 (* Save page as a result of /edit_todo?todo_id=ID *)
 let service_save_todo_item =
@@ -1241,13 +837,13 @@ let service_save_todo_item =
     ~post_params:(string "activation_date")
     (fun sp (src_page_cont, todo_ids) new_date ->
      Session.with_user_login sp
-       (fun username sp ->
-          WikiDB.update_activation_date_for_todos todo_ids new_date;
-          render_edit_todo_cont_page sp ~username src_page_cont))
+       (fun credentials sp ->
+          Database.update_activation_date_for_todos todo_ids new_date;
+          render_edit_todo_cont_page sp ~credentials src_page_cont))
 
-let rec render_todo_editor sp ~username (src_page_cont, todos_to_edit) =
+let rec render_todo_editor sp ~credentials (src_page_cont, todos_to_edit) =
   let todos_str = String.concat "," (List.map string_of_int todos_to_edit) in
-  let todos = WikiDB.query_todos_by_ids todos_to_edit in
+  let todos = Database.query_todos_by_ids todos_to_edit in
 
   let today_str = 
     Printer.DatePrinter.sprint "%i"(Date.today ()) in
@@ -1262,7 +858,7 @@ let rec render_todo_editor sp ~username (src_page_cont, todos_to_edit) =
 
   let f =
     let todo_in_pages =
-      WikiDB.todos_in_pages (List.map (fun todo -> todo.t_id) todos) in
+      Database.todos_in_pages (List.map (fun todo -> todo.t_id) todos) in
 
     let cancel_page cont = 
       match cont with
@@ -1307,7 +903,7 @@ let rec render_todo_editor sp ~username (src_page_cont, todos_to_edit) =
      "nurpawiki_calendar.js"] in
 
   html_stub sp ~javascript:calendar_js
-    (navbar_html sp ~username
+    (navbar_html sp ~credentials
        ((h1 heading)::[help_str; br(); f]))
 
 let error_page sp msg =
@@ -1327,8 +923,8 @@ let _ =
   register edit_todo_get_page
     (fun sp get_params () ->
        Session.with_user_login sp
-         (fun username sp ->
-            render_todo_get_page sp ~username get_params))
+         (fun credentials sp ->
+            render_todo_get_page sp ~credentials get_params))
 
 let todo_id_re = Pcre.regexp "^t-([0-9]+)$"
 
@@ -1350,12 +946,12 @@ let _ =
   register edit_todo_page
     (fun sp (src_page_cont, single_tid) (todo_ids : (string * string) list) ->
        Session.with_user_login sp
-         (fun username sp ->
+         (fun credentials sp ->
             if todo_ids = [] then
-              render_todo_get_page sp ~username 
+              render_todo_get_page sp ~credentials 
                 (src_page_cont, single_tid)
             else 
-              render_todo_editor sp ~username
+              render_todo_editor sp ~credentials
                 (src_page_cont, (parse_todo_ids todo_ids))))
 
 
@@ -1431,10 +1027,10 @@ let remove_duplicates strs =
     List.fold_left (fun acc e -> PSet.add e acc) PSet.empty strs in
   PSet.fold (fun e acc -> e::acc) s []
 
-let view_history_page sp ~username =
+let view_history_page sp ~credentials =
 
-  let activity = WikiDB.query_past_activity () in
-  let activity_in_pages = WikiDB.query_activity_in_pages () in
+  let activity = Database.query_past_activity () in
+  let activity_in_pages = Database.query_activity_in_pages () in
 
   let prettify_date d =
     let d = date_of_date_time_string d in
@@ -1486,7 +1082,7 @@ let view_history_page sp ~username =
                    prettified_date))
                activity_groups ([],"")))) in
   html_stub sp
-    (navbar_html sp ~username
+    (navbar_html sp ~credentials
        ([h1 [pcdata "Blast from the past"]] @ [act_table]))
 
 (* /history *)
@@ -1494,8 +1090,8 @@ let _ =
   register history_page
     (fun sp todo_id () ->
        Session.with_user_login sp
-         (fun username sp ->
-            view_history_page sp ~username))
+         (fun credentials sp ->
+            view_history_page sp ~credentials))
 
 (* /benchmark?test=empty,one_db *)
 let _ =
@@ -1506,7 +1102,7 @@ let _ =
            (body [p [pcdata "Empty page"]]))
     | "db1" ->
         (* TODO TODO add simple SQL query here *)
-(*        ignore (WikiDB.query_activities ());*)
+(*        ignore (Database.query_activities ());*)
         (html 
            (head (title (pcdata "")) [])
            (body [p [pcdata "Test one DB query"]]))
@@ -1551,15 +1147,15 @@ let _ =
                 [p ([link (Option.get sr.sr_page_descr); br ()] @ 
                       html_of_headline sr.sr_headline)]
             | SR_todo -> assert false) search_results) in
-  let gen_search_page sp ~username search_str =
-    let search_results = WikiDB.search_wikipage search_str in
+  let gen_search_page sp ~credentials search_str =
+    let search_results = Database.search_wikipage search_str in
     html_stub sp
-      (navbar_html sp ~username
+      (navbar_html sp ~credentials
          ([h1 [pcdata "Search results"]] @ (render_results sp search_results))) in
     
   register search_page
     (fun sp search_str () ->
        Session.with_user_login sp
-         (fun username sp ->
-            gen_search_page sp username search_str))
+         (fun credentials sp ->
+            gen_search_page sp credentials search_str))
 
