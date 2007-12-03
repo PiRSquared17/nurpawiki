@@ -541,8 +541,7 @@ let () =
   Eliompredefmod.Actions.register 
     ~service:task_side_effect_mod_priority_action task_side_effect_mod_priority
 
-let make_static_uri sp name =
-  make_uri (static_dir sp) sp name
+let make_static_uri = Html_util.make_static_uri
 
 let todo_edit_img_link sp page_cont task_id =
   [a ~a:[a_title "Edit"] ~service:edit_todo_get_page ~sp:sp
@@ -844,18 +843,7 @@ let load_wiki_page page_id =
 let wikiml_to_html sp (page_id:int) (page_name:string) todo_data =
   load_wiki_page page_id >> WikiML.parse_lines sp page_name todo_data
 
-(* Use this as the basis for all pages.  Includes CSS etc. *)
-let html_stub sp ?(javascript=[]) body_html =
-  let script src = 
-    js_script ~a:[a_defer `Defer] ~uri:(make_static_uri sp [src]) () in
-  let scripts  = 
-    script "nurpawiki.js" :: (List.map script javascript) in
-  return 
-    (html 
-       (head (title (pcdata "")) 
-          ((scripts) @ [css_link ~a:[] ~uri:(make_uri ~service:(static_dir sp) ~sp ["style.css"]) ()]))
-       (body 
-          body_html))
+let html_stub = Html_util.html_stub
 
 (* TODO need to mangle the string to be suitable as an URL *)
 let urlify_wiki_page_descr s =
@@ -1116,7 +1104,9 @@ let view_wiki_page sp (page_name,printable) =
 let _ = 
   register wiki_view_page
     (fun sp (page_name,printable) () ->
-       view_wiki_page sp (page_name,printable))
+       Session.with_user_login sp
+         (fun username sp -> view_wiki_page sp (page_name,printable)))
+
 
 let clamp_date_to_today date =
   let today = Date.today () in

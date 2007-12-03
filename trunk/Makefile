@@ -1,4 +1,5 @@
-FILES=$(wildcard *.ml)
+
+FILES=html_util.ml session.ml nurpawiki.ml
 
 CAMLC = ocamlfind ocamlc -g $(LIB)
 CAMLOPT = ocamlfind ocamlopt $(LIB)
