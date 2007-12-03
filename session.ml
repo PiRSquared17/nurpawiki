@@ -31,7 +31,7 @@ let login_box sp =
     (fun loginname ->
       [p 
          (let login = 
-            [pcdata "login: "; 
+            [pcdata "Enter your login name: "; 
              Eliompredefmod.Xhtml.string_input
                ~input_type:`Text ~name:loginname ()]
           in login)
@@ -47,7 +47,9 @@ let get_login_user sp =
       | Eliomsessions.No_data 
       | Eliomsessions.Data_session_expired -> Lwt.return None
 
-
+(** Wrap page service calls inside with_user_login to have them
+    automatically check for user login and redirect to login screen if
+    not logged in. *)
 let with_user_login sp f =
   get_login_user sp >>= fun maybe_user ->
     match maybe_user with
