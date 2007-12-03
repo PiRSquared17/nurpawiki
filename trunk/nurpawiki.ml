@@ -916,7 +916,7 @@ let todo_list_table_html sp cur_page todos =
               td [(WikiML.todo_modify_buttons sp cur_page id todo)]]))
        todos)
 
-let navbar_html sp ?(wiki_page_links=[]) ?(todo_list_table=[]) content =
+let navbar_html sp ~username ?(wiki_page_links=[]) ?(todo_list_table=[]) content =
   let home_link link_text =
     a ~service:wiki_view_page 
       ~a:[a_accesskey 'h'; a_class ["ak"]] ~sp:sp link_text 
@@ -939,6 +939,9 @@ let navbar_html sp ?(wiki_page_links=[]) ?(todo_list_table=[]) content =
               string_input ~input_type:`Text ~name:chain
                 ~value:"" ()]])] in
 
+  let user_greeting = 
+    [pcdata ("Howdy "^username^"!")] in
+
   let space = [pcdata " "] in
   [div ~a:[a_id "navbar"]
      ([home_link 
@@ -946,11 +949,11 @@ let navbar_html sp ?(wiki_page_links=[]) ?(todo_list_table=[]) content =
           pcdata "Home"]] @ 
         space @ [scheduler_link] @ 
          space @ [history_link] @ space @ wiki_page_links @
-         [br ()] @ search_input @ [br ()] @ todo_list_table);
+         [br ()] @ search_input @ user_greeting @ [br ()] @ todo_list_table);
    div ~a:[a_id "content"]
      content]
 
-let wiki_page_menu_html sp page content =
+let wiki_page_menu_html sp ~username page content =
   let edit_link = 
     [a ~service:wiki_edit_page ~sp:sp ~a:[a_accesskey '1'; a_class ["ak"]]
        [img ~alt:"Edit" ~src:(make_static_uri sp ["edit.png"]) ();
@@ -961,21 +964,21 @@ let wiki_page_menu_html sp page content =
        (page, Some true)] in
   let todo_list = 
     todo_list_table_html sp page (WikiDB.query_all_active_todos ()) in
-  navbar_html sp ~wiki_page_links:(edit_link @ [br ()] @ printable_link)
+  navbar_html sp ~username ~wiki_page_links:(edit_link @ [br ()] @ printable_link)
         ~todo_list_table:[todo_list] content
 
 let wiki_page_contents_html sp page_id page_name todo_data ?(content=[]) () =
   wiki_page_menu_html sp page_name
     (content @ wikiml_to_html sp page_id page_name todo_data)
 
-let view_page sp page_id page_name ~printable =
+let view_page sp ~username page_id page_name ~printable =
   let todos = WikiDB.query_page_todos page_id in
   if printable <> None && Option.get printable = true then
     let page_content = wikiml_to_html sp page_id page_name todos in
     html_stub sp page_content
   else 
     html_stub sp
-      (wiki_page_contents_html sp page_id page_name todos ())
+      (wiki_page_contents_html sp ~username page_id page_name todos ())
       
 let new_todo_re = 
   Str.regexp ("\\[todo \\("^WikiML. accepted_chars^"\\)\\]")
@@ -1017,20 +1020,22 @@ let service_save_page_post =
     ~fallback:wiki_view_page
     ~post_params:(string "value")
     (fun sp (page,_) value -> 
-       (* Check if there are any new or removed [todo:#id] tags and
-          updated DB page mappings accordingly: *)
-       let wikitext = Str.split newline_re value >> WikiML.preprocess in
-       let page_id = WikiDB.page_id_of_page_name page in
-       check_new_and_removed_todos page_id wikitext;
-       (* Convert [todo Description] items into [todo:ID] format, save
-          descriptions to database and save the wiki page contents. *)
-       let wiki_plaintext = 
-         convert_new_todo_items page_id wikitext >>
-           WikiML.wikitext_of_preprocessed_lines in
-       (* Log activity: *)
-       WikiDB.insert_save_page_activity page_id;
-       WikiDB.save_wiki_page page_id wiki_plaintext;
-       view_page sp page_id page ~printable:(Some false))
+       Session.with_user_login sp
+         (fun username sp ->
+            (* Check if there are any new or removed [todo:#id] tags and
+               updated DB page mappings accordingly: *)
+            let wikitext = Str.split newline_re value >> WikiML.preprocess in
+            let page_id = WikiDB.page_id_of_page_name page in
+            check_new_and_removed_todos page_id wikitext;
+            (* Convert [todo Description] items into [todo:ID] format, save
+               descriptions to database and save the wiki page contents. *)
+            let wiki_plaintext = 
+              convert_new_todo_items page_id wikitext >>
+                WikiML.wikitext_of_preprocessed_lines in
+            (* Log activity: *)
+            WikiDB.insert_save_page_activity page_id;
+            WikiDB.save_wiki_page page_id wiki_plaintext;
+            view_page sp ~username page_id page ~printable:(Some false)))
 
 (* Use to create a "cancel" button for user submits *)
 let cancel_link service sp params =
@@ -1062,50 +1067,52 @@ let annotate_old_todo_items page page_todos (lines : WikiML.preproc_line list) =
 let _ =
   register wiki_edit_page
     (fun sp page_name () -> 
-       let (page_id,page_todos,preproc_wikitext) = 
-         if WikiDB.wiki_page_exists page_name then
-           let page_id = WikiDB.page_id_of_page_name page_name in
-           let current_page_todos = WikiDB.query_page_todos page_id in
-           (page_id,
-            current_page_todos,
-            load_wiki_page page_id >> 
-              annotate_old_todo_items page_name current_page_todos)
-         else
-           begin
-             (WikiDB.new_wiki_page page_name, IMap.empty, [])
-           end in
-       let wikitext = 
-         String.concat "\n" (WikiML.wikitext_of_preprocessed_lines preproc_wikitext) in
-       let f =
-         post_form service_save_page_post sp
-           (fun chain -> 
-              [(p [string_input ~input_type:`Submit ~value:"Save" (); 
-                   cancel_link wiki_view_page sp
-                     (page_name,None);
-                   br ();
-                   textarea ~name:chain ~rows:30 ~cols:80 
-                     ~value:(pcdata wikitext) ()])])
-           (page_name,None) in
-       html_stub sp
-         (wiki_page_contents_html sp page_id page_name page_todos 
-            ~content:[f] ()))
+       Session.with_user_login sp
+         (fun username sp ->
+            let (page_id,page_todos,preproc_wikitext) = 
+              if WikiDB.wiki_page_exists page_name then
+                let page_id = WikiDB.page_id_of_page_name page_name in
+                let current_page_todos = WikiDB.query_page_todos page_id in
+                (page_id,
+                 current_page_todos,
+                 load_wiki_page page_id >> 
+                   annotate_old_todo_items page_name current_page_todos)
+              else
+                begin
+                  (WikiDB.new_wiki_page page_name, IMap.empty, [])
+                end in
+            let wikitext = 
+              String.concat "\n" (WikiML.wikitext_of_preprocessed_lines preproc_wikitext) in
+            let f =
+              post_form service_save_page_post sp
+                (fun chain -> 
+                   [(p [string_input ~input_type:`Submit ~value:"Save" (); 
+                        cancel_link wiki_view_page sp
+                          (page_name,None);
+                        br ();
+                        textarea ~name:chain ~rows:30 ~cols:80 
+                          ~value:(pcdata wikitext) ()])])
+                (page_name,None) in
+            html_stub sp
+              (wiki_page_contents_html sp ~username page_id page_name page_todos 
+                 ~content:[f] ())))
 
-let view_wiki_page sp (page_name,printable) =
+let view_wiki_page sp ~username (page_name,printable) =
   match WikiDB.find_page_id page_name with
     Some page_id ->
-      view_page sp page_id page_name ~printable
+      view_page sp ~username page_id page_name ~printable
   | None ->
       let f = 
         a wiki_edit_page sp [pcdata "Create new page"] page_name in
       html_stub sp
-        (wiki_page_menu_html sp page_name [f])
+        (wiki_page_menu_html sp ~username page_name [f])
 
 (* /view?p=Page *)
 let _ = 
   register wiki_view_page
     (fun sp (page_name,printable) () ->
        Session.with_user_login sp
-         (fun username sp -> view_wiki_page sp (page_name,printable)))
+         (fun username sp -> view_wiki_page sp ~username (page_name,printable)))
 
 
 let clamp_date_to_today date =
@@ -1124,91 +1131,97 @@ let wiki_page_links sp todo_in_pages todo =
   todo_page_links sp todo_in_pages ~link_css_class:(Some c) id
 
 let view_scheduler_page sp =
-  let today = Date.today () in
-  let prettify_activation_date d =
-    let d = date_of_string d in
-    (* Clamp & prettify activation date *)
-    begin 
-      match Date.compare today d with
-        -1 -> Printer.DatePrinter.sprint "%a %b %d, %Y" d
-      | 0 | 1 -> "today"
-      | _ -> assert false
-    end in
+
+  let scheduler_page_internal sp ~username =
+    let today = Date.today () in
+    let prettify_activation_date d =
+      let d = date_of_string d in
+      (* Clamp & prettify activation date *)
+      begin 
+        match Date.compare today d with
+          -1 -> Printer.DatePrinter.sprint "%a %b %d, %Y" d
+        | 0 | 1 -> "today"
+        | _ -> assert false
+      end in
     
-  let todo_table_html sp todos =
-    let todo_in_pages =
-      WikiDB.todos_in_pages (List.map (fun (_,todo) -> todo.t_id) todos) in
+    let todo_table_html sp todos =
+      let todo_in_pages =
+        WikiDB.todos_in_pages (List.map (fun (_,todo) -> todo.t_id) todos) in
 
-    let prev_heading = ref "" in
-    let todo_rows = 
-      List.map
-        (fun (heading,todo) ->
-           let todo_id_s = string_of_int todo.t_id in
-           let heading_row =
-             if !prev_heading <> heading then
-               begin
-                 prev_heading := heading;
-                 [tr (td ~a:[a_class ["rm_table_heading"]] [pcdata heading]) []]
-               end
-             else
-               [] in
-           let pri_style = WikiML.priority_css_class todo.t_priority in
-           let todo_row =
-             tr
-               (td ~a:[a_class ["rm_edit"]]
-                  (todo_edit_img_link sp ET_scheduler todo.t_id))
-               [td [raw_checkbox ~name:("t-"^ todo_id_s) ~value:"0" ()];
-                td [complete_task_img_link sp todo.t_id];
-                (td ~a:[a_class ["no_break"; pri_style]] 
-                   [pcdata (prettify_activation_date todo.t_activation_date)]);
-                td ~a:[a_class [pri_style]] 
-                  ([pcdata todo.t_descr] @ wiki_page_links sp todo_in_pages todo)] in
-           heading_row @ [todo_row]) todos in
-    List.flatten todo_rows in
+      let prev_heading = ref "" in
+      let todo_rows = 
+        List.map
+          (fun (heading,todo) ->
+             let todo_id_s = string_of_int todo.t_id in
+             let heading_row =
+               if !prev_heading <> heading then
+                 begin
+                   prev_heading := heading;
+                   [tr (td ~a:[a_class ["rm_table_heading"]] [pcdata heading]) []]
+                 end
+               else
+                 [] in
+             let pri_style = WikiML.priority_css_class todo.t_priority in
+             let todo_row =
+               tr
+                 (td ~a:[a_class ["rm_edit"]]
+                    (todo_edit_img_link sp ET_scheduler todo.t_id))
+                 [td [raw_checkbox ~name:("t-"^ todo_id_s) ~value:"0" ()];
+                  td [complete_task_img_link sp todo.t_id];
+                  (td ~a:[a_class ["no_break"; pri_style]] 
+                     [pcdata (prettify_activation_date todo.t_activation_date)]);
+                  td ~a:[a_class [pri_style]] 
+                    ([pcdata todo.t_descr] @ wiki_page_links sp todo_in_pages todo)] in
+             heading_row @ [todo_row]) todos in
+      List.flatten todo_rows in
 
-  let todo_section sp todos =
-    (todo_table_html sp todos) in
+    let todo_section sp todos =
+      (todo_table_html sp todos) in
 
-  let upcoming_pending =
-    WikiDB.query_upcoming_todos (None,None) in
-  let upcoming_tomorrow =
-    WikiDB.query_upcoming_todos (None,Some 1) in
-  let upcoming_todos_7_days =
-    WikiDB.query_upcoming_todos (Some 1,Some 7) in
-  let upcoming_todos_14_days =
-    WikiDB.query_upcoming_todos (Some 7, Some 14) in
-  let upcoming_all = 
-    WikiDB.query_upcoming_todos (Some 14, None) in
+    let upcoming_pending =
+      WikiDB.query_upcoming_todos (None,None) in
+    let upcoming_tomorrow =
+      WikiDB.query_upcoming_todos (None,Some 1) in
+    let upcoming_todos_7_days =
+      WikiDB.query_upcoming_todos (Some 1,Some 7) in
+    let upcoming_todos_14_days =
+      WikiDB.query_upcoming_todos (Some 7, Some 14) in
+    let upcoming_all = 
+      WikiDB.query_upcoming_todos (Some 14, None) in
 
-  let mark_todo_hdr h = List.map (fun e -> (h, e)) in
-  let merged_todos = 
-    (mark_todo_hdr "Today" upcoming_pending) @ 
-      (mark_todo_hdr "Tomorrow" upcoming_tomorrow) @
-      (mark_todo_hdr "Next 7 days" upcoming_todos_7_days) @
-      (mark_todo_hdr "Next 2 weeks" upcoming_todos_14_days) @
-      (mark_todo_hdr "Everything else" upcoming_all) in
+    let mark_todo_hdr h = List.map (fun e -> (h, e)) in
+    let merged_todos = 
+      (mark_todo_hdr "Today" upcoming_pending) @ 
+        (mark_todo_hdr "Tomorrow" upcoming_tomorrow) @
+        (mark_todo_hdr "Next 7 days" upcoming_todos_7_days) @
+        (mark_todo_hdr "Next 2 weeks" upcoming_todos_14_days) @
+        (mark_todo_hdr "Everything else" upcoming_all) in
 
-  (* TODO merge this HTML generation with other pages.  PROBLEM:
-     don't know how to easily do that without duplicating the
-     parameter passing of pages. *)
-  let table () = 
-    [p [raw_input ~input_type:`Submit ~value:"Mass edit" ()];
-     table
-       (tr (th []) [th []; th []; th [pcdata "Activates on"]; th [pcdata "Todo"]])
-       (todo_section sp merged_todos)] in
+    (* TODO merge this HTML generation with other pages.  PROBLEM:
+       don't know how to easily do that without duplicating the
+       parameter passing of pages. *)
+    let table () = 
+      [p [raw_input ~input_type:`Submit ~value:"Mass edit" ()];
+       table
+         (tr (th []) [th []; th []; th [pcdata "Activates on"]; th [pcdata "Todo"]])
+         (todo_section sp merged_todos)] in
 
-  let table' = 
-    post_form edit_todo_page sp table (ET_scheduler, None) in
+    let table' = 
+      post_form edit_todo_page sp table (ET_scheduler, None) in
+    
+    html_stub sp
+      (navbar_html sp ~username
+         ([h1 [pcdata "Road ahead"]] @ [table'])) in
+  Session.with_user_login sp
+    (fun username sp -> 
+       scheduler_page_internal sp username)
+  
 
-  html_stub sp
-    (navbar_html sp 
-       ([h1 [pcdata "Road ahead"]] @ [table']))
-
-let render_edit_todo_cont_page sp = function
+let render_edit_todo_cont_page sp ~username = function
     ET_scheduler -> 
       view_scheduler_page sp
   | ET_view wiki_page ->
-      view_wiki_page sp (wiki_page,None)
+      view_wiki_page sp ~username (wiki_page,None)
 
 let scheduler_page_discard_todo_id = 
   register_new_service
@@ -1217,7 +1230,9 @@ let scheduler_page_discard_todo_id =
                    et_cont_of_string string_of_et_cont "src_service") **
                    (list "todo_ids" (int "tid")))
     (fun sp (src_page_cont,_) () -> 
-       render_edit_todo_cont_page sp src_page_cont)
+       Session.with_user_login sp
+         (fun username sp ->
+            render_edit_todo_cont_page sp ~username src_page_cont))
          
 (* Save page as a result of /edit_todo?todo_id=ID *)
 let service_save_todo_item =
@@ -1225,10 +1240,12 @@ let service_save_todo_item =
     ~fallback:scheduler_page_discard_todo_id
     ~post_params:(string "activation_date")
     (fun sp (src_page_cont, todo_ids) new_date ->
-       WikiDB.update_activation_date_for_todos todo_ids new_date;
-       render_edit_todo_cont_page sp src_page_cont)
+     Session.with_user_login sp
+       (fun username sp ->
+          WikiDB.update_activation_date_for_todos todo_ids new_date;
+          render_edit_todo_cont_page sp ~username src_page_cont))
 
-let rec render_todo_editor sp (src_page_cont, todos_to_edit) =
+let rec render_todo_editor sp ~username (src_page_cont, todos_to_edit) =
   let todos_str = String.concat "," (List.map string_of_int todos_to_edit) in
   let todos = WikiDB.query_todos_by_ids todos_to_edit in
 
@@ -1290,7 +1307,7 @@ let rec render_todo_editor sp (src_page_cont, todos_to_edit) =
      "nurpawiki_calendar.js"] in
 
   html_stub sp ~javascript:calendar_js
-    (navbar_html sp 
+    (navbar_html sp ~username
        ((h1 heading)::[help_str; br(); f]))
 
 let error_page sp msg =
@@ -1308,7 +1325,10 @@ let render_todo_get_page sp (src_page_cont, todo) =
         
 let _ =
   register edit_todo_get_page
-    (fun sp get_params () -> render_todo_get_page sp get_params)
+    (fun sp get_params () ->
+       Session.with_user_login sp
+         (fun username sp ->
+            render_todo_get_page sp ~username get_params))
 
 let todo_id_re = Pcre.regexp "^t-([0-9]+)$"
 
@@ -1329,10 +1349,14 @@ let parse_todo_ids todo_ids =
 let _ =
   register edit_todo_page
     (fun sp (src_page_cont, single_tid) (todo_ids : (string * string) list) ->
-       if todo_ids = [] then
-         render_todo_get_page sp (src_page_cont, single_tid)
-       else 
-         render_todo_editor sp (src_page_cont, (parse_todo_ids todo_ids)))
+       Session.with_user_login sp
+         (fun username sp ->
+            if todo_ids = [] then
+              render_todo_get_page sp ~username 
+                (src_page_cont, single_tid)
+            else 
+              render_todo_editor sp ~username
+                (src_page_cont, (parse_todo_ids todo_ids))))
 
 
 (* /scheduler *)
@@ -1407,7 +1431,7 @@ let remove_duplicates strs =
     List.fold_left (fun acc e -> PSet.add e acc) PSet.empty strs in
   PSet.fold (fun e acc -> e::acc) s []
 
-let view_history_page sp =
+let view_history_page sp ~username =
 
   let activity = WikiDB.query_past_activity () in
   let activity_in_pages = WikiDB.query_activity_in_pages () in
@@ -1462,14 +1486,16 @@ let view_history_page sp =
                    prettified_date))
                activity_groups ([],"")))) in
   html_stub sp
-    (navbar_html sp 
+    (navbar_html sp ~username
        ([h1 [pcdata "Blast from the past"]] @ [act_table]))
 
 (* /history *)
 let _ =
   register history_page
     (fun sp todo_id () ->
-       view_history_page sp)
+       Session.with_user_login sp
+         (fun username sp ->
+            view_history_page sp ~username))
 
 (* /benchmark?test=empty,one_db *)
 let _ =
@@ -1525,13 +1551,15 @@ let _ =
                 [p ([link (Option.get sr.sr_page_descr); br ()] @ 
                       html_of_headline sr.sr_headline)]
             | SR_todo -> assert false) search_results) in
-  let gen_search_page sp search_str =
+  let gen_search_page sp ~username search_str =
     let search_results = WikiDB.search_wikipage search_str in
     html_stub sp
-      (navbar_html sp 
+      (navbar_html sp ~username
          ([h1 [pcdata "Search results"]] @ (render_results sp search_results))) in
     
   register search_page
     (fun sp search_str () ->
-       gen_search_page sp search_str)
+       Session.with_user_login sp
+         (fun username sp ->
+            gen_search_page sp username search_str))
 
