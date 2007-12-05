@@ -151,6 +151,13 @@ let update_activation_date_for_todos todo_ids new_date =
     ignore (guarded_exec sql)
 
 
+let update_todo_descr todo_id new_descr =
+  let sql = 
+    "UPDATE todos SET descr = '"^escape new_descr^"' WHERE id = "^
+      (string_of_int todo_id) in
+  ignore (guarded_exec sql)
+
+
 (* Query TODOs and sort by priority & completeness *)
 let query_all_active_todos () =
   let r = guarded_exec

@@ -753,10 +753,14 @@ let scheduler_page_discard_todo_id =
 let service_save_todo_item =
   register_new_post_service
     ~fallback:scheduler_page_discard_todo_id
-    ~post_params:(string "activation_date")
-    (fun sp (src_page_cont, todo_ids) new_date ->
+    ~post_params:((string "activation_date") ** (opt (string "descr")))
+    (fun sp (src_page_cont, todo_ids) (new_date,new_descr) ->
      Session.with_user_login sp
        (fun credentials sp ->
+          (* Can only set description for one input task, even if the
+             user pressed multi-edit: *)
+          if List.length todo_ids = 1 && new_descr <> None then
+            Database.update_todo_descr (List.hd todo_ids) (Option.get new_descr);
           Database.update_activation_date_for_todos todo_ids new_date;
           render_edit_todo_cont_page sp ~credentials src_page_cont))
 
@@ -766,7 +770,7 @@ let rec render_todo_editor sp ~credentials (src_page_cont, todos_to_edit) =
 
   let today_str = 
     Printer.DatePrinter.sprint "%i"(Date.today ()) in
-    
+  
   let smallest_date =
     List.fold_left 
       (fun min_date e -> min e.t_activation_date min_date) today_str todos in
@@ -783,9 +787,16 @@ let rec render_todo_editor sp ~credentials (src_page_cont, todos_to_edit) =
       match cont with
         ET_scheduler -> cancel_link scheduler_page sp ()
       | ET_view wiki -> cancel_link wiki_view_page sp (wiki,None) in
-      
+
+    let todo_descr allow_edit chain v =
+      if allow_edit then
+        string_input  ~input_type:`Text ~name:chain ~value:v ()
+      else 
+        pcdata v in
+
+    let n_todos = List.length todos in
     post_form service_save_todo_item sp
-      (fun chain -> 
+      (fun (new_act_date, new_descr) -> 
          [table 
             (tr (th [pcdata "ID"]) 
                [th [pcdata "Description"]; th [pcdata "Activates on"]])
@@ -797,14 +808,15 @@ let rec render_todo_editor sp ~credentials (src_page_cont, todos_to_edit) =
                        (clamp_date_to_today todo.t_activation_date) in
                    tr ~a:[a_class [pri_style]]
                      (td [pcdata (string_of_int todo.t_id)])
-                     [td (pcdata todo.t_descr :: wiki_page_links sp todo_in_pages todo); 
+                     [td (todo_descr (n_todos = 1) new_descr todo.t_descr :: 
+                            wiki_page_links sp todo_in_pages todo);
                       td ~a:[a_class ["no_break"]] [pcdata act_date]]) todos)
              @
                 [tr
                    (td [])
                    [td ~a:[a_id "act_date"]
                       [string_input ~input_type:`Submit ~value:"Save" ();
-                       string_input ~input_type:`Text ~name:chain 
+                       string_input ~input_type:`Text ~name:new_act_date 
                          ~a:[a_id "activation_date"; 
                              a_class ["act_date_input"];
                              a_value smallest_date_str] ~value:"" ();
