@@ -374,7 +374,7 @@ let query_users () =
        })
 
 
-let find_user username =
+let find_user_id username =
   let sql = 
     "SELECT id FROM users WHERE login = '"^escape username^"' LIMIT 1" in
   let r = guarded_exec sql in
