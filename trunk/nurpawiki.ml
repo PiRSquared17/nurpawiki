@@ -345,7 +345,9 @@ module WikiML =
             else
               begin
                 let s = (String.sub s charpos ((String.length s)-charpos)) in
-                add_html acc (pcdata ("WIKI SYNTAX ERROR on line: '"^s^"'"))
+                add_html acc 
+                  (Html_util.error 
+                     ("WIKI SYNTAX ERROR on line: '"^s^"'"))
               end
         in
         List.rev (loop acc 0) in
