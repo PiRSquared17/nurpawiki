@@ -358,6 +358,22 @@ let search_wikipage str =
          sr_page_descr = Some (List.nth row 2);
          sr_result_type = SR_page })
 
+
+let query_users () =
+  let sql = 
+    "SELECT id,login FROM users" in
+  let r = guarded_exec sql in
+  r#get_all_lst >>
+    List.map
+    (fun row ->
+       let id = int_of_string (List.nth row 0) in
+       let login = List.nth row 1 in
+       { 
+         user_id = id;
+         user_login = login; 
+       })
+
+
 let find_user username =
   let sql = 
     "SELECT id FROM users WHERE login = '"^escape username^"' LIMIT 1" in
@@ -368,6 +384,12 @@ let find_user username =
     Some (int_of_string (r#get_tuple 0).(0))
   
 
+let add_user ~login =
+  let sql =
+    "INSERT INTO users (login) VALUES ('"^escape login^"')" in
+  ignore (guarded_exec sql)
+
+
 let upgrade_schema_from_0 logmsg =
   Buffer.add_string logmsg "Upgrading from schema version 0\n";
   (* Create version table and set version to 1: *)
@@ -375,11 +397,11 @@ let upgrade_schema_from_0 logmsg =
     "CREATE TABLE version (schema_version integer NOT NULL);
      INSERT INTO version (schema_version) VALUES('1')" in
   ignore (guarded_exec sql);
-  
+
   let sql = 
-    "CREATE TABLE users (id integer NOT NULL, login text NOT NULL);
-     INSERT INTO users (id,login) VALUES('0', 'nobody');
-     INSERT INTO users (id,login) VALUES('1', 'admin')" in
+    "CREATE TABLE users (id SERIAL, login text NOT NULL);
+     INSERT INTO users (login) VALUES('nobody');
+     INSERT INTO users (login) VALUES('admin')" in
   Buffer.add_string logmsg "  Create users table\n";
   ignore (guarded_exec sql);
 
@@ -387,13 +409,13 @@ let upgrade_schema_from_0 logmsg =
 
   (* Todos are now owned by user_id=0 *)
   let sql =
-    "ALTER TABLE todos ADD COLUMN user_id integer NOT NULL DEFAULT 0" in
+    "ALTER TABLE todos ADD COLUMN user_id integer NOT NULL DEFAULT 1" in
   Buffer.add_string logmsg "  Add user_id column to todos table\n";
   ignore (guarded_exec sql);
 
   (* Add user_id field to activity log table *)
   let sql =
-    "ALTER TABLE activity_log ADD COLUMN user_id integer NOT NULL DEFAULT 0" in
+    "ALTER TABLE activity_log ADD COLUMN user_id integer NOT NULL DEFAULT 1" in
   Buffer.add_string logmsg "  Add user_id column to activity_log table\n";
   ignore (guarded_exec sql);
   ()

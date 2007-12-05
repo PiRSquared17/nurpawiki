@@ -27,20 +27,6 @@ let connect_action =
     ~post_params:(Eliomparameters.string "login")
     ()
     
-(* As the handler is very simple, we register it now: *)
-let disconnect_action = 
-  Eliompredefmod.Actions.register_new_post_coservice'
-    ~post_params:Eliomparameters.unit 
-    (fun sp () () -> 
-      Eliomsessions.close_session  ~sp () >>= fun () -> 
-      Lwt.return [])
-
-
-let disconnect_box sp s = 
-  Eliompredefmod.Xhtml.post_form disconnect_action sp 
-    (fun _ -> [p [Eliompredefmod.Xhtml.string_input
-                    ~input_type:`Submit ~value:s ()]]) ()
-
 let login_box sp = 
   Eliompredefmod.Xhtml.post_form connect_action sp
     (fun loginname ->

@@ -26,6 +26,7 @@ open Lwt
 open ExtList
 open ExtString
 
+open Services
 open Types
 
 module Psql = Postgresql
@@ -34,55 +35,9 @@ module P = Printf
 let match_pcre_option rex s =
   try Some (Pcre.extract ~rex s) with Not_found -> None
 
-type et_cont = 
-    ET_scheduler
-  | ET_view of string
-
-let et_cont_view_re = Pcre.regexp "^v_(.*)$"
-
-let string_of_et_cont = function
-    ET_scheduler -> "s"
-  | ET_view src_page -> "v_"^src_page
-
-let et_cont_of_string s = 
-  if s = "s" then
-    ET_scheduler
-  else 
-    begin
-      match match_pcre_option et_cont_view_re s with
-        None -> 
-          raise (Failure "et_cont_of_string")
-      | Some s ->
-          ET_view s.(1)
-    end
-
 let (>>) f g = g f
 
 let newline_re = Str.regexp "\n"
-
-let wiki_view_page = 
-  new_service ["view"] ((string "p")
-                        ** (opt (bool "printable"))) ()
-
-let wiki_edit_page = new_service ["edit"] (string "p") ()
-
-let scheduler_page = new_service ["scheduler"] unit ()
-
-let edit_todo_get_page = new_service ["edit_todo"] 
-  ((Eliomparameters.user_type 
-      et_cont_of_string string_of_et_cont "src_service") **
-     (opt (int "tid"))) ()
-
-let edit_todo_page = 
-  new_post_service
-    ~fallback:edit_todo_get_page 
-    ~post_params:any ()
-
-let history_page = new_service ["history"] unit ()
-
-let search_page = new_service ["search"] (string "q") ()
-
-let benchmark_page = new_service ["benchmark"] (string "test") ()
 
 let iso_date_re = Str.regexp "\\([0-9]+\\)-\\([0-9]+\\)-\\([0-9]+\\)"
 
@@ -511,43 +466,6 @@ let todo_list_table_html sp cur_page todos =
               td [(WikiML.todo_modify_buttons sp cur_page id todo)]]))
        todos)
 
-let navbar_html sp ~credentials ?(wiki_page_links=[]) ?(todo_list_table=[]) content =
-  let home_link link_text =
-    a ~service:wiki_view_page 
-      ~a:[a_accesskey 'h'; a_class ["ak"]] ~sp:sp link_text 
-      ("WikiStart", None) in
-  let scheduler_link =
-    a ~service:scheduler_page
-      ~a:[a_accesskey 'r'; a_class ["ak"]] ~sp:sp 
-      [img ~alt:"Scheduler" ~src:(make_static_uri sp ["calendar.png"]) ();
-       pcdata "Scheduler"] () in
-  let history_link =
-    a ~service:history_page
-      ~a:[a_accesskey 'r'; a_class ["ak"]] ~sp:sp 
-      [img ~alt:"History" ~src:(make_static_uri sp ["home.png"]) ();
-       pcdata "History"] () in
-
-  let search_input =
-    [get_form search_page sp
-       (fun (chain : ([`One of string] Eliomparameters.param_name)) -> 
-          [p [string_input ~input_type:`Submit ~value:"Search" ();
-              string_input ~input_type:`Text ~name:chain
-                ~value:"" ()]])] in
-
-  let user_greeting = 
-    [pcdata ("Howdy "^credentials.user_login^"!")] in
-
-  let space = [pcdata " "] in
-  [div ~a:[a_id "navbar"]
-     ([home_link 
-         [img ~alt:"Home" ~src:(make_static_uri sp ["home.png"]) ();
-          pcdata "Home"]] @ 
-        space @ [scheduler_link] @ 
-         space @ [history_link] @ space @ wiki_page_links @
-         [br ()] @ search_input @ user_greeting @ [br ()] @ todo_list_table);
-   div ~a:[a_id "content"]
-     content]
-
 let wiki_page_menu_html sp ~credentials page content =
   let edit_link = 
     [a ~service:wiki_edit_page ~sp:sp ~a:[a_accesskey '1'; a_class ["ak"]]
@@ -559,8 +477,9 @@ let wiki_page_menu_html sp ~credentials page content =
        (page, Some true)] in
   let todo_list = 
     todo_list_table_html sp page (Database.query_all_active_todos ()) in
-  navbar_html sp ~credentials ~wiki_page_links:(edit_link @ [br ()] @ printable_link)
-        ~todo_list_table:[todo_list] content
+  Html_util.navbar_html sp ~credentials 
+    ~wiki_page_links:(edit_link @ [br ()] @ printable_link)
+    ~todo_list_table:[todo_list] content
 
 let wiki_page_contents_html sp page_id page_name todo_data ?(content=[]) () =
   wiki_page_menu_html sp page_name
@@ -806,7 +725,7 @@ let view_scheduler_page sp =
       post_form edit_todo_page sp table (ET_scheduler, None) in
     
     html_stub sp
-      (navbar_html sp ~credentials
+      (Html_util.navbar_html sp ~credentials
          ([h1 [pcdata "Road ahead"]] @ [table'])) in
   Session.with_user_login sp
     (fun credentials sp -> 
@@ -903,7 +822,7 @@ let rec render_todo_editor sp ~credentials (src_page_cont, todos_to_edit) =
      "nurpawiki_calendar.js"] in
 
   html_stub sp ~javascript:calendar_js
-    (navbar_html sp ~credentials
+    (Html_util.navbar_html sp ~credentials
        ((h1 heading)::[help_str; br(); f]))
 
 let error_page sp msg =
@@ -1082,7 +1001,7 @@ let view_history_page sp ~credentials =
                    prettified_date))
                activity_groups ([],"")))) in
   html_stub sp
-    (navbar_html sp ~credentials
+    (Html_util.navbar_html sp ~credentials
        ([h1 [pcdata "Blast from the past"]] @ [act_table]))
 
 (* /history *)
@@ -1150,7 +1069,7 @@ let _ =
   let gen_search_page sp ~credentials search_str =
     let search_results = Database.search_wikipage search_str in
     html_stub sp
-      (navbar_html sp ~credentials
+      (Html_util.navbar_html sp ~credentials
          ([h1 [pcdata "Search results"]] @ (render_results sp search_results))) in
     
   register search_page
