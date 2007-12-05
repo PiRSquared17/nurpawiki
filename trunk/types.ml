@@ -7,6 +7,7 @@ type user =
       user_id : int;
       user_login : string;
     }
+
 type todo = 
     {
       t_id : int;
@@ -46,6 +47,31 @@ type search_result =
       sr_result_type : search_result_type;
       sr_page_descr : string option;
     }
+
+type et_cont = 
+    ET_scheduler
+  | ET_view of string
+
+let et_cont_view_re = Pcre.regexp "^v_(.*)$"
+
+let string_of_et_cont = function
+    ET_scheduler -> "s"
+  | ET_view src_page -> "v_"^src_page
+
+let match_pcre_option rex s =
+  try Some (Pcre.extract ~rex s) with Not_found -> None
+
+let et_cont_of_string s = 
+  if s = "s" then
+    ET_scheduler
+  else 
+    begin
+      match match_pcre_option et_cont_view_re s with
+        None -> 
+          raise (Failure "et_cont_of_string")
+      | Some s ->
+          ET_view s.(1)
+    end
 
 let int_of_activity_type = function
     AT_create_todo -> 1
