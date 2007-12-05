@@ -1,4 +1,3 @@
-
 (* Copyright (c) 2006, 2007 Janne Hellsten <jjhellst@gmail.com> *)
 
 (* 
