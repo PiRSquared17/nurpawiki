@@ -74,7 +74,7 @@ let with_user_login sp f =
       match maybe_user with
         Some username ->
           begin
-            match (Database.find_user username) with
+            match (Database.find_user_id username) with
               Some id ->
                 f { user_id = id; user_login = username; } sp
             | None ->

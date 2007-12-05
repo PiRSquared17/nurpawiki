@@ -31,7 +31,7 @@ let service_save_user =
     ()
 
 
-let rec view_user_editor_page sp ~credentials =
+let rec view_user_editor_page sp ~err ~credentials =
   let users = Database.query_users () in
   let users_table = 
     table 
@@ -46,23 +46,43 @@ let rec view_user_editor_page sp ~credentials =
   Html_util.html_stub sp
     (Html_util.navbar_html sp ~credentials
        ([h1 [pcdata "Edit users"];
-         users_table;
-         br ();
-         post_form ~service:service_save_user ~sp
-           (fun chain ->
-              [(p [string_input ~input_type:`Submit ~value:"Save" (); 
-                   string_input ~input_type:`Text ~name:chain ()])]) 
-           ()
-        ]))
+         users_table] @
+          err @
+         [post_form ~service:service_save_user ~sp
+            (fun login ->
+               [(p [
+                   pcdata "Login:";
+                   string_input ~input_type:`Text ~name:login ();
+                   string_input ~input_type:`Submit ~value:"Add User" ()])])
+            ()]))
 
+
+(* Only allow certain types of login names to avoid surprises *)
+let sanitize_login_name name =
+  let rex = Pcre.regexp "^[a-zA-Z_][a-zA-Z0-9_]+$" in
+  try Some (Pcre.extract ~rex name).(0) with Not_found -> None
 
 let _ =
   register service_save_user
     (fun sp () login ->
      Session.with_user_login sp
        (fun credentials sp ->
-          Database.add_user ~login;
-          view_user_editor_page sp ~credentials))
+          let sanitized_login = sanitize_login_name login in
+          let err = 
+            match sanitized_login with
+              None -> 
+                [Html_util.error "Only alphanumeric chars are allowed in login name!"]
+            | Some login ->
+                let old_user = 
+                  Database.find_user_id login in
+                if old_user <> None then
+                  [Html_util.error ("User '"^login^"' already exists!")]
+                else 
+                  begin
+                    Database.add_user login;
+                    []
+                  end in
+          view_user_editor_page sp ~err ~credentials))
 
 
 let _ =
@@ -70,4 +90,4 @@ let _ =
     (fun sp _ () -> 
        Session.with_user_login sp
          (fun credentials sp ->
-            view_user_editor_page sp ~credentials))
+            view_user_editor_page sp ~err:[] ~credentials))

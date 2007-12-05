@@ -74,4 +74,5 @@ let navbar_html sp ~credentials ?(wiki_page_links=[]) ?(todo_list_table=[]) cont
      content]
 
 
-
+let error text = 
+  span ~a:[a_class ["error"]] [pcdata text]
