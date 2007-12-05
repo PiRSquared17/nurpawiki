@@ -59,7 +59,7 @@ let rec view_user_editor_page sp ~err ~credentials =
 
 (* Only allow certain types of login names to avoid surprises *)
 let sanitize_login_name name =
-  let rex = Pcre.regexp "^[a-zA-Z_][a-zA-Z0-9_]+$" in
+  let rex = Pcre.regexp "^[a-zA-Z_][a-zA-Z0-9_]?$" in
   try Some (Pcre.extract ~rex name).(0) with Not_found -> None
 
 let _ =

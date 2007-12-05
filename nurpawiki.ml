@@ -1,4 +1,3 @@
-
 (* Copyright (c) 2006, 2007 Janne Hellsten <jjhellst@gmail.com> *)
 
 (* 
@@ -35,35 +34,39 @@ module P = Printf
 let match_pcre_option rex s =
   try Some (Pcre.extract ~rex s) with Not_found -> None
 
+(* TODO no need to extract here *)
+let matches_pcre rex s =
+  try ignore (Pcre.extract ~rex s); true with Not_found -> false
+
 let (>>) f g = g f
 
-let newline_re = Str.regexp "\n"
+let newline_re = Pcre.regexp "\n"
 
-let iso_date_re = Str.regexp "\\([0-9]+\\)-\\([0-9]+\\)-\\([0-9]+\\)"
+let iso_date_re = Pcre.regexp "([0-9]+)-([0-9]+)-([0-9]+)"
 
 let date_of_string s = 
-  if Str.string_match iso_date_re s 0 then
-    let year = int_of_string (Str.matched_group 1 s) in
-    let month = int_of_string (Str.matched_group 2 s) in
-    let day = int_of_string (Str.matched_group 3 s) in
-    Date.make year month day
-  else 
-    assert false
+  match match_pcre_option iso_date_re s with
+    Some r ->
+      let year = int_of_string r.(1) in
+      let month = int_of_string r.(2) in
+      let day = int_of_string r.(3) in
+      Date.make year month day
+  | None -> assert false
 
-let iso_date_time_re = Str.regexp "\\([0-9]+\\)-\\([0-9]+\\)-\\([0-9]+\\) .*"
 
-let date_of_date_time_string s = 
-  if Str.string_match iso_date_time_re s 0 or Str.string_match iso_date_re s 0 then
-    let year = int_of_string (Str.matched_group 1 s) in
-    let month = int_of_string (Str.matched_group 2 s) in
-    let day = int_of_string (Str.matched_group 3 s) in
-    Date.make year month day
-  else
-    begin
-      P.eprintf "invalid date '%s'\n" s;
+let iso_date_time_re = Pcre.regexp "([0-9]+)-([0-9]+)-([0-9]+) .*"
+
+let date_of_date_time_string s =
+  match (match_pcre_option iso_date_time_re s,
+         match_pcre_option iso_date_re s) with
+    (Some r,_)|(_,Some r) ->
+      let year = int_of_string r.(1) in
+      let month = int_of_string r.(2) in
+      let day = int_of_string r.(3) in
+      Date.make year month day
+  | _ -> 
+      Messages.errlog ("invalid date '"^s^"'");
       assert false
-    end
-
 
 let task_side_effect_complete sp task_id () =
   (* TODO!!! wrong user_id hardcoded here! *)
@@ -114,23 +117,24 @@ module WikiML =
         | `NoWiki of string list
         ]
 
-    let ws_or_empty_re = Str.regexp "^\\([ \t\n\r]*\\)$"
+    let ws_or_empty_re = Pcre.regexp "^\\([ \t\n\r]*\\)$"
 
-    let h1_re = Str.regexp "^=\\(.*\\)=\\([ \n\r]*\\)?$"
-    let h2_re = Str.regexp "^==\\(.*\\)==\\([ \n\r]*\\)?$"
-    let h3_re = Str.regexp "^===\\(.*\\)===\\([ \n\r]*\\)?$"
-    let list_re = Str.regexp "^[ ]?\\([*]+\\) \\(.*\\)\\([ \n\r]*\\)?$"
-
+    let h1_re = Pcre.regexp "^=(.*)=([ \n\r]*)?$"
+    let h2_re = Pcre.regexp "^==(.*)==([ \n\r]*)?$"
+    let h3_re = Pcre.regexp "^===(.*)===([ \n\r]*)?$"
+    let list_re = Pcre.regexp "^[ ]?([*]+) (.*)([ \n\r]*)?$"
+      
     let is_list = function 
         `Wiki line ->
-          Str.string_match list_re line 0
-      | `NoWiki _ -> false
-
+          match_pcre_option list_re line
+      | `NoWiki _ -> 
+          None
+          
     let is_list_or_empty = function 
         `Wiki line ->
-          Str.string_match list_re line 0 || Str.string_match ws_or_empty_re line 0
+          matches_pcre list_re line || matches_pcre ws_or_empty_re line
       | `NoWiki _ -> false
-
+          
     let take_while pred lines =
       let rec loop acc = function 
           (x::xs) as lst -> 
@@ -153,7 +157,7 @@ module WikiML =
     let accepted_chars = "["^accepted_chars_^" -]+"
     let text_re = Str.regexp ("\\("^accepted_chars_sans_ws^"\\)")
     let wikilink_re = Str.regexp "\\([A-Z][a-z]+\\([A-Z][a-z]+\\)+\\)"
-
+      
     let todo_re = 
       Str.regexp ("\\[todo:\\([0-9]+\\)\\("^accepted_chars^"\\)?\\]")
 
@@ -346,15 +350,17 @@ module WikiML =
         in
         List.rev (loop acc 0) in
       
+      let rec pcre_first_match str pos =
+        let rec loop = function
+            (rex,f)::xs ->
+              (try Some (Pcre.extract ~rex ~pos str, f) with Not_found -> loop xs)
+          | [] -> None in
+        loop in
+
       let rec loop acc = function
-          ((`Wiki x) as wx::xs) as lst ->
-            if Str.string_match h3_re x 0 then
-              loop ((h3 [pcdata (Str.matched_group 1 x)])::acc) xs
-            else if Str.string_match h2_re x 0 then
-              loop ((h2 [pcdata (Str.matched_group 1 x)])::acc) xs
-            else if Str.string_match h1_re x 0 then
-              loop ((h1 [pcdata (Str.matched_group 1 x)])::acc) xs
-            else if is_list wx then
+          ((`Wiki x)::xs) as lst ->
+
+            let parse_list r = 
               (* Grab all lines starting with '*': *)
               let (after_bullets,bullets) =
                 take_while is_list_or_empty lst in
@@ -362,42 +368,47 @@ module WikiML =
                 List.filter_map
                   (function 
                        (`Wiki e) as wl ->
-                         if Str.string_match ws_or_empty_re e 0 then
+                         if matches_pcre ws_or_empty_re e then
                            (* Empty line, ignore *)
                            None
-                         else if is_list wl then
-                           let n_stars = String.length (Str.matched_group 1 e) in
-                           Some (n_stars, parse_text [] (Str.matched_group 2 e))
                          else 
-                           assert false
+                           begin
+                             match is_list wl with
+                               Some r ->
+                                 let n_stars = String.length r.(1) in
+                                 Some (n_stars, parse_text [] r.(2))
+                             | None ->
+                                 assert false
+                           end
                      | `NoWiki _ -> assert false) bullets in
-              loop ((translate_list list_items)::acc) after_bullets
-            else if Str.string_match ws_or_empty_re x 0 then
-              loop acc xs
-            else 
-              loop ((p (parse_text [] x))::acc) xs
+              loop ((translate_list list_items)::acc) after_bullets in
+            
+            let wiki_pats =
+              [(h3_re, (fun r -> loop ((h3 [pcdata r.(1)])::acc) xs));
+               (h2_re, (fun r -> loop ((h2 [pcdata r.(1)])::acc) xs));
+               (h1_re, (fun r -> loop ((h1 [pcdata r.(1)])::acc) xs));
+               (list_re, (fun r -> parse_list r));
+               (ws_or_empty_re, (fun r -> loop acc xs))] in
+
+            begin
+              match pcre_first_match x 0 wiki_pats with
+                Some (res, action) -> action res
+              | None ->
+                  loop ((p (parse_text [] x))::acc) xs
+            end
         | (`NoWiki x::xs) ->
             loop (pre [pcdata (String.concat "\n" x)]::acc) xs
         | [] -> List.rev acc in
-
+      
       loop [] preprocessed_lines
 
   end
 
 let load_wiki_page page_id =
-  let lines = 
-    Database.load_wiki_page page_id >> Str.split newline_re in
-  let preprocd = WikiML.preprocess lines in
-  preprocd
+  Database.load_wiki_page page_id >> Pcre.split ~rex:newline_re >> WikiML.preprocess
 
 let wikiml_to_html sp (page_id:int) (page_name:string) todo_data =
   load_wiki_page page_id >> WikiML.parse_lines sp page_name todo_data
-
-let html_stub = Html_util.html_stub
-
-(* TODO need to mangle the string to be suitable as an URL *)
-let urlify_wiki_page_descr s =
-  s
 
 (* Hash page description to a CSS palette entry.  Used to syntax
    highlight wiki page links based on their names. *)
@@ -413,7 +424,7 @@ let todo_page_links_of_pages sp ?(colorize=false) ?(link_css_class=None) ?(inser
     | None -> [a_class color_css] in
   let link page = 
     a ~a:(attrs page) ~service:wiki_view_page ~sp:sp [pcdata page.p_descr]
-      (urlify_wiki_page_descr (page.p_descr,None)) in
+      (page.p_descr,None) in
   let rec insert_commas acc = function
       (x::_::xs) as lst ->
         insert_commas (pcdata ", "::x::acc) (List.tl lst)
@@ -489,9 +500,9 @@ let view_page sp ~credentials page_id page_name ~printable =
   let todos = Database.query_page_todos page_id in
   if printable <> None && Option.get printable = true then
     let page_content = wikiml_to_html sp page_id page_name todos in
-    html_stub sp page_content
+    Html_util.html_stub sp page_content
   else 
-    html_stub sp
+    Html_util.html_stub sp
       (wiki_page_contents_html sp ~credentials page_id page_name todos ())
       
 let new_todo_re = 
@@ -539,7 +550,7 @@ let service_save_page_post =
          (fun credentials sp ->
             (* Check if there are any new or removed [todo:#id] tags and
                updated DB page mappings accordingly: *)
-            let wikitext = Str.split newline_re value >> WikiML.preprocess in
+            let wikitext = Pcre.split ~rex:newline_re value >> WikiML.preprocess in
             let page_id = Database.page_id_of_page_name page in
             check_new_and_removed_todos page_id wikitext;
             (* Convert [todo Description] items into [todo:ID] format, save
@@ -608,7 +619,7 @@ let _ =
                         textarea ~name:chain ~rows:30 ~cols:80 
                           ~value:(pcdata wikitext) ()])])
                 (page_name,None) in
-            html_stub sp
+            Html_util.html_stub sp
               (wiki_page_contents_html sp ~credentials page_id page_name page_todos 
                  ~content:[f] ())))
 
@@ -619,7 +630,7 @@ let view_wiki_page sp ~credentials (page_name,printable) =
   | None ->
       let f = 
         a wiki_edit_page sp [pcdata "Create new page"] page_name in
-      html_stub sp
+      Html_util.html_stub sp
         (wiki_page_menu_html sp ~credentials page_name [f])
 
 (* /view?p=Page *)
@@ -724,7 +735,7 @@ let view_scheduler_page sp =
     let table' = 
       post_form edit_todo_page sp table (ET_scheduler, None) in
     
-    html_stub sp
+    Html_util.html_stub sp
       (Html_util.navbar_html sp ~credentials
          ([h1 [pcdata "Road ahead"]] @ [table'])) in
   Session.with_user_login sp
@@ -833,12 +844,12 @@ let rec render_todo_editor sp ~credentials (src_page_cont, todos_to_edit) =
      "PopupWindow.js";
      "nurpawiki_calendar.js"] in
 
-  html_stub sp ~javascript:calendar_js
+  Html_util.html_stub sp ~javascript:calendar_js
     (Html_util.navbar_html sp ~credentials
        ((h1 heading)::[help_str; br(); f]))
 
 let error_page sp msg =
-  html_stub sp [h1 [pcdata ("ERROR: "^msg)]]
+  Html_util.html_stub sp [h1 [pcdata ("ERROR: "^msg)]]
 
 let render_todo_get_page sp (src_page_cont, todo) = 
   match todo with
@@ -1012,7 +1023,7 @@ let view_history_page sp ~credentials =
                      [tr (td ~a:[a_class ["no_break"; "h_date_heading"]] date_text) []] @ lst_acc,
                    prettified_date))
                activity_groups ([],"")))) in
-  html_stub sp
+  Html_util.html_stub sp
     (Html_util.navbar_html sp ~credentials
        ([h1 [pcdata "Blast from the past"]] @ [act_table]))
 
@@ -1074,13 +1085,13 @@ let _ =
                 let link descr = 
                   a ~a:[a_class ["sr_link"]] ~service:wiki_view_page ~sp:sp 
                     [pcdata descr]
-                    (urlify_wiki_page_descr descr,None) in
+                    (descr,None) in
                 [p ([link (Option.get sr.sr_page_descr); br ()] @ 
                       html_of_headline sr.sr_headline)]
             | SR_todo -> assert false) search_results) in
   let gen_search_page sp ~credentials search_str =
     let search_results = Database.search_wikipage search_str in
-    html_stub sp
+    Html_util.html_stub sp
       (Html_util.navbar_html sp ~credentials
          ([h1 [pcdata "Search results"]] @ (render_results sp search_results))) in
     
