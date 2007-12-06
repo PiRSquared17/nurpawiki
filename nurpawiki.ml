@@ -109,6 +109,10 @@ let complete_task_img_link sp task_id =
   Eliompredefmod.Xhtml.a ~service:task_side_effect_complete_action
     ~a:[a_title "Mark as completed!"] ~sp img_html task_id
 
+let todo_descr_html descr owner = 
+  [pcdata descr; span ~a:[a_class ["todo_owner"]] [pcdata (" ["^owner^"] ")]]
+
+
 (* Deal with Wiki markup *)
 module WikiML =
   struct
@@ -301,7 +305,7 @@ module WikiML =
                 ["todo_descr"; priority_css_class todo.t_priority] in
             span 
               [todo_modify_buttons sp cur_page todo_id todo;
-               span ~a:[a_class style] [pcdata todo.t_descr]]
+               span ~a:[a_class style] (todo_descr_html todo.t_descr todo.t_owner_login)]
           with Not_found -> 
             (pcdata "UNKNOWN TODO ID!") in
         add_html acc html in
@@ -457,7 +461,7 @@ let todo_list_table_html sp cur_page todos =
     let page_links =
       let c = "wiki_pri_"^WikiML.string_of_priority todo.t_priority in
       todo_page_links sp todo_in_pages ~link_css_class:(Some c) (todo.t_id) in
-    pcdata descr :: page_links in
+    todo_descr_html descr todo.t_owner_login @ page_links in
 
   table ~a:[a_class ["todo_table"]]
     (tr 
@@ -699,7 +703,7 @@ let view_scheduler_page sp =
                   (td ~a:[a_class ["no_break"; pri_style]] 
                      [pcdata (prettify_activation_date todo.t_activation_date)]);
                   td ~a:[a_class [pri_style]] 
-                    ([pcdata todo.t_descr] @ wiki_page_links sp todo_in_pages todo)] in
+                    (todo_descr_html todo.t_descr todo.t_owner_login @ wiki_page_links sp todo_in_pages todo)] in
              heading_row @ [todo_row]) todos in
       List.flatten todo_rows in
 
