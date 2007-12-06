@@ -409,13 +409,21 @@ let query_user username =
   else
     Some (user_of_sql_row (r#get_tuple_lst 0))
 
-      (*Database.add_user login ~passwd ~name ~email;*)
 let add_user ~login ~passwd ~real_name ~email =
   let sql =
     "INSERT INTO users (login,passwd,real_name,email) "^
       "VALUES ("^(String.concat "," 
                     (List.map (fun s -> "'"^escape s^"'")
                        [login; passwd; real_name; email]))^")" in
+  ignore (guarded_exec sql)
+
+let update_user ~user_id ~passwd ~real_name ~email =
+  let sql =
+    "UPDATE users SET 
+         passwd = '"^escape passwd^"',
+         real_name = '"^escape real_name^"',
+         email = '"^escape email^"' 
+       WHERE id = "^(string_of_int user_id) in
   ignore (guarded_exec sql)
 
 

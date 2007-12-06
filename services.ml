@@ -57,5 +57,6 @@ let search_page = new_service ["search"] (string "q") ()
 
 let benchmark_page = new_service ["benchmark"] (string "test") ()
 
-let user_editor_page = new_service ["user_editor"] unit ()
+let user_admin_page = new_service ["user_admin"] unit ()
 
+let edit_user_page = new_service ["edit_user"] unit ()
