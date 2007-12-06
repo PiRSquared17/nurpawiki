@@ -74,7 +74,6 @@ let navbar_html sp ~credentials ?(wiki_page_links=[]) ?(todo_list_table=[]) cont
   let user_greeting = 
     [pcdata ("Howdy "^credentials.user_login^"!")] in
 
-
   [div ~a:[a_id "topbar"]
      [table
         (tr (td [home_link 
