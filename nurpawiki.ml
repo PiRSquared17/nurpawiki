@@ -110,7 +110,10 @@ let complete_task_img_link sp task_id =
     ~a:[a_title "Mark as completed!"] ~sp img_html task_id
 
 let todo_descr_html descr owner = 
-  [pcdata descr; span ~a:[a_class ["todo_owner"]] [pcdata (" ["^owner^"] ")]]
+  match owner with
+    None -> [pcdata descr]
+  | Some o ->
+      [pcdata descr; span ~a:[a_class ["todo_owner"]] [pcdata (" ["^o.owner_login^"] ")]]
 
 
 (* Deal with Wiki markup *)
@@ -305,7 +308,7 @@ module WikiML =
                 ["todo_descr"; priority_css_class todo.t_priority] in
             span 
               [todo_modify_buttons sp cur_page todo_id todo;
-               span ~a:[a_class style] (todo_descr_html todo.t_descr todo.t_owner_login)]
+               span ~a:[a_class style] (todo_descr_html todo.t_descr todo.t_owner)]
           with Not_found -> 
             (pcdata "UNKNOWN TODO ID!") in
         add_html acc html in
@@ -461,7 +464,7 @@ let todo_list_table_html sp cur_page todos =
     let page_links =
       let c = "wiki_pri_"^WikiML.string_of_priority todo.t_priority in
       todo_page_links sp todo_in_pages ~link_css_class:(Some c) (todo.t_id) in
-    todo_descr_html descr todo.t_owner_login @ page_links in
+    todo_descr_html descr todo.t_owner @ page_links in
 
   table ~a:[a_class ["todo_table"]]
     (tr 
@@ -703,7 +706,7 @@ let view_scheduler_page sp =
                   (td ~a:[a_class ["no_break"; pri_style]] 
                      [pcdata (prettify_activation_date todo.t_activation_date)]);
                   td ~a:[a_class [pri_style]] 
-                    (todo_descr_html todo.t_descr todo.t_owner_login @ wiki_page_links sp todo_in_pages todo)] in
+                    (todo_descr_html todo.t_descr todo.t_owner @ wiki_page_links sp todo_in_pages todo)] in
              heading_row @ [todo_row]) todos in
       List.flatten todo_rows in
 
@@ -813,11 +816,16 @@ let rec render_todo_editor sp ~credentials (src_page_cont, todos_to_edit) =
 
     let owner_selection allow_edit todo chain =
       let users = Database.query_users () in
+
+      let match_owner u = function
+          Some o -> o.owner_id = u.user_id
+        | None -> false in
+        
       let options = 
         List.map 
           (fun u -> 
-             Option ([], u.user_id, Some (pcdata u.user_login), 
-                     todo.t_owner_id = u.user_id))
+             Option ([], u.user_id, Some (pcdata u.user_login),
+                     match_owner u todo.t_owner))
           users in
       int_select ~name:chain (List.hd options) (List.tl options) in
 

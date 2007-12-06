@@ -127,7 +127,7 @@ let save_user ~update_user ~old_passwd ~login ~passwd ~passwd2 ~real_name ~email
                   assert false 
             end
           else
-            Database.add_user ~login ~passwd ~real_name ~email;
+            Database.add_user ~login ~passwd:passwd_md5 ~real_name ~email;
           []
         end
 

@@ -33,8 +33,12 @@ type todo =
       t_completed : bool;
       t_priority : int;
       t_activation_date : string;
-      t_owner_id : int;
-      t_owner_login : string;
+      t_owner : owner option;
+    }
+and owner = 
+    {
+      owner_id : int;
+      owner_login : string;
     }
 
 type page = 
