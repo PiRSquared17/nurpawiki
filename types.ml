@@ -21,6 +21,9 @@ type user =
     {
       user_id : int;
       user_login : string;
+      user_passwd : string;
+      user_real_name : string;
+      user_email : string;
     }
 
 type todo = 
