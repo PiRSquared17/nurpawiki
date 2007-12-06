@@ -86,12 +86,22 @@ let todos_user_login_join = "FROM todos LEFT OUTER JOIN users ON todos.user_id =
 
 (* Use this tuple format when querying TODOs to be parsed by
    parse_todo_result *)
-let todo_tuple_format = "todos.id,descr,completed,priority,activation_date,user_id,users.login" 
+let todo_tuple_format = "todos.id,descr,completed,priority,activation_date,user_id,users.login"
 
 let todo_of_row row = 
   let id = int_of_string (List.nth row 0) in
   let descr = List.nth row 1 in
   let completed = (List.nth row 2) = "t" in
+  let owner_id = List.nth row 5 in
+  let owner = 
+    if owner_id = "" then
+      None
+    else
+      Some {
+        owner_id = int_of_string owner_id;
+        owner_login = List.nth row 6;
+      } in
+    
   let pri = List.nth row 3 in
   {
     t_id = id;
@@ -99,8 +109,7 @@ let todo_of_row row =
     t_completed = completed;
     t_priority = int_of_string pri;
     t_activation_date =  List.nth row 4;
-    t_owner_id =  int_of_string (List.nth row 5);
-    t_owner_login =  List.nth row 6;
+    t_owner = owner;
   }
     
 let parse_todo_result res = 
@@ -453,7 +462,6 @@ let upgrade_schema_from_0 logmsg =
                          passwd varchar(64) NOT NULL,
                          real_name text,
                          email varchar(64));
-     INSERT INTO users (login,passwd) VALUES('nobody', '"^empty_passwd^"');
      INSERT INTO users (login,passwd) VALUES('admin', '"^empty_passwd^"')" in
   Buffer.add_string logmsg "  Create users table\n";
   ignore (guarded_exec sql);
@@ -462,13 +470,13 @@ let upgrade_schema_from_0 logmsg =
 
   (* Todos are now owned by user_id=0 *)
   let sql =
-    "ALTER TABLE todos ADD COLUMN user_id integer NOT NULL DEFAULT 1" in
+    "ALTER TABLE todos ADD COLUMN user_id integer" in
   Buffer.add_string logmsg "  Add user_id column to todos table\n";
   ignore (guarded_exec sql);
 
   (* Add user_id field to activity log table *)
   let sql =
-    "ALTER TABLE activity_log ADD COLUMN user_id integer NOT NULL DEFAULT 1" in
+    "ALTER TABLE activity_log ADD COLUMN user_id integer" in
   Buffer.add_string logmsg "  Add user_id column to activity_log table\n";
   ignore (guarded_exec sql);
   ()

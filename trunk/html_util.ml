@@ -81,6 +81,8 @@ let navbar_html sp ~credentials ?(wiki_page_links=[]) ?(todo_list_table=[]) cont
                     pcdata "Home"]])
            [td [scheduler_link];
             td [history_link];
+            td [a ~service:edit_user_page ~sp [pcdata "My Preferences"] ()];
+            td [a ~service:user_admin_page ~sp [pcdata "Edit Users"] ()];
             td wiki_page_links;
             td search_input;
             td [disconnect_box sp "Logout"]])
