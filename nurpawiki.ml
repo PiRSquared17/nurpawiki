@@ -766,14 +766,20 @@ let scheduler_page_discard_todo_id =
 let service_save_todo_item =
   register_new_post_service
     ~fallback:scheduler_page_discard_todo_id
-    ~post_params:((string "activation_date") ** (opt (string "descr")))
-    (fun sp (src_page_cont, todo_ids) (new_date,new_descr) ->
+    ~post_params:((string "activation_date") ** 
+                    (opt (string "descr")) ** 
+                    (int "owner_id"))
+    (fun sp (src_page_cont, todo_ids) (new_date,(new_descr,new_owner_id)) ->
      Session.with_user_login sp
        (fun credentials sp ->
           (* Can only set description for one input task, even if the
              user pressed multi-edit: *)
-          if List.length todo_ids = 1 && new_descr <> None then
-            Database.update_todo_descr (List.hd todo_ids) (Option.get new_descr);
+          if List.length todo_ids = 1 then
+            begin
+              if new_descr <> None then
+                Database.update_todo_descr (List.hd todo_ids) (Option.get new_descr);
+              Database.update_todo_owner_id (List.hd todo_ids) new_owner_id
+            end;
           Database.update_activation_date_for_todos todo_ids new_date;
           render_edit_todo_cont_page sp ~credentials src_page_cont))
 
@@ -801,15 +807,25 @@ let rec render_todo_editor sp ~credentials (src_page_cont, todos_to_edit) =
         ET_scheduler -> cancel_link scheduler_page sp ()
       | ET_view wiki -> cancel_link wiki_view_page sp (wiki,None) in
 
+    let owner_selection allow_edit todo chain =
+      let users = Database.query_users () in
+      let options = 
+        List.map 
+          (fun u -> 
+             Option ([], u.user_id, Some (pcdata u.user_login), 
+                     todo.t_owner_id = u.user_id))
+          users in
+      int_select ~name:chain (List.hd options) (List.tl options) in
+
     let todo_descr allow_edit chain v =
       if allow_edit then
         string_input  ~input_type:`Text ~name:chain ~value:v ()
-      else 
-        pcdata v in
+      else
+        pcdata "" in
 
     let n_todos = List.length todos in
     post_form service_save_todo_item sp
-      (fun (new_act_date, new_descr) -> 
+      (fun (new_act_date,(new_descr,new_owner)) -> 
          [table 
             (tr (th [pcdata "ID"]) 
                [th [pcdata "Description"]; th [pcdata "Activates on"]])
@@ -823,7 +839,8 @@ let rec render_todo_editor sp ~credentials (src_page_cont, todos_to_edit) =
                      (td [pcdata (string_of_int todo.t_id)])
                      [td (todo_descr (n_todos = 1) new_descr todo.t_descr :: 
                             wiki_page_links sp todo_in_pages todo);
-                      td ~a:[a_class ["no_break"]] [pcdata act_date]]) todos)
+                      td ~a:[a_class ["no_break"]] [pcdata act_date];
+                      td [owner_selection (n_todos = 1) todo new_owner]]) todos)
              @
                 [tr
                    (td [])

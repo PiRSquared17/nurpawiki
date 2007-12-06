@@ -33,6 +33,7 @@ type todo =
       t_completed : bool;
       t_priority : int;
       t_activation_date : string;
+      t_owner_id : int;
     }
 
 type page = 
