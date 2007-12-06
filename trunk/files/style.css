@@ -45,7 +45,6 @@ a.palette10 { color:rgb(132, 102, 0); }
 a.palette11 { color:rgb(51, 0, 153); }
 
 
-
 .no_break {
   white-space:nowrap;
 }
@@ -76,6 +75,11 @@ a.palette11 { color:rgb(51, 0, 153); }
 .error {
     color : Red;
     font-weight:bold;
+};
+
+.todo_owner {
+  color : #77f;
+  font-weight : bold;
 };
 
 /* Search results */

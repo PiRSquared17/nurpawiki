@@ -82,9 +82,11 @@ let escape s =
        | c -> Buffer.add_char b c) s;
   Buffer.contents b
     
+let todos_user_login_join = "FROM todos LEFT OUTER JOIN users ON todos.user_id = users.id"
+
 (* Use this tuple format when querying TODOs to be parsed by
    parse_todo_result *)
-let todo_tuple_format = "id,descr,completed,priority,activation_date,user_id" 
+let todo_tuple_format = "todos.id,descr,completed,priority,activation_date,user_id,users.login" 
 
 let todo_of_row row = 
   let id = int_of_string (List.nth row 0) in
@@ -98,6 +100,7 @@ let todo_of_row row =
     t_priority = int_of_string pri;
     t_activation_date =  List.nth row 4;
     t_owner_id =  int_of_string (List.nth row 5);
+    t_owner_login =  List.nth row 6;
   }
     
 let parse_todo_result res = 
@@ -153,7 +156,7 @@ COMMIT" in
 let query_todos_by_ids todo_ids = 
   if todo_ids <> [] then
     let ids = String.concat "," (List.map string_of_int todo_ids) in
-    let r = guarded_exec ("SELECT "^todo_tuple_format^" from todos WHERE id IN ("^ids^")") in
+    let r = guarded_exec ("SELECT "^todo_tuple_format^" "^todos_user_login_join^" WHERE todos.id IN ("^ids^")") in
     List.map todo_of_row (r#get_all_lst)
   else
     []
@@ -184,7 +187,7 @@ let update_todo_owner_id todo_id new_owner_id =
 (* Query TODOs and sort by priority & completeness *)
 let query_all_active_todos () =
   let r = guarded_exec
-    ("SELECT "^todo_tuple_format^" FROM todos "^
+    ("SELECT "^todo_tuple_format^" "^todos_user_login_join^" "^
        "WHERE activation_date <= current_date AND completed = 'f' "^
        "ORDER BY completed,priority,id") in
   List.map todo_of_row r#get_all_lst
@@ -208,7 +211,7 @@ let query_upcoming_todos date_criterion =
     | (None,None) -> 
         "activation_date <= now()" in
   let r = guarded_exec
-    ("SELECT "^todo_tuple_format^" FROM todos "^
+    ("SELECT "^todo_tuple_format^" "^todos_user_login_join^" "^
        "WHERE "^date_comparison^" AND completed='f' ORDER BY activation_date,priority,id") in
   List.map todo_of_row r#get_all_lst
     
@@ -264,7 +267,7 @@ let query_activity_in_pages () =
     
 (* Collect todos in the current page *)
 let query_page_todos page_id =
-  let sql = "SELECT "^todo_tuple_format^" FROM todos where id in "^
+  let sql = "SELECT "^todo_tuple_format^" "^todos_user_login_join^" WHERE todos.id in "^
     "(SELECT todo_id FROM todos_in_pages WHERE page_id = "^string_of_int page_id^")" in
   let r = guarded_exec sql in
   parse_todo_result r

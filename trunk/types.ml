@@ -34,6 +34,7 @@ type todo =
       t_priority : int;
       t_activation_date : string;
       t_owner_id : int;
+      t_owner_login : string;
     }
 
 type page = 
