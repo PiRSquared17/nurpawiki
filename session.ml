@@ -47,7 +47,7 @@ let login_box sp =
     (fun (loginname,passwd) ->
       [p 
          (let login = 
-            [pcdata "Enter your login name (must be admin or nobody for now): "; 
+            [pcdata "Enter your login name (must be admin (empty password by default)): "; 
              string_input ~input_type:`Text ~name:loginname ();
              string_input ~input_type:`Password ~name:passwd ();
              string_input ~input_type:`Submit ~value:"Login" ()]
