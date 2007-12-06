@@ -81,10 +81,7 @@ let db_upgrade_warning sp =
 let with_user_login sp f =
   (* First check for the need of DB upgrade: *)
   if Database.db_schema_version () < Database.nurpawiki_schema_version then
-    begin
-      (* TODO could take the user directly to main page here *)
-      Html_util.html_stub sp (db_upgrade_warning sp)
-    end
+    Html_util.html_stub sp (db_upgrade_warning sp)
   else
     get_login_user sp >>= fun maybe_user ->
       match maybe_user with
@@ -106,6 +103,12 @@ let with_user_login sp f =
       | None ->
           Html_util.html_stub sp [login_box sp]
 
+let update_session_password sp login new_password =
+  ignore
+    (Eliomsessions.close_session  ~sp () >>= fun () -> 
+       Eliomsessions.set_volatile_session_data ~table:login_table ~sp (login,new_password);
+       return [])
+  
 let connect_action_handler sp () login_nfo =
   Eliomsessions.close_session  ~sp () >>= fun () -> 
     Eliomsessions.set_volatile_session_data ~table:login_table ~sp login_nfo;
