@@ -75,12 +75,11 @@ a.palette11 { color:rgb(51, 0, 153); }
 .error {
     color : Red;
     font-weight:bold;
-};
+}
 
 .todo_owner {
-  color : #77f;
-  font-weight : bold;
-};
+  color : #558;
+}
 
 /* Search results */
 .sr_link { font-size: 1.15em; }
