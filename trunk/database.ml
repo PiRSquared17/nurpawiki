@@ -84,7 +84,7 @@ let escape s =
     
 (* Use this tuple format when querying TODOs to be parsed by
    parse_todo_result *)
-let todo_tuple_format = "id,descr,completed,priority,activation_date" 
+let todo_tuple_format = "id,descr,completed,priority,activation_date,user_id" 
 
 let todo_of_row row = 
   let id = int_of_string (List.nth row 0) in
@@ -97,6 +97,7 @@ let todo_of_row row =
     t_completed = completed;
     t_priority = int_of_string pri;
     t_activation_date =  List.nth row 4;
+    t_owner_id =  int_of_string (List.nth row 5);
   }
     
 let parse_todo_result res = 
@@ -169,6 +170,13 @@ let update_activation_date_for_todos todo_ids new_date =
 let update_todo_descr todo_id new_descr =
   let sql = 
     "UPDATE todos SET descr = '"^escape new_descr^"' WHERE id = "^
+      (string_of_int todo_id) in
+  ignore (guarded_exec sql)
+
+
+let update_todo_owner_id todo_id new_owner_id =
+  let sql = 
+    "UPDATE todos SET user_id = "^string_of_int new_owner_id^" WHERE id = "^
       (string_of_int todo_id) in
   ignore (guarded_exec sql)
 
