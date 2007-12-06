@@ -495,7 +495,7 @@ let wiki_page_menu_html sp ~credentials page content =
   let todo_list = 
     todo_list_table_html sp page (Database.query_all_active_todos ()) in
   Html_util.navbar_html sp ~credentials 
-    ~wiki_page_links:(edit_link @ [br ()] @ printable_link)
+    ~wiki_page_links:(edit_link @ [pcdata " "] @  printable_link)
     ~todo_list_table:[todo_list] content
 
 let wiki_page_contents_html sp page_id page_name todo_data ?(content=[]) () =

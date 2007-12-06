@@ -69,22 +69,26 @@ let navbar_html sp ~credentials ?(wiki_page_links=[]) ?(todo_list_table=[]) cont
     [get_form search_page sp
        (fun (chain : ([`One of string] Eliomparameters.param_name)) -> 
           [p [string_input ~input_type:`Submit ~value:"Search" ();
-              string_input ~input_type:`Text ~name:chain
-                ~value:"" ()]])] in
+              string_input ~input_type:`Text ~name:chain ()]])] in
 
   let user_greeting = 
     [pcdata ("Howdy "^credentials.user_login^"!")] in
 
 
-  let space = [pcdata " "] in
-  [div ~a:[a_id "navbar"]
-     ([home_link 
-         [img ~alt:"Home" ~src:(make_static_uri sp ["home.png"]) ();
-          pcdata "Home"]] @ 
-        space @ [scheduler_link] @ 
-         space @ [history_link] @ space @ wiki_page_links @
-         [disconnect_box sp "Logout"] @
-         search_input @ user_greeting @ [br ()] @ todo_list_table);
+  [div ~a:[a_id "topbar"]
+     [table
+        (tr (td [home_link 
+                   [img ~alt:"Home" ~src:(make_static_uri sp ["home.png"]) ();
+                    pcdata "Home"]])
+           [td [scheduler_link];
+            td [history_link];
+            td wiki_page_links;
+            td search_input;
+            td [disconnect_box sp "Logout"]])
+        []];
+   
+   div ~a:[a_id "navbar"]
+     (user_greeting @ [br ()] @ todo_list_table);
    div ~a:[a_id "content"]
      content]
 
