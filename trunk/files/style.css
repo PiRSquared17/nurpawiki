@@ -110,6 +110,15 @@ html, body {
 	padding: 0;
 	}
 
+#topbar {
+  margin-top:10px;
+  margin-left:10px;
+  margin-right:10px;
+  float:top;
+  height:50px;
+  border-bottom: 2px solid #ccf;
+}
+
 #navbar {
 	width: 300px;
 	float: left;
