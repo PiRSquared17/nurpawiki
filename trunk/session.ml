@@ -39,17 +39,18 @@ let login_table = Eliomsessions.create_volatile_table ()
 
 let connect_action = 
   Eliomservices.new_post_coservice'
-    ~post_params:(Eliomparameters.string "login")
+    ~post_params:((string "login") ** (string "passwd"))
     ()
     
 let login_box sp = 
   Eliompredefmod.Xhtml.post_form connect_action sp
-    (fun loginname ->
+    (fun (loginname,passwd) ->
       [p 
          (let login = 
             [pcdata "Enter your login name (must be admin or nobody for now): "; 
-             Eliompredefmod.Xhtml.string_input
-               ~input_type:`Text ~name:loginname ()]
+             string_input ~input_type:`Text ~name:loginname ();
+             string_input ~input_type:`Password ~name:passwd ();
+             string_input ~input_type:`Submit ~value:"Login" ()]
           in login)
      ])
     ()
@@ -87,21 +88,28 @@ let with_user_login sp f =
   else
     get_login_user sp >>= fun maybe_user ->
       match maybe_user with
-        Some username ->
+        Some (login,passwd) ->
           begin
-            match (Database.find_user_id username) with
-              Some id ->
-                f { user_id = id; user_login = username; } sp
+            match (Database.query_user login) with
+              Some user ->
+                let passwd_md5 = Digest.to_hex (Digest.string passwd) in
+                (* Autheticate user against his password *)
+                if passwd_md5 <> user.user_passwd then
+                  Html_util.html_stub sp 
+                    [p [Html_util.error ("Wrong password given for user '"^login^"'")];
+                     login_box sp]
+                else 
+                  f user sp
             | None ->
                 Html_util.html_stub sp [login_box sp]
           end
       | None ->
           Html_util.html_stub sp [login_box sp]
 
-let connect_action_handler sp () login =
+let connect_action_handler sp () login_nfo =
   Eliomsessions.close_session  ~sp () >>= fun () -> 
-  Eliomsessions.set_volatile_session_data ~table:login_table ~sp login;
-  return []
+    Eliomsessions.set_volatile_session_data ~table:login_table ~sp login_nfo;
+    return []
 
 let () =
   Eliompredefmod.Actions.register ~service:connect_action connect_action_handler

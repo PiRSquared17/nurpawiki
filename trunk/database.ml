@@ -381,34 +381,41 @@ let search_wikipage str =
          sr_result_type = SR_page })
 
 
+let user_query_string = 
+  "SELECT id,login,passwd,real_name,email FROM users"
+
+let user_of_sql_row row =
+  let id = int_of_string (List.nth row 0) in
+  { 
+    user_id = id;
+    user_login = (List.nth row 1);
+    user_passwd = (List.nth row 2); 
+    user_real_name = (List.nth row 3); 
+    user_email = (List.nth row 4); 
+  }
+
 let query_users () =
-  let sql = 
-    "SELECT id,login FROM users" in
+  let sql = user_query_string in
   let r = guarded_exec sql in
-  r#get_all_lst >>
-    List.map
-    (fun row ->
-       let id = int_of_string (List.nth row 0) in
-       let login = List.nth row 1 in
-       { 
-         user_id = id;
-         user_login = login; 
-       })
+  r#get_all_lst >> List.map user_of_sql_row
 
 
-let find_user_id username =
+let query_user username =
   let sql = 
-    "SELECT id FROM users WHERE login = '"^escape username^"' LIMIT 1" in
+    user_query_string ^" WHERE login = '"^escape username^"' LIMIT 1" in
   let r = guarded_exec sql in
   if r#ntuples = 0 then 
     None 
   else
-    Some (int_of_string (r#get_tuple 0).(0))
-  
+    Some (user_of_sql_row (r#get_tuple_lst 0))
 
-let add_user ~login =
+      (*Database.add_user login ~passwd ~name ~email;*)
+let add_user ~login ~passwd ~real_name ~email =
   let sql =
-    "INSERT INTO users (login) VALUES ('"^escape login^"')" in
+    "INSERT INTO users (login,passwd,real_name,email) "^
+      "VALUES ("^(String.concat "," 
+                    (List.map (fun s -> "'"^escape s^"'")
+                       [login; passwd; real_name; email]))^")" in
   ignore (guarded_exec sql)
 
 
@@ -420,10 +427,15 @@ let upgrade_schema_from_0 logmsg =
      INSERT INTO version (schema_version) VALUES('1')" in
   ignore (guarded_exec sql);
 
+  let empty_passwd = (Digest.to_hex (Digest.string "")) in
   let sql = 
-    "CREATE TABLE users (id SERIAL, login text NOT NULL);
-     INSERT INTO users (login) VALUES('nobody');
-     INSERT INTO users (login) VALUES('admin')" in
+    "CREATE TABLE users (id SERIAL, 
+                         login text NOT NULL,
+                         passwd varchar(64) NOT NULL,
+                         real_name text,
+                         email varchar(64));
+     INSERT INTO users (login,passwd) VALUES('nobody', '"^empty_passwd^"');
+     INSERT INTO users (login,passwd) VALUES('admin', '"^empty_passwd^"')" in
   Buffer.add_string logmsg "  Create users table\n";
   ignore (guarded_exec sql);
 
