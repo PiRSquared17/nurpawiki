@@ -495,8 +495,10 @@ let wiki_page_menu_html sp ~credentials page content =
     [a ~service:wiki_view_page ~sp:sp
        ~a:[a_accesskey 'p'; a_class ["ak"]] [pcdata "Print"]
        (page, Some true)] in
+  let current_user_id = Some credentials.user_id in
   let todo_list = 
-    todo_list_table_html sp page (Database.query_all_active_todos ()) in
+    todo_list_table_html sp page 
+      (Database.query_all_active_todos ~current_user_id ()) in
   Html_util.navbar_html sp ~credentials 
     ~wiki_page_links:(edit_link @ [pcdata " "] @  printable_link)
     ~todo_list_table:[todo_list] content
@@ -713,16 +715,17 @@ let view_scheduler_page sp =
     let todo_section sp todos =
       (todo_table_html sp todos) in
 
+    let current_user_id = Some credentials.user_id in
     let upcoming_pending =
-      Database.query_upcoming_todos (None,None) in
+      Database.query_upcoming_todos ~current_user_id (None,None) in
     let upcoming_tomorrow =
-      Database.query_upcoming_todos (None,Some 1) in
+      Database.query_upcoming_todos ~current_user_id (None,Some 1) in
     let upcoming_todos_7_days =
-      Database.query_upcoming_todos (Some 1,Some 7) in
+      Database.query_upcoming_todos ~current_user_id (Some 1,Some 7) in
     let upcoming_todos_14_days =
-      Database.query_upcoming_todos (Some 7, Some 14) in
+      Database.query_upcoming_todos ~current_user_id (Some 7, Some 14) in
     let upcoming_all = 
-      Database.query_upcoming_todos (Some 14, None) in
+      Database.query_upcoming_todos ~current_user_id (Some 14, None) in
 
     let mark_todo_hdr h = List.map (fun e -> (h, e)) in
     let merged_todos = 

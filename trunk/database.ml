@@ -193,15 +193,22 @@ let update_todo_owner_id todo_id new_owner_id =
   ignore (guarded_exec sql)
 
 
+let select_current_user id = 
+  (match id with
+     None -> ""
+   | Some user_id -> 
+       " AND user_id = "^string_of_int user_id^" ")
+
 (* Query TODOs and sort by priority & completeness *)
-let query_all_active_todos () =
+let query_all_active_todos ?(current_user_id=None) () =
   let r = guarded_exec
     ("SELECT "^todo_tuple_format^" "^todos_user_login_join^" "^
        "WHERE activation_date <= current_date AND completed = 'f' "^
+       select_current_user current_user_id^
        "ORDER BY completed,priority,id") in
   List.map todo_of_row r#get_all_lst
 
-let query_upcoming_todos date_criterion =
+let query_upcoming_todos ?(current_user_id=None) date_criterion =
   let date_comparison =
     let dayify d = 
       "'"^string_of_int d^" days'" in
@@ -221,7 +228,9 @@ let query_upcoming_todos date_criterion =
         "activation_date <= now()" in
   let r = guarded_exec
     ("SELECT "^todo_tuple_format^" "^todos_user_login_join^" "^
-       "WHERE "^date_comparison^" AND completed='f' ORDER BY activation_date,priority,id") in
+       "WHERE "^date_comparison^
+       select_current_user current_user_id^
+       " AND completed='f' ORDER BY activation_date,priority,id") in
   List.map todo_of_row r#get_all_lst
     
 let new_todo page_id user_id descr =
