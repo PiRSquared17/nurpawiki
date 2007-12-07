@@ -823,6 +823,8 @@ let rec render_todo_editor sp ~credentials (src_page_cont, todos_to_edit) =
     let todo_descr chain v =
       string_input ~input_type:`Text ~name:chain ~value:v () in
 
+    (* See nurpawiki_calendar.js for JavaScript calendar binding
+       details. *)
     let create_listform f = 
       [table 
          (tr (th [pcdata "ID"]) 
