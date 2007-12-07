@@ -197,7 +197,7 @@ let select_current_user id =
   (match id with
      None -> ""
    | Some user_id -> 
-       " AND user_id = "^string_of_int user_id^" ")
+       " AND (user_id = "^string_of_int user_id^" OR user_id IS NULL) ")
 
 (* Query TODOs and sort by priority & completeness *)
 let query_all_active_todos ?(current_user_id=None) () =
