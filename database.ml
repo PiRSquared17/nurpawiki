@@ -170,13 +170,11 @@ let query_todos_by_ids todo_ids =
   else
     []
 
-let update_activation_date_for_todos todo_ids new_date =
-  if todo_ids <> [] then
-    let ids = String.concat "," (List.map string_of_int todo_ids) in
-    let sql = 
-      "UPDATE todos SET activation_date = '"^new_date^"' WHERE id IN ("^
-        ids^")" in
-    ignore (guarded_exec sql)
+let update_todo_activation_date todo_id new_date =
+  let sql = 
+    "UPDATE todos SET activation_date = '"^new_date^"' WHERE id = "^
+      (string_of_int todo_id) in
+  ignore (guarded_exec sql)
 
 
 let update_todo_descr todo_id new_descr =
@@ -186,9 +184,9 @@ let update_todo_descr todo_id new_descr =
   ignore (guarded_exec sql)
 
 
-let update_todo_owner_id todo_id new_owner_id =
+let update_todo_owner_id todo_id owner_id =
   let sql = 
-    "UPDATE todos SET user_id = "^string_of_int new_owner_id^" WHERE id = "^
+    "UPDATE todos SET user_id = "^string_of_int owner_id^" WHERE id = "^
       (string_of_int todo_id) in
   ignore (guarded_exec sql)
 
