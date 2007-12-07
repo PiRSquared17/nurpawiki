@@ -846,20 +846,6 @@ let rec render_todo_editor sp ~credentials (src_page_cont, todos_to_edit) =
 
     post_form ~service:service_save_todo_item ~sp create_listform src_page_cont in
 
-(*      src_page_cont in*)
-
-(*              @ *)
-(*                 [tr *)
-(*                    (td []) *)
-(*                    [td ~a:[a_id "act_date"] *)
-(*                       [string_input ~input_type:`Submit ~value:"Save" (); *)
-(*                        string_input ~input_type:`Text ~name:new_act_date  *)
-(*                          ~a:[a_id "activation_date";  *)
-(*                              a_class ["act_date_input"]; *)
-(*                              a_value smallest_date_str] ~value:"" (); *)
-(*                        cancel_page src_page_cont]]])])  *)
-
-
   let heading = [pcdata ("Edit TODOs "^todos_str)] in
   let help_str = 
     pcdata "NOTE: Below activation date will be assigned for all the items" in
