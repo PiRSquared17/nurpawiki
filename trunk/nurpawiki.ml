@@ -835,9 +835,11 @@ let rec render_todo_editor sp ~credentials (src_page_cont, todos_to_edit) =
                   [td (todo_descr tv_descr todo.t_descr :: 
                          wiki_page_links sp todo_in_pages todo);
                    td ~a:[a_class ["no_break"]] 
-                     [string_input
+                     [string_input ~a:[a_id ("calendar_"^(string_of_int todo.t_id))]
                         ~input_type:`Text ~name:tv_act_date 
-                        ~value:todo.t_activation_date ()];
+                        ~value:todo.t_activation_date ();
+                      button ~a:[a_id ("button_"^(string_of_int todo.t_id)); a_name "cal_trigger"] 
+                        ~button_type:`Button [pcdata "..."]];
                    td [owner_selection tv_owner_id todo;
                        int_input ~name:tv_id ~input_type:`Hidden ~value:todo.t_id ()]]])
             todos
@@ -851,11 +853,11 @@ let rec render_todo_editor sp ~credentials (src_page_cont, todos_to_edit) =
     pcdata "NOTE: Below activation date will be assigned for all the items" in
 
   let calendar_js = 
-    ["CalendarPopup.js";
-     "date.js";
-     "AnchorPosition.js";
-     "PopupWindow.js";
-     "nurpawiki_calendar.js"] in
+    [["jscalendar"; "calendar.js"];
+     ["jscalendar"; "lang"; "calendar-en.js"];
+     ["jscalendar"; "calendar-setup.js"];
+     ["nurpawiki_calendar.js"]] in
+
 
   Html_util.html_stub sp ~javascript:calendar_js
     (Html_util.navbar_html sp ~credentials

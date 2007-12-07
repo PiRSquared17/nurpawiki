@@ -39,13 +39,17 @@ let disconnect_box sp s =
 (* Use this as the basis for all pages.  Includes CSS etc. *)
 let html_stub sp ?(javascript=[]) body_html =
   let script src = 
-    js_script ~a:[a_defer `Defer] ~uri:(make_static_uri sp [src]) () in
+    js_script ~a:[a_defer `Defer] ~uri:(make_static_uri sp src) () in
   let scripts  = 
-    script "nurpawiki.js" :: (List.map script javascript) in
+    script ["nurpawiki.js"] :: (List.map script javascript) in
   return 
     (html 
        (head (title (pcdata "")) 
-          ((scripts) @ [css_link ~a:[] ~uri:(make_uri ~service:(static_dir sp) ~sp ["style.css"]) ()]))
+          ((scripts) @ 
+             [css_link ~a:[] ~uri:(make_uri ~service:(static_dir sp) ~sp 
+                                     ["style.css"]) ();
+              css_link ~a:[] ~uri:(make_uri ~service:(static_dir sp) ~sp 
+                                     ["jscalendar"; "calendar-win2k-1.css"]) ()]))
        (body 
           body_html))
 
