@@ -765,9 +765,8 @@ let scheduler_page_discard_todo_id =
   register_new_service
     ~path:["scheduler"] 
     ~get_params:((Eliomparameters.user_type 
-                   et_cont_of_string string_of_et_cont "src_service") **
-                   (list "todo_ids" (int "tid")))
-    (fun sp (src_page_cont,_) () -> 
+                   et_cont_of_string string_of_et_cont "src_service"))
+    (fun sp (src_page_cont) () -> 
        Session.with_user_login sp
          (fun credentials sp ->
             render_edit_todo_cont_page sp ~credentials src_page_cont))
@@ -776,38 +775,26 @@ let scheduler_page_discard_todo_id =
 let service_save_todo_item =
   register_new_post_service
     ~fallback:scheduler_page_discard_todo_id
-    ~post_params:((string "activation_date") ** 
-                    (opt (string "descr")) ** 
-                    (int "owner_id"))
-    (fun sp (src_page_cont, todo_ids) (new_date,(new_descr,new_owner_id)) ->
+    ~post_params:(list "todos"
+                    ((int "todo_id") **
+                       (string "activation_date") ** 
+                       (string "descr") ** 
+                       (int "owner_id")))
+    (fun sp src_page_cont todos ->
      Session.with_user_login sp
        (fun credentials sp ->
-          (* Can only set description for one input task, even if the
-             user pressed multi-edit: *)
-          if List.length todo_ids = 1 then
-            begin
-              if new_descr <> None then
-                Database.update_todo_descr (List.hd todo_ids) (Option.get new_descr);
-              Database.update_todo_owner_id (List.hd todo_ids) new_owner_id
-            end;
-          Database.update_activation_date_for_todos todo_ids new_date;
+          List.iter
+            (fun (todo_id,(activation_date,(descr,owner_id))) ->
+               Database.update_todo_descr todo_id descr;
+               Database.update_todo_owner_id todo_id owner_id;
+               Database.update_todo_activation_date todo_id activation_date)
+            todos;
           render_edit_todo_cont_page sp ~credentials src_page_cont))
 
 let rec render_todo_editor sp ~credentials (src_page_cont, todos_to_edit) =
   let todos_str = String.concat "," (List.map string_of_int todos_to_edit) in
   let todos = Database.query_todos_by_ids todos_to_edit in
-
-  let today_str = 
-    Printer.DatePrinter.sprint "%i"(Date.today ()) in
   
-  let smallest_date =
-    List.fold_left 
-      (fun min_date e -> min e.t_activation_date min_date) today_str todos in
-
-  let smallest_date_str = 
-    Printer.DatePrinter.sprint "%i"
-      (clamp_date_to_today smallest_date) in
-
   let f =
     let todo_in_pages =
       Database.todos_in_pages (List.map (fun todo -> todo.t_id) todos) in
@@ -817,7 +804,8 @@ let rec render_todo_editor sp ~credentials (src_page_cont, todos_to_edit) =
         ET_scheduler -> cancel_link scheduler_page sp ()
       | ET_view wiki -> cancel_link wiki_view_page sp (wiki,None) in
 
-    let owner_selection allow_edit todo chain =
+    let owner_selection chain todo =
+      (* TODO don't do this per each todo *)
       let users = Database.query_users () in
 
       let match_owner u = function
@@ -832,41 +820,46 @@ let rec render_todo_editor sp ~credentials (src_page_cont, todos_to_edit) =
           users in
       int_select ~name:chain (List.hd options) (List.tl options) in
 
-    let todo_descr allow_edit chain v =
-      if allow_edit then
-        string_input  ~input_type:`Text ~name:chain ~value:v ()
-      else
-        pcdata "" in
+    let todo_descr chain v =
+      string_input ~input_type:`Text ~name:chain ~value:v () in
 
-    let n_todos = List.length todos in
-    post_form service_save_todo_item sp
-      (fun (new_act_date,(new_descr,new_owner)) -> 
-         [table 
-            (tr (th [pcdata "ID"]) 
-               [th [pcdata "Description"]; th [pcdata "Activates on"]])
-            ((List.map
-                (fun todo ->
-                   let pri_style = WikiML.priority_css_class todo.t_priority in
-                   let act_date = 
-                     Printer.DatePrinter.sprint "%i"
-                       (clamp_date_to_today todo.t_activation_date) in
-                   tr ~a:[a_class [pri_style]]
-                     (td [pcdata (string_of_int todo.t_id)])
-                     [td (todo_descr (n_todos = 1) new_descr todo.t_descr :: 
-                            wiki_page_links sp todo_in_pages todo);
-                      td ~a:[a_class ["no_break"]] [pcdata act_date];
-                      td [owner_selection (n_todos = 1) todo new_owner]]) todos)
-             @
-                [tr
-                   (td [])
-                   [td ~a:[a_id "act_date"]
-                      [string_input ~input_type:`Submit ~value:"Save" ();
-                       string_input ~input_type:`Text ~name:new_act_date 
-                         ~a:[a_id "activation_date"; 
-                             a_class ["act_date_input"];
-                             a_value smallest_date_str] ~value:"" ();
-                       cancel_page src_page_cont]]])]) 
-      (src_page_cont, todos_to_edit) in
+    let create_listform f = 
+      [table 
+         (tr (th [pcdata "ID"]) 
+            [th [pcdata "Description"]; th [pcdata "Activates on"]])
+         (f.it
+            (fun (tv_id,(tv_act_date,(tv_descr,tv_owner_id))) todo ->
+               let pri_style = WikiML.priority_css_class todo.t_priority in
+               [tr ~a:[a_class [pri_style]]
+                  (td [pcdata (string_of_int todo.t_id)])
+                  [td (todo_descr tv_descr todo.t_descr :: 
+                         wiki_page_links sp todo_in_pages todo);
+                   td ~a:[a_class ["no_break"]] 
+                     [string_input
+                        ~input_type:`Text ~name:tv_act_date 
+                        ~value:todo.t_activation_date ()];
+                   td [owner_selection tv_owner_id todo;
+                       int_input ~name:tv_id ~input_type:`Hidden ~value:todo.t_id ()]]])
+            todos
+            [tr (td [string_input ~input_type:`Submit ~value:"Save" ();
+                     cancel_page src_page_cont]) []])] in
+
+    post_form ~service:service_save_todo_item ~sp create_listform src_page_cont in
+
+(*      src_page_cont in*)
+
+(*              @ *)
+(*                 [tr *)
+(*                    (td []) *)
+(*                    [td ~a:[a_id "act_date"] *)
+(*                       [string_input ~input_type:`Submit ~value:"Save" (); *)
+(*                        string_input ~input_type:`Text ~name:new_act_date  *)
+(*                          ~a:[a_id "activation_date";  *)
+(*                              a_class ["act_date_input"]; *)
+(*                              a_value smallest_date_str] ~value:"" (); *)
+(*                        cancel_page src_page_cont]]])])  *)
+
+
   let heading = [pcdata ("Edit TODOs "^todos_str)] in
   let help_str = 
     pcdata "NOTE: Below activation date will be assigned for all the items" in
