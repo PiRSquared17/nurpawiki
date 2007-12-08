@@ -99,7 +99,8 @@ let navbar_html sp ~credentials ?(wiki_page_links=[]) ?(todo_list_table=[]) cont
              td ~a:[a_class ["top_menu_right_align"]]
               [table 
                  (tr 
-                    (td [a ~service:edit_user_page ~sp [pcdata "My Preferences"] ()])
+                    (td [a ~service:edit_user_page ~sp [pcdata "My Preferences"] 
+                        credentials.user_login])
                     [td [a ~service:user_admin_page ~sp [pcdata "Edit Users"] ()]])
                  []]]) []];
    div ~a:[a_id "navbar"]
