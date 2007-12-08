@@ -446,10 +446,12 @@ let add_user ~login ~passwd ~real_name ~email =
 
 let update_user ~user_id ~passwd ~real_name ~email =
   let sql =
-    "UPDATE users SET 
-         passwd = '"^escape passwd^"',
-         real_name = '"^escape real_name^"',
-         email = '"^escape email^"' 
+    "UPDATE users SET "^
+      (match passwd with
+         None -> ""
+       | Some passwd -> "passwd = '"^escape passwd^"',")^
+      "real_name = '"^escape real_name^"',
+          email = '"^escape email^"' 
        WHERE id = "^(string_of_int user_id) in
   ignore (guarded_exec sql)
 

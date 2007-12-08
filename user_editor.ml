@@ -36,8 +36,7 @@ let service_create_new_user =
 let service_save_user_edit =
   new_post_service
     ~fallback:edit_user_page
-    ~post_params:((string "login") **
-                    (string "passwd") ** 
+    ~post_params:((string "passwd") ** 
                     (string "passwd2") **  (* re-type *)
                     (string "name") **
                     (string "email"))
@@ -60,7 +59,8 @@ let rec view_user_admin_page sp ~err ~credentials =
               (td [pcdata (string_of_int user.user_id)])
               [td [pcdata user.user_login];
                td [pcdata user.user_real_name];
-               td [pcdata user.user_email]])
+               td [pcdata user.user_email];
+               td [a ~service:edit_user_page ~sp [pcdata "Edit"] user.user_login]])
          users) in
 
   Html_util.html_stub sp
@@ -100,7 +100,7 @@ let sanitize_login_name name =
   let rex = Pcre.regexp "^[a-zA-Z_][a-zA-Z0-9_]*$" in
   try Some (Pcre.extract ~rex name).(0) with Not_found -> None
 
-let save_user ~update_user ~old_passwd ~login ~passwd ~passwd2 ~real_name ~email =
+let save_user ~update_user ~login ~passwd ~passwd2 ~real_name ~email =
   let sanitized_login = sanitize_login_name login in
   match sanitized_login with
     None -> 
@@ -121,7 +121,7 @@ let save_user ~update_user ~old_passwd ~login ~passwd ~passwd2 ~real_name ~email
                 Some u ->
                   (* If no password was entered, set it to old value: *)
                   let new_passwd_md5 = 
-                    if passwd = "" then old_passwd else passwd_md5 in
+                    if passwd = "" then None else Some passwd_md5 in
                   Database.update_user 
                     ~user_id:u.user_id ~passwd:new_passwd_md5 ~real_name ~email;
               | None ->
@@ -138,15 +138,16 @@ let _ =
      Session.with_user_login sp
        (fun credentials sp ->
           let err = 
-            save_user ~update_user:false ~old_passwd:"" ~login ~passwd ~passwd2 ~real_name ~email in
+            save_user ~update_user:false ~login ~passwd ~passwd2 ~real_name ~email in
           view_user_admin_page sp ~err ~credentials))
 
 
-let save_user_prefs login c_passwd c_passwd2 (c_name,old_name) (c_email,old_email) =
+let save_user_prefs c_passwd c_passwd2 (c_name,old_name) (c_email,old_email) =
   (table
      (tr
         (td [pcdata "Password:"])
-        [td [string_input ~input_type:`Password ~name:c_passwd ()]])
+        [td [string_input ~input_type:`Password ~name:c_passwd ()];
+         ])
      [tr
         (td [pcdata "Re-type password:"])
         [td [string_input ~input_type:`Password ~name:c_passwd2 ()]];
@@ -179,23 +180,27 @@ let rec view_edit_user_page sp ~err ~cur_user user_to_edit =
        ([h1 [pcdata "Edit User"]] @
           err @
           [post_form ~service:service_save_user_edit ~sp
-             (fun (login,(passwd,(passwd2,(name,email)))) ->
+             (fun (passwd,(passwd2,(name,email))) ->
                 [h2 [pcdata ("Edit User '"^user_to_edit.user_login^"'")];
-                 save_user_prefs user_to_edit.user_login passwd passwd2 
+                 save_user_prefs passwd passwd2 
                    (name,user_to_edit.user_real_name) 
-                   (email,user_to_edit.user_email)]) ()]))
+                   (email,user_to_edit.user_email)]) user_to_edit.user_login]))
 
+
+let error_page sp msg =
+  Html_util.html_stub sp 
+    [p [Html_util.error msg]]
 
 let _ =
   register service_save_user_edit
-    (fun sp () (login,(passwd,(passwd2,(real_name, email))))  ->
+    (fun sp login (passwd,(passwd2,(real_name, email)))  ->
        Session.with_user_login sp
          (fun cur_user sp ->
+            (* TODO match user privileges here! *)
             let err = 
               save_user 
                 ~update_user:true 
-                ~old_passwd:cur_user.user_passwd 
-                ~login:cur_user.user_login
+                ~login:login
                 ~passwd ~passwd2 ~real_name ~email in
             (* Update password in the session if we're editing current
                user: *)
@@ -207,14 +212,16 @@ let _ =
                   (fun cur_user sp ->
                      view_edit_user_page sp ~err ~cur_user user)
             | None ->
-                Html_util.html_stub sp 
-                  [p
-                     [Html_util.error 
-                        ("Trying to edit unknown user '"^login^"'")]]))
+                error_page sp ("Trying to edit unknown user '"^login^"'")))
 
 let _ =
   register edit_user_page
-    (fun sp _ () -> 
+    (fun sp editing_login () -> 
        Session.with_user_login sp
          (fun cur_user sp ->
-            view_edit_user_page sp ~err:[] ~cur_user cur_user))
+            match Database.query_user editing_login with
+              Some login ->
+                (* TODO need to match user privileges here! *)
+                view_edit_user_page sp ~err:[] ~cur_user login
+            | None ->
+                error_page sp ("Unknown user '"^editing_login^"'")))
