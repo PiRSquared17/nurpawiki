@@ -42,19 +42,6 @@ let connect_action =
     ~post_params:((string "login") ** (string "passwd"))
     ()
     
-let login_box sp = 
-  Eliompredefmod.Xhtml.post_form connect_action sp
-    (fun (loginname,passwd) ->
-      [p 
-         (let login = 
-            [pcdata "Enter your login name (must be admin (empty password by default)): "; 
-             string_input ~input_type:`Text ~name:loginname ();
-             string_input ~input_type:`Password ~name:passwd ();
-             string_input ~input_type:`Submit ~value:"Login" ()]
-          in login)
-     ])
-    ()
-
 (* Get logged in user as an option *)
 let get_login_user sp =
   Lwt.return (Eliomsessions.get_volatile_session_data login_table sp ()) >>=
@@ -75,6 +62,27 @@ let db_upgrade_warning sp =
       br ();
       a ~service:upgrade_page ~sp [pcdata "Upgrade now!"] ()]]
 
+let login_html sp ~err =
+  Html_util.html_stub sp 
+    [div ~a:[a_id "login_outer"]
+       [div ~a:[a_id "login_align_middle"]
+          [Eliompredefmod.Xhtml.post_form connect_action sp
+             (fun (loginname,passwd) ->
+                [table ~a:[a_class ["login_box"]]
+                   (tr (td ~a:[a_class ["login_text"]] 
+                          [pcdata "Welcome to Nurpawiki!"]) [])
+                   [tr (td [pcdata ""]) [];
+                    tr (td ~a:[a_class ["login_text_descr"]] 
+                          [pcdata "Username:"]) [];
+                    tr (td [string_input ~input_type:`Text ~name:loginname ()]) [];
+                    tr (td ~a:[a_class ["login_text_descr"]] 
+                          [pcdata "Password:"]) [];
+                    tr (td [string_input ~input_type:`Password ~name:passwd ()]) [];
+                    tr (td [string_input ~input_type:`Submit ~value:"Login" ()]) [];
+                   ];
+                 p err]) ()]]]
+
+
 (** Wrap page service calls inside with_user_login to have them
     automatically check for user login and redirect to login screen if
     not logged in. *)
@@ -92,16 +100,16 @@ let with_user_login sp f =
                 let passwd_md5 = Digest.to_hex (Digest.string passwd) in
                 (* Autheticate user against his password *)
                 if passwd_md5 <> user.user_passwd then
-                  Html_util.html_stub sp 
-                    [p [Html_util.error ("Wrong password given for user '"^login^"'")];
-                     login_box sp]
+                  login_html sp
+                    [Html_util.error ("Wrong password given for user '"^login^"'")]
                 else 
                   f user sp
             | None ->
-                Html_util.html_stub sp [login_box sp]
+                login_html sp [] 
           end
       | None ->
-          Html_util.html_stub sp [login_box sp]
+          login_html sp []
+
 
 let update_session_password sp login new_password =
   ignore
