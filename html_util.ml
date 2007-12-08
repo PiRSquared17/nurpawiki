@@ -79,19 +79,29 @@ let navbar_html sp ~credentials ?(wiki_page_links=[]) ?(todo_list_table=[]) cont
     [pcdata ("Howdy "^credentials.user_login^"!")] in
 
   [div ~a:[a_id "topbar"]
-     [table
-        (tr (td [home_link 
-                   [img ~alt:"Home" ~src:(make_static_uri sp ["home.png"]) ();
-                    pcdata "Home"]])
-           [td [scheduler_link];
-            td [history_link];
-            td [a ~service:edit_user_page ~sp [pcdata "My Preferences"] ()];
-            td [a ~service:user_admin_page ~sp [pcdata "Edit Users"] ()];
-            td wiki_page_links;
-            td search_input;
-            td [disconnect_box sp "Logout"]])
-        []];
-   
+     [table ~a:[a_class ["top_menu_size"]]
+        (tr
+           (td ~a:[a_class ["top_menu_left_align"]]
+              [table
+                 (tr (td [home_link 
+                            [img ~alt:"Home" ~src:(make_static_uri sp ["home.png"]) ();
+                             pcdata "Home"]])
+                    [td [scheduler_link];
+                     td [history_link];
+                     td wiki_page_links])
+                 []])
+           [td (*~a:[a_class ["top_menu_right_align"]]*)
+              [table 
+                 (tr 
+                    (td search_input)
+                    [td [disconnect_box sp "Logout"]])
+                 []];
+             td ~a:[a_class ["top_menu_right_align"]]
+              [table 
+                 (tr 
+                    (td [a ~service:edit_user_page ~sp [pcdata "My Preferences"] ()])
+                    [td [a ~service:user_admin_page ~sp [pcdata "Edit Users"] ()]])
+                 []]]) []];
    div ~a:[a_id "navbar"]
      (user_greeting @ [br ()] @ todo_list_table);
    div ~a:[a_id "content"]
