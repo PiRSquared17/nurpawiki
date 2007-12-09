@@ -53,6 +53,7 @@ type activity_type =
   | AT_work_on_todo
   | AT_create_page
   | AT_edit_page
+  | AT_uncomplete_todo
 
 type activity =
     {
@@ -103,6 +104,7 @@ let int_of_activity_type = function
   | AT_work_on_todo -> 3
   | AT_create_page -> 4
   | AT_edit_page -> 5
+  | AT_uncomplete_todo -> 6
 
 let activity_type_of_int = function
     1 -> AT_create_todo
@@ -110,5 +112,5 @@ let activity_type_of_int = function
   | 3 -> AT_work_on_todo
   | 4 -> AT_create_page
   | 5 -> AT_edit_page
+  | 6 -> AT_uncomplete_todo
   | _ -> assert false
-

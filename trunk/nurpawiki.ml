@@ -166,7 +166,7 @@ module WikiML =
     let wikilink_re = Str.regexp "\\([A-Z][a-z]+\\([A-Z][a-z]+\\)+\\)"
       
     let todo_re = 
-      Str.regexp ("\\[todo:\\([0-9]+\\)\\("^accepted_chars^"\\)?\\]")
+      Str.regexp ("\\[todo:\\([0-9]+\\)\\( "^accepted_chars^"\\)?\\]")
 
     let wikilinkanum_re = 
       Str.regexp ("\\(\\[\\(wiki\\|file\\|http\\):\\("^accepted_chars_sans_ws^
@@ -519,7 +519,13 @@ let view_page sp ~credentials page_id page_name ~printable =
 let new_todo_re = 
   Str.regexp ("\\[todo \\("^WikiML. accepted_chars^"\\)\\]")
 
-let check_new_and_removed_todos page_id lines =
+(* Parse existing todo's from the current to-be-saved wiki page and
+   update the DB relation on what todos are on the page. 
+
+   Todo descriptions are inspected and if they've been changed, modify
+   them in the DB.  It's also possible to resurrect completed tasks
+   here by removing the '(x)' part from a task description. *)
+let check_new_and_removed_todos ~cur_user page_id lines =
   (* Figure out which TODOs are mentioned on the wiki page: *)
   let page_todos = 
     List.fold_left
@@ -528,13 +534,60 @@ let check_new_and_removed_todos page_id lines =
              let rec loop acc n =
                try 
                  let beg = Str.search_forward WikiML.todo_re line n in
-                 loop (Str.matched_group 1 line::acc)
+                 let m = 
+                   try 
+                     Some (Str.matched_group 2 line) 
+                   with 
+                     Not_found -> None in
+                 loop ((Str.matched_group 1 line, m)::acc)
                    (beg+(String.length (Str.matched_group 0 line)))
                with 
                  Not_found -> acc in
              loop acc 0
          | `NoWiki _ -> acc) [] lines in
-  Database.update_page_todos page_id (List.map int_of_string page_todos)
+
+  (* Query todos that reside on this page.  Don't update DB for todos
+     that did NOT change *)
+  let todos_on_page = Database.query_page_todos page_id in
+
+  let completed_re = Pcre.regexp "^\\s*\\(x\\) (.*)$" in
+  let remove_ws_re = Pcre.regexp "^\\s*(.*)$" in
+  (* Update todo descriptions & resurrect completed tasks *)
+  List.iter
+    (fun (id_s,descr) ->
+       match descr with
+         Some descr ->
+           (match match_pcre_option completed_re descr with
+              Some _ -> 
+                (* Task has already been completed, do nothing: *)
+                ()
+            | None ->
+                let id = int_of_string id_s in
+                (* Update task description (if not empty): *)
+                (match match_pcre_option remove_ws_re descr with
+                   Some r ->
+                     begin
+                       try
+                         let new_descr = r.(1) in
+                         (* Only modify task description in DB if it's
+                            changed from its previous value: *)
+                         let todo = IMap.find id todos_on_page in
+                         (* Resurrect completed task *)
+                         if todo.t_completed then
+                           Database.uncomplete_task cur_user.user_id id;
+                         if todo.t_descr <> new_descr then
+                           Database.update_todo_descr id new_descr
+                       with 
+                         Not_found -> 
+                           (* Internal inconsistency, should not happen. *)
+                           ()
+                     end
+                 | None -> ()))
+       | None -> ())  page_todos;
+
+  (* Update DB "todos in pages" relation *)
+  Database.update_page_todos page_id 
+    (List.map (fun e -> (int_of_string (fst e))) page_todos)
 
 
 (* Insert new TODOs from the wiki ML into DB and replace [todo descr]
@@ -563,7 +616,7 @@ let service_save_page_post =
                updated DB page mappings accordingly: *)
             let wikitext = Pcre.split ~rex:newline_re value >> WikiML.preprocess in
             let page_id = Database.page_id_of_page_name page in
-            check_new_and_removed_todos page_id wikitext;
+            check_new_and_removed_todos ~cur_user:credentials page_id wikitext;
             (* Convert [todo Description] items into [todo:ID] format, save
                descriptions to database and save the wiki page contents. *)
             let wiki_plaintext = 
@@ -926,6 +979,7 @@ let descr_of_activity_type = function
   | AT_work_on_todo -> "Worked on"
   | AT_create_page -> "Created"
   | AT_edit_page -> "Edited"
+  | AT_uncomplete_todo -> "Resurrected"
 
 module ReverseOrdString = 
   struct
@@ -972,6 +1026,8 @@ let group_activities activities activity_in_pages =
                | None -> P.eprintf "no descr in activity_log %i\n" a.a_id; ag)
           | AT_create_page | AT_edit_page ->
               { ag with ag_edited_pages = pages @ ag.ag_edited_pages }
+          | AT_uncomplete_todo ->
+              ag (* TODO fixme doing nothing for now .. *)
           | AT_work_on_todo -> ag in
         RSMap.add d ag' acc)
     RSMap.empty activities
