@@ -100,7 +100,7 @@ let navbar_html sp ~credentials ?(wiki_page_links=[]) ?(todo_list_table=[]) cont
               [table 
                  (tr 
                     (td [a ~service:edit_user_page ~sp [pcdata "My Preferences"] 
-                        credentials.user_login])
+                           (None,credentials.user_login)])
                     [td [a ~service:user_admin_page ~sp [pcdata "Edit Users"] ()]])
                  []]]) []];
    div ~a:[a_id "navbar"]
