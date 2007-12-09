@@ -27,8 +27,8 @@ let service_create_new_user =
   new_post_service
     ~fallback:user_admin_page
     ~post_params:((string "login") ** 
-                    (string "passwd") ** 
-                    (string "passwd2") **  (* re-type *)
+                    (string "pass") ** 
+                    (string "pass2") **  (* re-type *)
                     (string "name") **
                     (string "email"))
     ()
@@ -36,8 +36,8 @@ let service_create_new_user =
 let service_save_user_edit =
   new_post_service
     ~fallback:edit_user_page
-    ~post_params:((string "passwd") ** 
-                    (string "passwd2") **  (* re-type *)
+    ~post_params:((string "pass") ** 
+                    (string "pass2") **  (* re-type *)
                     (string "name") **
                     (string "email"))
     ()
@@ -146,11 +146,11 @@ let _ =
 let save_user_prefs c_passwd c_passwd2 (c_name,old_name) (c_email,old_email) =
   (table
      (tr
-        (td [pcdata "Password:"])
+        (td [pcdata "New Password:"])
         [td [string_input ~input_type:`Password ~name:c_passwd ()];
-         ])
+        ])
      [tr
-        (td [pcdata "Re-type password:"])
+        (td [pcdata "Re-type Password:"])
         [td [string_input ~input_type:`Password ~name:c_passwd2 ()]];
 
       tr 
@@ -159,7 +159,7 @@ let save_user_prefs c_passwd c_passwd2 (c_name,old_name) (c_email,old_email) =
                ~value:old_name ()]];
 
       tr 
-        (td [pcdata "E-mail address:"])
+        (td [pcdata "E-mail Address:"])
         [td [string_input ~input_type:`Text ~name:c_email 
                ~value:old_email ()]];
 
