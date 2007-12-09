@@ -422,7 +422,7 @@ let user_of_sql_row row =
   }
 
 let query_users () =
-  let sql = user_query_string in
+  let sql = user_query_string ^ " ORDER BY id" in
   let r = guarded_exec sql in
   r#get_all_lst >> List.map user_of_sql_row
 
