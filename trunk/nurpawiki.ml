@@ -993,6 +993,7 @@ type act_group =
     {
       ag_created_todos : (string * page list) list;
       ag_completed_todos : (string * page list) list;
+      ag_resurrected_todos : (string * page list) list;
       ag_edited_pages : page list;
     }
 
@@ -1000,6 +1001,7 @@ let empty_act_group =
   {
       ag_created_todos = [];
       ag_completed_todos = [];
+      ag_resurrected_todos = [];
       ag_edited_pages = [];
   }
 
@@ -1024,10 +1026,15 @@ let group_activities activities activity_in_pages =
                    let e = (Option.get a.a_todo_descr, pages)::ag.ag_completed_todos in
                    { ag with ag_completed_todos = e }
                | None -> P.eprintf "no descr in activity_log %i\n" a.a_id; ag)
+          | AT_uncomplete_todo ->
+              (match a.a_todo_descr with
+                 Some descr ->
+                   let e = 
+                     (Option.get a.a_todo_descr, pages)::ag.ag_resurrected_todos in
+                   { ag with ag_resurrected_todos = e }
+               | None -> P.eprintf "no descr in activity_log %i\n" a.a_id; ag)
           | AT_create_page | AT_edit_page ->
               { ag with ag_edited_pages = pages @ ag.ag_edited_pages }
-          | AT_uncomplete_todo ->
-              ag (* TODO fixme doing nothing for now .. *)
           | AT_work_on_todo -> ag in
         RSMap.add d ag' acc)
     RSMap.empty activities
@@ -1078,8 +1085,12 @@ let view_history_page sp ~credentials =
                                          ~colorize:true sp pages))]))
                          lst) in
 
-                  let created_todos = todo_html "Created" e.ag_created_todos in
-                  let completed_todos = todo_html "Completed" e.ag_completed_todos in
+                  let created_todos = 
+                    todo_html "Created" e.ag_created_todos in
+                  let completed_todos = 
+                    todo_html "Completed" e.ag_completed_todos in
+                  let resurrected_todos = 
+                    todo_html "Resurrected" e.ag_resurrected_todos in
                   let pages_html = 
                     if e.ag_edited_pages <> [] then
                       [tr (td [])
@@ -1092,7 +1103,7 @@ let view_history_page sp ~credentials =
                   
                   (* NOTE: 'tr' comes last as we're building the page
                      in reverse order *)
-                  (pages_html @ created_todos @ completed_todos @ 
+                  (pages_html @ created_todos @ completed_todos @ resurrected_todos @
                      [tr (td ~a:[a_class ["no_break"; "h_date_heading"]] date_text) []] @ lst_acc,
                    prettified_date))
                activity_groups ([],"")))) in
