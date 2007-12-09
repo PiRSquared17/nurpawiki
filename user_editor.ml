@@ -43,7 +43,7 @@ let service_save_user_edit =
     ()
 
 
-let rec view_user_admin_page sp ~err ~credentials =
+let rec view_user_admin_page sp ~err ~cur_user =
   let users = Database.query_users () in
   let users_table = 
     table 
@@ -65,7 +65,7 @@ let rec view_user_admin_page sp ~err ~credentials =
          users) in
 
   Html_util.html_stub sp
-    (Html_util.navbar_html sp ~credentials
+    (Html_util.navbar_html sp ~credentials:cur_user
        ([h1 [pcdata "Edit users"];
          users_table] @
           err @
@@ -136,11 +136,14 @@ let save_user ~update_user ~login ~passwd ~passwd2 ~real_name ~email =
 let _ =
   register service_create_new_user
     (fun sp () (login,(passwd,(passwd2,(real_name, email))))  ->
-     Session.with_user_login sp
-       (fun credentials sp ->
-          let err = 
-            save_user ~update_user:false ~login ~passwd ~passwd2 ~real_name ~email in
-          view_user_admin_page sp ~err ~credentials))
+       Session.with_user_login sp
+         (fun cur_user sp ->
+            Privileges.with_can_create_user cur_user 
+              (fun () ->
+                 let err = save_user ~update_user:false 
+                   ~login ~passwd ~passwd2 ~real_name ~email in
+                 view_user_admin_page sp ~err ~cur_user)
+              ~on_fail:(fun e -> Html_util.error_page sp e)))
 
 
 let save_user_prefs c_passwd c_passwd2 (c_name,old_name) (c_email,old_email) =
@@ -171,8 +174,11 @@ let _ =
   register user_admin_page
     (fun sp _ () -> 
        Session.with_user_login sp
-         (fun credentials sp ->
-            view_user_admin_page sp ~err:[] ~credentials))
+         (fun cur_user sp ->
+            Privileges.with_can_view_users cur_user
+              (fun () ->
+                 view_user_admin_page sp ~err:[] ~cur_user) 
+              ~on_fail:(fun e -> Html_util.error_page sp e)))
 
 
 let rec view_edit_user_page sp caller ~err ~cur_user user_to_edit =
@@ -189,38 +195,41 @@ let rec view_edit_user_page sp caller ~err ~cur_user user_to_edit =
              (caller, user_to_edit.user_login)]))
 
 
-let error_page sp msg =
-  Html_util.html_stub sp 
-    [p [Html_util.error msg]]
-
 let _ =
   register service_save_user_edit
     (fun sp (caller,login) (passwd,(passwd2,(real_name, email)))  ->
        Session.with_user_login sp
          (fun cur_user sp ->
-            (* TODO match user privileges here! *)
-            let err = 
-              save_user 
-                ~update_user:true 
-                ~login:login
-                ~passwd ~passwd2 ~real_name ~email in
-            (* Update password in the session if we're editing current
-               user: *)
-            if passwd <> "" && cur_user.user_login = login then
-              Session.update_session_password sp login passwd;
             match Database.query_user login with
-              Some user ->
-                Session.with_user_login sp
-                  (fun cur_user sp ->
-                     match caller with
-                       Some "user_admin" ->
-                         view_user_admin_page sp ~err:[] ~credentials:cur_user
-                     | Some _ -> 
-                         error_page sp ("Invalid caller service!")
-                     | None ->
-                         view_edit_user_page sp caller ~err ~cur_user user)
+              Some user_to_edit ->
+                Privileges.with_can_edit_user cur_user user_to_edit
+                  (fun () ->
+                     let err = 
+                       save_user 
+                         ~update_user:true 
+                         ~login:login
+                         ~passwd ~passwd2 ~real_name ~email in
+                     (* Update password in the session if we're editing current
+                        user: *)
+                     if err = [] && passwd <> "" && cur_user.user_login = login then
+                       Session.update_session_password sp login passwd;
+                     Session.with_user_login sp
+                       (fun cur_user sp ->
+                          match caller with
+                            Some "user_admin" ->
+                              view_user_admin_page sp ~err ~cur_user
+                          | Some _ -> 
+                              Html_util.error_page sp ("Invalid caller service!")
+                          | None ->
+                              match Database.query_user login with
+                                Some user ->
+                                  view_edit_user_page sp caller ~err ~cur_user user
+                              | None ->
+                                  Html_util.error_page sp ("Invalid user!")))
+                  ~on_fail:(fun e -> Html_util.error_page sp e)
             | None ->
-                error_page sp ("Trying to edit unknown user '"^login^"'")))
+                Html_util.error_page sp ("Trying to edit unknown user '"^login^"'")))
+
 
 let _ =
   register edit_user_page
@@ -228,8 +237,10 @@ let _ =
        Session.with_user_login sp
          (fun cur_user sp ->
             match Database.query_user editing_login with
-              Some login ->
-                (* TODO need to match user privileges here! *)
-                view_edit_user_page sp caller ~err:[] ~cur_user login
+              Some user_to_edit ->
+                Privileges.with_can_edit_user cur_user user_to_edit
+                  (fun () ->
+                     view_edit_user_page sp caller ~err:[] ~cur_user user_to_edit)
+                  ~on_fail:(fun e -> Html_util.error_page sp e)
             | None ->
-                error_page sp ("Unknown user '"^editing_login^"'")))
+                Html_util.error_page sp ("Unknown user '"^editing_login^"'")))
