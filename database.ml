@@ -305,16 +305,27 @@ let update_page_todos page_id todos =
   ignore (guarded_exec sql)                        
 
 (* Mark task as complete and set completion date for today *)
-let complete_task ~user_id id =
+let complete_task_generic ~user_id id op =
+  let (activity,task_complete_flag) =
+    match op with
+      `Complete_task -> (AT_complete_todo, "t")
+    | `Resurrect_task -> (AT_uncomplete_todo, "f") in
   let page_ids =
     try 
       Some (List.map (fun p -> p.p_id) (IMap.find id (todos_in_pages [id])))
     with Not_found -> None in
   let ids = string_of_int id in
   let sql = "BEGIN;
-UPDATE todos SET completed = 't' where id="^ids^";"^
-    (insert_todo_activity ~user_id ids ~page_ids AT_complete_todo)^"; COMMIT" in
+UPDATE todos SET completed = '"^task_complete_flag^"' where id="^ids^";"^
+    (insert_todo_activity ~user_id ids ~page_ids activity)^"; COMMIT" in
   ignore (guarded_exec sql)
+
+(* Mark task as complete and set completion date for today *)
+let complete_task ~user_id id =
+  complete_task_generic ~user_id id `Complete_task
+
+let uncomplete_task ~user_id id =
+  complete_task_generic ~user_id id `Resurrect_task
 
 let task_priority id = 
   let sql = "SELECT priority FROM todos WHERE id = "^string_of_int id in
