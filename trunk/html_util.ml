@@ -111,3 +111,8 @@ let navbar_html sp ~credentials ?(wiki_page_links=[]) ?(todo_list_table=[]) cont
 
 let error text = 
   span ~a:[a_class ["error"]] [pcdata text]
+
+let error_page sp msg =
+  html_stub sp 
+    [p [error msg]]
+
