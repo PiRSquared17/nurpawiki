@@ -111,6 +111,33 @@ let with_user_login sp f =
           login_html sp []
 
 
+(* Same as with_user_login except that we can't generate HTML for any
+   errors here.  Neither can we present the user with a login box.  If
+   there are any errors, just bail out without doing anything
+   harmful. *)
+let action_with_user_login sp f =
+  if Database.db_schema_version () = Database.nurpawiki_schema_version then
+    get_login_user sp >>= fun maybe_user ->
+      (match maybe_user with
+         Some (login,passwd) ->
+           begin
+             match (Database.query_user login) with
+               Some user ->
+                 let passwd_md5 = Digest.to_hex (Digest.string passwd) in
+                 (* Autheticate user against his password *)
+                 if passwd_md5 = user.user_passwd then
+                   f user
+                 else 
+                   ()
+             | None ->
+                 ()
+           end
+       | None -> ());
+      return []
+  else
+    return []
+
+
 let update_session_password sp login new_password =
   ignore
     (Eliomsessions.close_session  ~sp () >>= fun () -> 

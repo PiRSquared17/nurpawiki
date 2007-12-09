@@ -69,9 +69,14 @@ let date_of_date_time_string s =
       assert false
 
 let task_side_effect_complete sp task_id () =
-  (* TODO!!! wrong user_id hardcoded here! *)
-  Database.complete_task 0 task_id;
+  (* TODO error handling! (should not break anything though even on
+     errors) *)
+  ignore 
+    (Session.action_with_user_login sp 
+       (fun user ->
+          Database.complete_task user.user_id task_id));
   return []
+
 
 let task_side_effect_mod_priority sp (task_id, dir) () =
   if dir = false then 
