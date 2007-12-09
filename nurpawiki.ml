@@ -1020,20 +1020,20 @@ let group_activities activities activity_in_pages =
             AT_create_todo ->
               (match a.a_todo_descr with
                  Some descr ->
-                   let e = (Option.get a.a_todo_descr, pages)::ag.ag_created_todos in
+                   let e = (descr, pages)::ag.ag_created_todos in
                    { ag with ag_created_todos = e }
                | None -> P.eprintf "no descr in activity_log %i\n" a.a_id; ag)
           | AT_complete_todo ->
               (match a.a_todo_descr with
                  Some descr ->
-                   let e = (Option.get a.a_todo_descr, pages)::ag.ag_completed_todos in
+                   let e = (descr, pages)::ag.ag_completed_todos in
                    { ag with ag_completed_todos = e }
                | None -> P.eprintf "no descr in activity_log %i\n" a.a_id; ag)
           | AT_uncomplete_todo ->
               (match a.a_todo_descr with
                  Some descr ->
                    let e = 
-                     (Option.get a.a_todo_descr, pages)::ag.ag_resurrected_todos in
+                    (descr, pages)::ag.ag_resurrected_todos in
                    { ag with ag_resurrected_todos = e }
                | None -> P.eprintf "no descr in activity_log %i\n" a.a_id; ag)
           | AT_create_page | AT_edit_page ->

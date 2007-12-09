@@ -384,10 +384,12 @@ let save_wiki_page page_id lines =
 
 let query_past_activity () =
   let sql =
-    "SELECT activity_log.id,activity_id,activity_timestamp,todos.descr "^
-      "FROM activity_log LEFT OUTER JOIN todos "^
-      "ON activity_log.todo_id = todos.id AND activity_log.activity_timestamp < now() "^
-      "ORDER BY activity_timestamp DESC" in
+    "SELECT activity_log.id,activity_id,activity_timestamp,todos.descr,users.login "^
+      "FROM activity_log
+       LEFT OUTER JOIN todos ON activity_log.todo_id = todos.id
+       LEFT OUTER JOIN users ON activity_log.user_id = users.id
+       AND activity_log.activity_timestamp < now()
+       ORDER BY activity_timestamp DESC" in
   let r = guarded_exec sql in
   r#get_all_lst >>
     List.map
@@ -396,10 +398,13 @@ let query_past_activity () =
        let act_id = List.nth row 1 in
        let time = List.nth row 2 in
        let descr = List.nth row 3 in
+       let user = List.nth row 4 in
        { a_id = id;
          a_activity = activity_type_of_int (int_of_string act_id);
          a_date = time;
-         a_todo_descr = if descr = "" then None else Some descr; })
+         a_todo_descr = if descr = "" then None else Some descr;
+         a_changed_by = if user = "" then None else Some descr
+       })
 
 (* Search features *)
 let search_wikipage str =

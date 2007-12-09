@@ -61,6 +61,7 @@ type activity =
       a_activity : activity_type;
       a_date : string;
       a_todo_descr : string option;
+      a_changed_by : string option;
     }
 
 type search_result_type = SR_page | SR_todo
