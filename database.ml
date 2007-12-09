@@ -403,7 +403,7 @@ let query_past_activity () =
          a_activity = activity_type_of_int (int_of_string act_id);
          a_date = time;
          a_todo_descr = if descr = "" then None else Some descr;
-         a_changed_by = if user = "" then None else Some descr
+         a_changed_by = if user = "" then None else Some user
        })
 
 (* Search features *)

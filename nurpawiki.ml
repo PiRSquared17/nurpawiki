@@ -994,10 +994,11 @@ module RSMap = Map.Make (ReverseOrdString)
 
 type act_group = 
     {
-      ag_created_todos : (string * page list) list;
-      ag_completed_todos : (string * page list) list;
-      ag_resurrected_todos : (string * page list) list;
+      ag_created_todos : (string * string * page list) list;
+      ag_completed_todos : (string * string * page list) list;
+      ag_resurrected_todos : (string * string * page list) list;
       ag_edited_pages : page list;
+      ag_page_editors : string list;
     }
 
 let empty_act_group = 
@@ -1005,6 +1006,7 @@ let empty_act_group =
       ag_created_todos = [];
       ag_completed_todos = [];
       ag_resurrected_todos = [];
+      ag_page_editors = [];
       ag_edited_pages = [];
   }
 
@@ -1015,29 +1017,34 @@ let group_activities activities activity_in_pages =
         let d = Printer.DatePrinter.sprint "%Y-%m-%d" date in
         let ag = try RSMap.find d acc with Not_found -> empty_act_group in
         let pages = try IMap.find a.a_id activity_in_pages with Not_found -> [] in
+        let opt_to_str o = Option.default "" o in
         let ag' = 
+          let changed_by = opt_to_str a.a_changed_by in
           match a.a_activity with
             AT_create_todo ->
               (match a.a_todo_descr with
                  Some descr ->
-                   let e = (descr, pages)::ag.ag_created_todos in
+                   let e = (descr, changed_by, pages)::ag.ag_created_todos in
                    { ag with ag_created_todos = e }
                | None -> P.eprintf "no descr in activity_log %i\n" a.a_id; ag)
           | AT_complete_todo ->
               (match a.a_todo_descr with
                  Some descr ->
-                   let e = (descr, pages)::ag.ag_completed_todos in
+                   let e = (descr, changed_by, pages)::ag.ag_completed_todos in
                    { ag with ag_completed_todos = e }
                | None -> P.eprintf "no descr in activity_log %i\n" a.a_id; ag)
           | AT_uncomplete_todo ->
               (match a.a_todo_descr with
                  Some descr ->
-                   let e = 
-                    (descr, pages)::ag.ag_resurrected_todos in
+                   let e = (descr, changed_by, pages)::ag.ag_resurrected_todos in
                    { ag with ag_resurrected_todos = e }
                | None -> P.eprintf "no descr in activity_log %i\n" a.a_id; ag)
           | AT_create_page | AT_edit_page ->
-              { ag with ag_edited_pages = pages @ ag.ag_edited_pages }
+              let add_editor e acc =
+                if List.mem e acc then acc else e::acc in
+              { ag with 
+                  ag_page_editors = add_editor changed_by ag.ag_page_editors;
+                  ag_edited_pages = pages @ ag.ag_edited_pages }
           | AT_work_on_todo -> ag in
         RSMap.add d ag' acc)
     RSMap.empty activities
@@ -1065,7 +1072,9 @@ let view_history_page sp ~credentials =
 
   let act_table = 
     table ~a:[a_class ["todo_table"]]
-      (tr (th []) [th [pcdata "Activity"]; th [pcdata "Details"]])
+      (tr (th []) [th [pcdata "Activity"]; 
+                   th [pcdata "By"];
+                   th [pcdata "Details"]])
       (List.rev
          (fst 
             (RSMap.fold
@@ -1080,9 +1089,10 @@ let view_history_page sp ~credentials =
                   let todo_html ty lst = 
                     List.rev
                       (List.mapi
-                         (fun ndx (todo,pages) ->
+                         (fun ndx (todo,changed_by,pages) ->
                             (tr (td [])
                                [td (if ndx = 0 then [pcdata ty] else []);
+                                td ~a:[a_class ["todo_owner"]] [pcdata changed_by];
                                 td ([pcdata todo] @ 
                                       (todo_page_links_of_pages 
                                          ~colorize:true sp pages))]))
@@ -1098,6 +1108,9 @@ let view_history_page sp ~credentials =
                     if e.ag_edited_pages <> [] then
                       [tr (td [])
                          [td [pcdata "Edited"];
+                          td 
+                            ~a:[a_class ["todo_owner"]] 
+                            [pcdata (String.concat "," e.ag_page_editors)];
                           td (todo_page_links_of_pages sp 
                                 ~colorize:true ~insert_parens:false 
                                 (remove_duplicates e.ag_edited_pages))]]
