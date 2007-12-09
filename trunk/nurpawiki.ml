@@ -71,11 +71,9 @@ let date_of_date_time_string s =
 let task_side_effect_complete sp task_id () =
   (* TODO error handling! (should not break anything though even on
      errors) *)
-  ignore 
-    (Session.action_with_user_login sp 
-       (fun user ->
-          Database.complete_task user.user_id task_id));
-  return []
+  Session.action_with_user_login sp 
+    (fun user ->
+       Database.complete_task user.user_id task_id)
 
 
 let task_side_effect_mod_priority sp (task_id, dir) () =
