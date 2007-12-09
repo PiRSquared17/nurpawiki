@@ -60,7 +60,8 @@ let rec view_user_admin_page sp ~err ~credentials =
               [td [pcdata user.user_login];
                td [pcdata user.user_real_name];
                td [pcdata user.user_email];
-               td [a ~service:edit_user_page ~sp [pcdata "Edit"] user.user_login]])
+               td [a ~service:edit_user_page ~sp [pcdata "Edit"] 
+                     (Some "user_admin", user.user_login)]])
          users) in
 
   Html_util.html_stub sp
@@ -174,7 +175,7 @@ let _ =
             view_user_admin_page sp ~err:[] ~credentials))
 
 
-let rec view_edit_user_page sp ~err ~cur_user user_to_edit =
+let rec view_edit_user_page sp caller ~err ~cur_user user_to_edit =
   Html_util.html_stub sp
     (Html_util.navbar_html sp ~credentials:cur_user
        ([h1 [pcdata "Edit User"]] @
@@ -184,7 +185,8 @@ let rec view_edit_user_page sp ~err ~cur_user user_to_edit =
                 [h2 [pcdata ("Edit User '"^user_to_edit.user_login^"'")];
                  save_user_prefs passwd passwd2 
                    (name,user_to_edit.user_real_name) 
-                   (email,user_to_edit.user_email)]) user_to_edit.user_login]))
+                   (email,user_to_edit.user_email)]) 
+             (caller, user_to_edit.user_login)]))
 
 
 let error_page sp msg =
@@ -193,7 +195,7 @@ let error_page sp msg =
 
 let _ =
   register service_save_user_edit
-    (fun sp login (passwd,(passwd2,(real_name, email)))  ->
+    (fun sp (caller,login) (passwd,(passwd2,(real_name, email)))  ->
        Session.with_user_login sp
          (fun cur_user sp ->
             (* TODO match user privileges here! *)
@@ -210,18 +212,24 @@ let _ =
               Some user ->
                 Session.with_user_login sp
                   (fun cur_user sp ->
-                     view_edit_user_page sp ~err ~cur_user user)
+                     match caller with
+                       Some "user_admin" ->
+                         view_user_admin_page sp ~err:[] ~credentials:cur_user
+                     | Some _ -> 
+                         error_page sp ("Invalid caller service!")
+                     | None ->
+                         view_edit_user_page sp caller ~err ~cur_user user)
             | None ->
                 error_page sp ("Trying to edit unknown user '"^login^"'")))
 
 let _ =
   register edit_user_page
-    (fun sp editing_login () -> 
+    (fun sp (caller,editing_login) () -> 
        Session.with_user_login sp
          (fun cur_user sp ->
             match Database.query_user editing_login with
               Some login ->
                 (* TODO need to match user privileges here! *)
-                view_edit_user_page sp ~err:[] ~cur_user login
+                view_edit_user_page sp caller ~err:[] ~cur_user login
             | None ->
                 error_page sp ("Unknown user '"^editing_login^"'")))

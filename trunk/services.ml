@@ -59,4 +59,5 @@ let benchmark_page = new_service ["benchmark"] (string "test") ()
 
 let user_admin_page = new_service ["user_admin"] unit ()
 
-let edit_user_page = new_service ["edit_user"] (string "user_to_edit") ()
+let edit_user_page = new_service ["edit_user"] 
+  (opt (string "caller") ** (string "user_to_edit")) ()
