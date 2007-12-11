@@ -78,6 +78,12 @@ let navbar_html sp ~credentials ?(wiki_page_links=[]) ?(todo_list_table=[]) cont
   let user_greeting = 
     [pcdata ("Howdy "^credentials.user_login^"!")] in
 
+  let edit_users_link = 
+    if Privileges.can_view_users credentials then
+      [td [a ~service:user_admin_page ~sp [pcdata "Edit Users"] ()]]
+    else 
+      [] in
+
   [div ~a:[a_id "topbar"]
      [table ~a:[a_class ["top_menu_size"]]
         (tr
@@ -101,7 +107,7 @@ let navbar_html sp ~credentials ?(wiki_page_links=[]) ?(todo_list_table=[]) cont
                  (tr 
                     (td [a ~service:edit_user_page ~sp [pcdata "My Preferences"] 
                            (None,credentials.user_login)])
-                    [td [a ~service:user_admin_page ~sp [pcdata "Edit Users"] ()]])
+                    edit_users_link)
                  []]]) []];
    div ~a:[a_id "navbar"]
      (user_greeting @ [br ()] @ todo_list_table);

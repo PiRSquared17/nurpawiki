@@ -30,11 +30,14 @@ let with_can_create_user cur_user f ~on_fail =
   else 
     on_fail ("User '"^cur_user.user_login^"' is not permitted to create new users")
 
+let can_view_users cur_user =
+  cur_user.user_login = "admin"
+
 (** with_can_view_users [user f] calls [f ()] if user is privileged
     enough to view a list of all users.  Otherwise return an error
     message. *)
 let with_can_view_users cur_user f ~on_fail =
-  if cur_user.user_login = "admin" then
+  if can_view_users cur_user  then
     f ()
   else
     on_fail ("User '"^cur_user.user_login^"' is not permitted to view other users")
