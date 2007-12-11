@@ -164,7 +164,7 @@ let service_save_todo_item =
                     ((int "todo_id") **
                        (string "activation_date") ** 
                        (string "descr") ** 
-                       (int "owner_id")))
+                       (string "owner_id")))
     (fun sp src_page_cont todos ->
      Session.with_user_login sp
        (fun credentials sp ->
@@ -173,7 +173,9 @@ let service_save_todo_item =
           List.iter
             (fun (todo_id,(activation_date,(descr,owner_id))) ->
                Database.update_todo_descr todo_id descr;
-               Database.update_todo_owner_id todo_id owner_id;
+               let owner_id_opt = 
+                 if owner_id = "" then None else Some (int_of_string owner_id) in
+               Database.update_todo_owner_id todo_id owner_id_opt;
                Database.update_todo_activation_date todo_id activation_date)
             todos;
           render_edit_todo_cont_page sp ~credentials src_page_cont))
@@ -201,10 +203,9 @@ let rec render_todo_editor sp ~credentials (src_page_cont, todos_to_edit) =
       let options = 
         List.map 
           (fun u -> 
-             Option ([], u.user_id, Some (pcdata u.user_login),
-                     match_owner u todo.t_owner))
-          users in
-      int_select ~name:chain (List.hd options) (List.tl options) in
+             Option ([], string_of_int u.user_id, Some (pcdata u.user_login),
+                     match_owner u todo.t_owner)) users in
+      string_select ~name:chain (Option ([], "", None, false)) options in
 
     let todo_descr chain v =
       string_input ~input_type:`Text ~name:chain ~value:v () in
