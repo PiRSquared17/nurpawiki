@@ -47,3 +47,8 @@ let with_can_edit_user cur_user target f ~on_fail =
     f ()
   else 
     on_fail ("User '"^cur_user.user_login^"' is not permitted to edit users other than self")
+
+(** Privileged enough to schedule tasks for all users? *)
+let can_schedule_all_tasks cur_user =
+  cur_user.user_login = "admin"
+    

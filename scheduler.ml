@@ -94,17 +94,17 @@ let view_scheduler_page sp =
     let todo_section sp todos =
       (todo_table_html sp todos) in
 
-    let current_user_id = Some credentials.user_id in
-    let upcoming_pending =
-      Database.query_upcoming_todos ~current_user_id (None,None) in
-    let upcoming_tomorrow =
-      Database.query_upcoming_todos ~current_user_id (None,Some 1) in
-    let upcoming_todos_7_days =
-      Database.query_upcoming_todos ~current_user_id (Some 1,Some 7) in
-    let upcoming_todos_14_days =
-      Database.query_upcoming_todos ~current_user_id (Some 7, Some 14) in
-    let upcoming_all = 
-      Database.query_upcoming_todos ~current_user_id (Some 14, None) in
+    let query_todos = 
+      if Privileges.can_schedule_all_tasks credentials then
+        Database.query_upcoming_todos ~current_user_id:None
+      else (* Query this users's tasks only: *)
+        Database.query_upcoming_todos ~current_user_id:(Some credentials.user_id) in
+
+    let upcoming_pending = query_todos (None,None) in
+    let upcoming_tomorrow = query_todos (None,Some 1) in
+    let upcoming_todos_7_days = query_todos (Some 1,Some 7) in
+    let upcoming_todos_14_days = query_todos (Some 7, Some 14) in
+    let upcoming_all = query_todos (Some 14, None) in
 
     let mark_todo_hdr h = List.map (fun e -> (h, e)) in
     let merged_todos = 
@@ -168,6 +168,8 @@ let service_save_todo_item =
     (fun sp src_page_cont todos ->
      Session.with_user_login sp
        (fun credentials sp ->
+          (* TODO security hole: would need to check user privileges
+             for these DB operations. *)
           List.iter
             (fun (todo_id,(activation_date,(descr,owner_id))) ->
                Database.update_todo_descr todo_id descr;
@@ -195,7 +197,7 @@ let rec render_todo_editor sp ~credentials (src_page_cont, todos_to_edit) =
       let match_owner u = function
           Some o -> o.owner_id = u.user_id
         | None -> false in
-        
+      
       let options = 
         List.map 
           (fun u -> 
@@ -225,7 +227,8 @@ let rec render_todo_editor sp ~credentials (src_page_cont, todos_to_edit) =
                      [string_input ~a:[a_id ("calendar_"^(string_of_int todo.t_id))]
                         ~input_type:`Text ~name:tv_act_date 
                         ~value:todo.t_activation_date ();
-                      button ~a:[a_id ("button_"^(string_of_int todo.t_id)); a_name "cal_trigger"] 
+                      button ~a:[a_id ("button_"^(string_of_int todo.t_id)); 
+                                 a_name "cal_trigger"] 
                         ~button_type:`Button [pcdata "..."]];
                    td [owner_selection tv_owner_id todo;
                        int_input ~name:tv_id ~input_type:`Hidden ~value:todo.t_id ()]]])

@@ -198,7 +198,7 @@ let select_current_user id =
        " AND (user_id = "^string_of_int user_id^" OR user_id IS NULL) ")
 
 (* Query TODOs and sort by priority & completeness *)
-let query_all_active_todos ?(current_user_id=None) () =
+let query_all_active_todos ~current_user_id () =
   let r = guarded_exec
     ("SELECT "^todo_tuple_format^" "^todos_user_login_join^" "^
        "WHERE activation_date <= current_date AND completed = 'f' "^
@@ -206,7 +206,7 @@ let query_all_active_todos ?(current_user_id=None) () =
        "ORDER BY completed,priority,id") in
   List.map todo_of_row r#get_all_lst
 
-let query_upcoming_todos ?(current_user_id=None) date_criterion =
+let query_upcoming_todos ~current_user_id date_criterion =
   let date_comparison =
     let dayify d = 
       "'"^string_of_int d^" days'" in
