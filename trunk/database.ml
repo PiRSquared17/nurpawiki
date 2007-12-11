@@ -185,8 +185,12 @@ let update_todo_descr todo_id new_descr =
 
 
 let update_todo_owner_id todo_id owner_id =
+  let owner_id_s = 
+    match owner_id with
+      Some id -> string_of_int id 
+    | None -> "NULL" in
   let sql = 
-    "UPDATE todos SET user_id = "^string_of_int owner_id^" WHERE id = "^
+    "UPDATE todos SET user_id = "^owner_id_s^" WHERE id = "^
       (string_of_int todo_id) in
   ignore (guarded_exec sql)
 
