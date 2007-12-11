@@ -27,12 +27,10 @@ open ExtString
 
 open Services
 open Types
+open Util
 
 module Psql = Postgresql
 module P = Printf
-
-let match_pcre_option rex s =
-  try Some (Pcre.extract ~rex s) with Not_found -> None
 
 (* TODO no need to extract here *)
 let matches_pcre rex s =
@@ -41,32 +39,6 @@ let matches_pcre rex s =
 let (>>) f g = g f
 
 let newline_re = Pcre.regexp "\n"
-
-let iso_date_re = Pcre.regexp "([0-9]+)-([0-9]+)-([0-9]+)"
-
-let date_of_string s = 
-  match match_pcre_option iso_date_re s with
-    Some r ->
-      let year = int_of_string r.(1) in
-      let month = int_of_string r.(2) in
-      let day = int_of_string r.(3) in
-      Date.make year month day
-  | None -> assert false
-
-
-let iso_date_time_re = Pcre.regexp "([0-9]+)-([0-9]+)-([0-9]+) .*"
-
-let date_of_date_time_string s =
-  match (match_pcre_option iso_date_time_re s,
-         match_pcre_option iso_date_re s) with
-    (Some r,_)|(_,Some r) ->
-      let year = int_of_string r.(1) in
-      let month = int_of_string r.(2) in
-      let day = int_of_string r.(3) in
-      Date.make year month day
-  | _ -> 
-      Messages.errlog ("invalid date '"^s^"'");
-      assert false
 
 let task_side_effect_complete sp task_id () =
   (* TODO error handling! (should not break anything though even on
@@ -84,13 +56,6 @@ let task_side_effect_mod_priority sp (task_id, dir) () =
   return []
 
 
-let task_side_effect_complete_action = 
-  Eliomservices.new_coservice' ~get_params:(Eliomparameters.int "task_id") ()
-
-let task_side_effect_mod_priority_action = 
-  Eliomservices.new_coservice' ~get_params:((Eliomparameters.int "task_id") **
-                                              Eliomparameters.bool "dir") ()
-
 let () =
   Eliompredefmod.Actions.register 
     ~service:task_side_effect_complete_action task_side_effect_complete;
@@ -98,26 +63,6 @@ let () =
     ~service:task_side_effect_mod_priority_action task_side_effect_mod_priority
 
 let make_static_uri = Html_util.make_static_uri
-
-let todo_edit_img_link sp page_cont task_id =
-  [a ~a:[a_title "Edit"] ~service:edit_todo_get_page ~sp:sp
-     [img ~alt:"Edit" 
-        ~src:(make_static_uri sp ["edit_small.png"]) ()]
-     (page_cont, Some task_id)]
-
-let complete_task_img_link sp task_id =
-  let img_html = 
-    [img ~alt:"Mark complete" 
-       ~src:(make_static_uri sp ["mark_complete.png"]) ()] in
-  Eliompredefmod.Xhtml.a ~service:task_side_effect_complete_action
-    ~a:[a_title "Mark as completed!"] ~sp img_html task_id
-
-let todo_descr_html descr owner = 
-  match owner with
-    None -> [pcdata descr]
-  | Some o ->
-      [pcdata descr; span ~a:[a_class ["todo_owner"]] [pcdata (" ["^o.owner_login^"] ")]]
-
 
 (* Deal with Wiki markup *)
 module WikiML =
@@ -156,12 +101,6 @@ module WikiML =
             ([], List.rev acc) in
       loop [] lines
 
-    let string_of_priority = function
-        3 -> "lo"
-      | 2 -> "med"
-      | 1 -> "hi"
-      | _ -> "INTERNAL ERROR: PRIORITY OUT OF RANGE"
-
     let accepted_chars_ = "a-zA-Z\128-\2550-9_!\"§°#%&/()=?+.,;:{}'@\\$\\^\\*`´<>"
     let accepted_chars_sans_ws = "["^accepted_chars_^"-]+"
     let accepted_chars = "["^accepted_chars_^" -]+"
@@ -179,12 +118,6 @@ module WikiML =
       Str.regexp ("\\(\\[\\(wiki\\|file\\|http\\):\\("^accepted_chars_sans_ws^"\\)\\]\\)")
 
     let ws_re = Str.regexp "\\([ \t]+\\).*"
-
-    let priority_css_class = function
-        3 -> "todo_pri_lo"
-      | 2 -> "todo_pri_med"
-      | 1 -> "todo_pri_hi"
-      | _ -> "internal_error"
 
     let open_pre_re = Str.regexp "^\\(<pre>\\|8<\\)[ \r\n]*$"
     let close_pre_re = Str.regexp "^\\(</pre>\\|8<\\)[ \r\n]*$"
@@ -221,7 +154,7 @@ module WikiML =
 
     (* Todo item manipulation HTML *)
     let complete_todo sp id =
-      [complete_task_img_link sp id]
+      [Html_util.complete_task_img_link sp id]
           
     let priority_arrow sp id up_or_down =
       let (title,arrow_img,dir) = 
@@ -241,7 +174,7 @@ module WikiML =
        priority_arrow sp id false]
 
     let todo_editor_link sp todo_id page =
-      todo_edit_img_link sp (ET_view page) todo_id
+      Html_util.todo_edit_img_link sp (ET_view page) todo_id
         
     let todo_modify_buttons sp page todo_id todo =
       let completed = todo.t_completed in
@@ -308,10 +241,10 @@ module WikiML =
               if completed then 
                 ["todo_descr_completed"]
               else 
-                ["todo_descr"; priority_css_class todo.t_priority] in
+                ["todo_descr"; Html_util.priority_css_class todo.t_priority] in
             span 
               [todo_modify_buttons sp cur_page todo_id todo;
-               span ~a:[a_class style] (todo_descr_html todo.t_descr todo.t_owner)]
+               span ~a:[a_class style] (Html_util.todo_descr_html todo.t_descr todo.t_owner)]
           with Not_found -> 
             (pcdata "UNKNOWN TODO ID!") in
         add_html acc html in
@@ -422,42 +355,6 @@ let load_wiki_page page_id =
 let wikiml_to_html sp (page_id:int) (page_name:string) todo_data =
   load_wiki_page page_id >> WikiML.parse_lines sp page_name todo_data
 
-(* Hash page description to a CSS palette entry.  Used to syntax
-   highlight wiki page links based on their names. *)
-let css_palette_ndx_of_wikipage page_id = 
-  "palette"^(string_of_int (page_id mod 12))
-
-let todo_page_links_of_pages sp ?(colorize=false) ?(link_css_class=None) ?(insert_parens=true) pages =
-  let attrs page = 
-    let color_css = 
-      if colorize then [css_palette_ndx_of_wikipage page.p_id] else [] in
-    match link_css_class with
-      Some c -> [a_class ([c] @ color_css)]
-    | None -> [a_class color_css] in
-  let link page = 
-    a ~a:(attrs page) ~service:wiki_view_page ~sp:sp [pcdata page.p_descr]
-      (page.p_descr,None) in
-  let rec insert_commas acc = function
-      (x::_::xs) as lst ->
-        insert_commas (pcdata ", "::x::acc) (List.tl lst)
-    | x::[] ->
-        insert_commas (x::acc) []
-    | [] -> List.rev acc in
-  let insert_parens_html lst = 
-    pcdata " ("::lst @ [pcdata ")"] in
-  if pages <> [] then
-    let lst = insert_commas [] (List.map link pages) in
-    if insert_parens then 
-      insert_parens_html lst
-    else 
-      lst
-  else
-    []
-
-let todo_page_links sp todo_in_pages ?(colorize=false) ?(link_css_class=None) ?(insert_parens=true) id =
-  let pages = try IMap.find id todo_in_pages with Not_found -> [] in
-  todo_page_links_of_pages ~colorize sp pages
-
 let todo_list_table_html sp cur_page todos =
   (* Which pages contain TODOs, mapping from todo_id -> {pages} *)
   let todo_in_pages =
@@ -465,9 +362,10 @@ let todo_list_table_html sp cur_page todos =
   let todo_page_link todo =
     let descr = todo.t_descr in
     let page_links =
-      let c = "wiki_pri_"^WikiML.string_of_priority todo.t_priority in
-      todo_page_links sp todo_in_pages ~link_css_class:(Some c) (todo.t_id) in
-    todo_descr_html descr todo.t_owner @ page_links in
+      let c = "wiki_pri_"^Html_util.string_of_priority todo.t_priority in
+      Html_util.todo_page_links sp todo_in_pages 
+        ~link_css_class:(Some c) (todo.t_id) in
+    Html_util.todo_descr_html descr todo.t_owner @ page_links in
 
   table ~a:[a_class ["todo_table"]]
     (tr 
@@ -480,7 +378,7 @@ let todo_list_table_html sp cur_page todos =
             if completed then
               "todo_completed_row" 
             else 
-              WikiML.priority_css_class todo.t_priority in
+              Html_util.priority_css_class todo.t_priority in
           let row_class = 
             (row_pri_style::(if completed then ["todo_table_completed"] else [])) in
           (tr 
@@ -630,12 +528,6 @@ let service_save_page_post =
             Database.save_wiki_page page_id wiki_plaintext;
             view_page sp ~credentials page_id page ~printable:(Some false)))
 
-(* Use to create a "cancel" button for user submits *)
-let cancel_link service sp params =
-  a ~a:[a_class ["cancel_edit"]] ~service:service ~sp:sp 
-    [pcdata "Cancel"] 
-    params
-
 (* Convert [todo:ID] into [todo:ID 'Description'] before going into
    Wiki page edit textarea. *)
 let annotate_old_todo_items page page_todos (lines : WikiML.preproc_line list) =
@@ -680,7 +572,7 @@ let _ =
               post_form service_save_page_post sp
                 (fun chain -> 
                    [(p [string_input ~input_type:`Submit ~value:"Save" (); 
-                        cancel_link wiki_view_page sp
+                        Html_util.cancel_link wiki_view_page sp
                           (page_name,None);
                         br ();
                         textarea ~name:chain ~rows:30 ~cols:80 
@@ -707,274 +599,6 @@ let _ =
        Session.with_user_login sp
          (fun credentials sp -> view_wiki_page sp ~credentials (page_name,printable)))
 
-
-let clamp_date_to_today date =
-  let today = Date.today () in
-  let d = date_of_string date in
-  begin
-    match Date.compare today d with
-      -1 -> d
-    | 0 | 1 -> today
-    | _ -> assert false
-  end
-
-let wiki_page_links sp todo_in_pages todo = 
-  let id = todo.t_id in
-  let c = "wiki_pri_"^WikiML.string_of_priority todo.t_priority in
-  todo_page_links sp todo_in_pages ~link_css_class:(Some c) id
-
-let view_scheduler_page sp =
-
-  let scheduler_page_internal sp ~credentials =
-    let today = Date.today () in
-    let prettify_activation_date d =
-      let d = date_of_string d in
-      (* Clamp & prettify activation date *)
-      begin 
-        match Date.compare today d with
-          -1 -> Printer.DatePrinter.sprint "%a %b %d, %Y" d
-        | 0 | 1 -> "today"
-        | _ -> assert false
-      end in
-    
-    let todo_table_html sp todos =
-      let todo_in_pages =
-        Database.todos_in_pages (List.map (fun (_,todo) -> todo.t_id) todos) in
-
-      let prev_heading = ref "" in
-      let todo_rows = 
-        List.map
-          (fun (heading,todo) ->
-             let todo_id_s = string_of_int todo.t_id in
-             let heading_row =
-               if !prev_heading <> heading then
-                 begin
-                   prev_heading := heading;
-                   [tr (td ~a:[a_class ["rm_table_heading"]] [pcdata heading]) []]
-                 end
-               else
-                 [] in
-             let pri_style = WikiML.priority_css_class todo.t_priority in
-             let todo_row =
-               tr
-                 (td ~a:[a_class ["rm_edit"]]
-                    (todo_edit_img_link sp ET_scheduler todo.t_id))
-                 [td [raw_checkbox ~name:("t-"^ todo_id_s) ~value:"0" ()];
-                  td [complete_task_img_link sp todo.t_id];
-                  (td ~a:[a_class ["no_break"; pri_style]] 
-                     [pcdata (prettify_activation_date todo.t_activation_date)]);
-                  td ~a:[a_class [pri_style]] 
-                    (todo_descr_html todo.t_descr todo.t_owner @ wiki_page_links sp todo_in_pages todo)] in
-             heading_row @ [todo_row]) todos in
-      List.flatten todo_rows in
-
-    let todo_section sp todos =
-      (todo_table_html sp todos) in
-
-    let current_user_id = Some credentials.user_id in
-    let upcoming_pending =
-      Database.query_upcoming_todos ~current_user_id (None,None) in
-    let upcoming_tomorrow =
-      Database.query_upcoming_todos ~current_user_id (None,Some 1) in
-    let upcoming_todos_7_days =
-      Database.query_upcoming_todos ~current_user_id (Some 1,Some 7) in
-    let upcoming_todos_14_days =
-      Database.query_upcoming_todos ~current_user_id (Some 7, Some 14) in
-    let upcoming_all = 
-      Database.query_upcoming_todos ~current_user_id (Some 14, None) in
-
-    let mark_todo_hdr h = List.map (fun e -> (h, e)) in
-    let merged_todos = 
-      (mark_todo_hdr "Today" upcoming_pending) @ 
-        (mark_todo_hdr "Tomorrow" upcoming_tomorrow) @
-        (mark_todo_hdr "Next 7 days" upcoming_todos_7_days) @
-        (mark_todo_hdr "Next 2 weeks" upcoming_todos_14_days) @
-        (mark_todo_hdr "Everything else" upcoming_all) in
-
-    (* TODO merge this HTML generation with other pages.  PROBLEM:
-       don't know how to easily do that without duplicating the
-       parameter passing of pages. *)
-    let table () = 
-      [p [raw_input ~input_type:`Submit ~value:"Mass edit" ()];
-       table
-         (tr (th []) [th []; th []; th [pcdata "Activates on"]; th [pcdata "Todo"]])
-         (todo_section sp merged_todos)] in
-
-    let table' = 
-      post_form edit_todo_page sp table (ET_scheduler, None) in
-    
-    Html_util.html_stub sp
-      (Html_util.navbar_html sp ~credentials
-         ([h1 [pcdata "Road ahead"]] @ [table'])) in
-  Session.with_user_login sp
-    (fun credentials sp -> 
-       scheduler_page_internal sp credentials)
-  
-
-let render_edit_todo_cont_page sp ~credentials = function
-    ET_scheduler -> 
-      view_scheduler_page sp
-  | ET_view wiki_page ->
-      view_wiki_page sp ~credentials (wiki_page,None)
-
-let scheduler_page_discard_todo_id = 
-  register_new_service
-    ~path:["scheduler"] 
-    ~get_params:((Eliomparameters.user_type 
-                   et_cont_of_string string_of_et_cont "src_service"))
-    (fun sp (src_page_cont) () -> 
-       Session.with_user_login sp
-         (fun credentials sp ->
-            render_edit_todo_cont_page sp ~credentials src_page_cont))
-         
-(* Save page as a result of /edit_todo?todo_id=ID *)
-let service_save_todo_item =
-  register_new_post_service
-    ~fallback:scheduler_page_discard_todo_id
-    ~post_params:(list "todos"
-                    ((int "todo_id") **
-                       (string "activation_date") ** 
-                       (string "descr") ** 
-                       (int "owner_id")))
-    (fun sp src_page_cont todos ->
-     Session.with_user_login sp
-       (fun credentials sp ->
-          List.iter
-            (fun (todo_id,(activation_date,(descr,owner_id))) ->
-               Database.update_todo_descr todo_id descr;
-               Database.update_todo_owner_id todo_id owner_id;
-               Database.update_todo_activation_date todo_id activation_date)
-            todos;
-          render_edit_todo_cont_page sp ~credentials src_page_cont))
-
-let rec render_todo_editor sp ~credentials (src_page_cont, todos_to_edit) =
-  let todos_str = String.concat "," (List.map string_of_int todos_to_edit) in
-  let todos = Database.query_todos_by_ids todos_to_edit in
-  
-  let f =
-    let todo_in_pages =
-      Database.todos_in_pages (List.map (fun todo -> todo.t_id) todos) in
-
-    let cancel_page cont = 
-      match cont with
-        ET_scheduler -> cancel_link scheduler_page sp ()
-      | ET_view wiki -> cancel_link wiki_view_page sp (wiki,None) in
-
-    let owner_selection chain todo =
-      (* TODO don't do this per each todo *)
-      let users = Database.query_users () in
-
-      let match_owner u = function
-          Some o -> o.owner_id = u.user_id
-        | None -> false in
-        
-      let options = 
-        List.map 
-          (fun u -> 
-             Option ([], u.user_id, Some (pcdata u.user_login),
-                     match_owner u todo.t_owner))
-          users in
-      int_select ~name:chain (List.hd options) (List.tl options) in
-
-    let todo_descr chain v =
-      string_input ~input_type:`Text ~name:chain ~value:v () in
-
-    (* See nurpawiki_calendar.js for JavaScript calendar binding
-       details. *)
-    let create_listform f = 
-      [table 
-         (tr (th [pcdata "ID"]) 
-            [th [pcdata "Description"]; th [pcdata "Activates on"]])
-         (f.it
-            (fun (tv_id,(tv_act_date,(tv_descr,tv_owner_id))) todo ->
-               let pri_style = WikiML.priority_css_class todo.t_priority in
-               [tr ~a:[a_class [pri_style]]
-                  (td [pcdata (string_of_int todo.t_id)])
-                  [td (todo_descr tv_descr todo.t_descr :: 
-                         wiki_page_links sp todo_in_pages todo);
-                   td ~a:[a_class ["no_break"]] 
-                     [string_input ~a:[a_id ("calendar_"^(string_of_int todo.t_id))]
-                        ~input_type:`Text ~name:tv_act_date 
-                        ~value:todo.t_activation_date ();
-                      button ~a:[a_id ("button_"^(string_of_int todo.t_id)); a_name "cal_trigger"] 
-                        ~button_type:`Button [pcdata "..."]];
-                   td [owner_selection tv_owner_id todo;
-                       int_input ~name:tv_id ~input_type:`Hidden ~value:todo.t_id ()]]])
-            todos
-            [tr (td [string_input ~input_type:`Submit ~value:"Save" ();
-                     cancel_page src_page_cont]) []])] in
-
-    post_form ~service:service_save_todo_item ~sp create_listform src_page_cont in
-
-  let heading = [pcdata ("Edit TODOs "^todos_str)] in
-  let help_str = 
-    pcdata "NOTE: Below activation date will be assigned for all the items" in
-
-  let calendar_js = 
-    [["jscalendar"; "calendar.js"];
-     ["jscalendar"; "lang"; "calendar-en.js"];
-     ["jscalendar"; "calendar-setup.js"];
-     ["nurpawiki_calendar.js"]] in
-
-
-  Html_util.html_stub sp ~javascript:calendar_js
-    (Html_util.navbar_html sp ~credentials
-       ((h1 heading)::[help_str; br(); f]))
-
-let error_page sp msg =
-  Html_util.html_stub sp [h1 [pcdata ("ERROR: "^msg)]]
-
-let render_todo_get_page sp (src_page_cont, todo) = 
-  match todo with
-    Some todo_id ->
-      render_todo_editor sp (src_page_cont, [todo_id])
-  | None ->
-      (* Bogus input as we didn't get any todos to edit..  But let's
-         just take the user back to where he came from rather than
-         issueing an error message. *)
-      render_edit_todo_cont_page sp src_page_cont
-        
-let _ =
-  register edit_todo_get_page
-    (fun sp get_params () ->
-       Session.with_user_login sp
-         (fun credentials sp ->
-            render_todo_get_page sp ~credentials get_params))
-
-let todo_id_re = Pcre.regexp "^t-([0-9]+)$"
-
-let parse_todo_ids todo_ids = 
-  try
-    List.map
-      (fun (todo_id_str,b) ->
-         match match_pcre_option todo_id_re todo_id_str with
-           Some r ->
-             int_of_string r.(1)
-         | None ->
-             raise Not_found) todo_ids
-  with
-    Not_found ->
-      []
-        
-
-let _ =
-  register edit_todo_page
-    (fun sp (src_page_cont, single_tid) (todo_ids : (string * string) list) ->
-       Session.with_user_login sp
-         (fun credentials sp ->
-            if todo_ids = [] then
-              render_todo_get_page sp ~credentials 
-                (src_page_cont, single_tid)
-            else 
-              render_todo_editor sp ~credentials
-                (src_page_cont, (parse_todo_ids todo_ids))))
-
-
-(* /scheduler *)
-let _ =
-  register scheduler_page
-    (fun sp todo_id () ->
-       view_scheduler_page sp)
 
 let descr_of_activity_type = function
     AT_create_todo -> "Created"
@@ -1094,7 +718,7 @@ let view_history_page sp ~credentials =
                                [td (if ndx = 0 then [pcdata ty] else []);
                                 td ~a:[a_class ["todo_owner"]] [pcdata changed_by];
                                 td ([pcdata todo] @ 
-                                      (todo_page_links_of_pages 
+                                      (Html_util.todo_page_links_of_pages 
                                          ~colorize:true sp pages))]))
                          lst) in
 
@@ -1111,7 +735,7 @@ let view_history_page sp ~credentials =
                           td 
                             ~a:[a_class ["todo_owner"]] 
                             [pcdata (String.concat "," e.ag_page_editors)];
-                          td (todo_page_links_of_pages sp 
+                          td (Html_util.todo_page_links_of_pages sp 
                                 ~colorize:true ~insert_parens:false 
                                 (remove_duplicates e.ag_edited_pages))]]
                     else 

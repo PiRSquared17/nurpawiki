@@ -1,5 +1,5 @@
 
-FILES=types.ml database.ml services.ml html_util.ml privileges.ml session.ml user_editor.ml nurpawiki.ml
+FILES=types.ml util.ml database.ml services.ml html_util.ml privileges.ml session.ml user_editor.ml nurpawiki.ml scheduler.ml
 
 CAMLC = ocamlfind ocamlc -g $(LIB)
 CAMLOPT = ocamlfind ocamlopt $(LIB)

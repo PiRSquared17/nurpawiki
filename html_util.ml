@@ -116,3 +116,74 @@ let error_page sp msg =
   html_stub sp 
     [p [error msg]]
 
+
+let string_of_priority = function
+    3 -> "lo"
+  | 2 -> "med"
+  | 1 -> "hi"
+  | _ -> "INTERNAL ERROR: PRIORITY OUT OF RANGE"
+
+let priority_css_class p =
+  "todo_pri_"^(string_of_priority p)
+
+(* Hash page description to a CSS palette entry.  Used to syntax
+   highlight wiki page links based on their names. *)
+let css_palette_ndx_of_wikipage page_id = 
+  "palette"^(string_of_int (page_id mod 12))
+
+let todo_page_links_of_pages sp ?(colorize=false) ?(link_css_class=None) ?(insert_parens=true) pages =
+  let attrs page = 
+    let color_css = 
+      if colorize then [css_palette_ndx_of_wikipage page.p_id] else [] in
+    match link_css_class with
+      Some c -> [a_class ([c] @ color_css)]
+    | None -> [a_class color_css] in
+  let link page = 
+    a ~a:(attrs page) ~service:wiki_view_page ~sp:sp [pcdata page.p_descr]
+      (page.p_descr,None) in
+  let rec insert_commas acc = function
+      (x::_::xs) as lst ->
+        insert_commas (pcdata ", "::x::acc) (List.tl lst)
+    | x::[] ->
+        insert_commas (x::acc) []
+    | [] -> List.rev acc in
+  let insert_parens_html lst = 
+    pcdata " ("::lst @ [pcdata ")"] in
+  if pages <> [] then
+    let lst = insert_commas [] (List.map link pages) in
+    if insert_parens then 
+      insert_parens_html lst
+    else 
+      lst
+  else
+    []
+
+let todo_page_links sp todo_in_pages ?(colorize=false) ?(link_css_class=None) ?(insert_parens=true) id =
+  let pages = try IMap.find id todo_in_pages with Not_found -> [] in
+  todo_page_links_of_pages ~colorize sp pages
+
+let todo_edit_img_link sp page_cont task_id =
+  [a ~a:[a_title "Edit"] ~service:edit_todo_get_page ~sp:sp
+     [img ~alt:"Edit" 
+        ~src:(make_static_uri sp ["edit_small.png"]) ()]
+     (page_cont, Some task_id)]
+
+let complete_task_img_link sp task_id =
+  let img_html = 
+    [img ~alt:"Mark complete" 
+       ~src:(make_static_uri sp ["mark_complete.png"]) ()] in
+  Eliompredefmod.Xhtml.a ~service:task_side_effect_complete_action
+    ~a:[a_title "Mark as completed!"] ~sp img_html task_id
+
+let todo_descr_html descr owner = 
+  match owner with
+    None -> [pcdata descr]
+  | Some o ->
+      [pcdata descr; span ~a:[a_class ["todo_owner"]] [pcdata (" ["^o.owner_login^"] ")]]
+
+
+(* Use to create a "cancel" button for user submits *)
+let cancel_link service sp params =
+  a ~a:[a_class ["cancel_edit"]] ~service:service ~sp:sp 
+    [pcdata "Cancel"] 
+    params
