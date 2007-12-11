@@ -61,3 +61,12 @@ let user_admin_page = new_service ["user_admin"] unit ()
 
 let edit_user_page = new_service ["edit_user"] 
   (opt (string "caller") ** (string "user_to_edit")) ()
+
+
+let task_side_effect_complete_action = 
+  Eliomservices.new_coservice' ~get_params:(Eliomparameters.int "task_id") ()
+
+let task_side_effect_mod_priority_action = 
+  Eliomservices.new_coservice' ~get_params:((Eliomparameters.int "task_id") **
+                                              Eliomparameters.bool "dir") ()
+
