@@ -14,21 +14,29 @@ When creating databases, you must ensure that the database will be in `en_US.UTF
 
 See [DatabaseInstallationHacks hacks] if you have reason to doubt this is not so.
 
-=== Install db and configure ===
+=== Install DB and configure ===
 
-Enable localhost access to the database without a password:
-
-Edit `/etc/postgresql/8.2/main/pg_hba.conf` like so (TODO what's a better way to do this??!):
-
-{{{
--host    all         all         127.0.0.1/32          md5
-+host    all         all         127.0.0.1/32          trust
-}}}
-
-As user `postgres`, do:
+ * Become postgres user by `su root; su postgres`
   * `createdb -h localhost -E UTF-8 nurpawiki`
   * `psql nurpawiki < nurpawiki/schema.psql` (setup nurpawiki schema with tsearch2)
 
 Make sure you choose the right Postgresql port when running `configure` for Nurpawiki.
 
-And you're done!
+==== 1) Setup postgres user authentication to the database ====
+This is the preferred method on making the DB connection authenticate property.  If you're having problems, you can try the (2) option as well, but that's not recommended.
+
+ * Become postgres user by `su root; su postgres`
+ * Set postgres DB password for the nurpawiki database
+  * Connect to DB: `psql nurpawiki`
+  * `ALTER USER postgres PASSWORD 'barfoo';`
+
+When running Nurpawiki's `configure` script, specify the same password you used in the above ALTER statement.
+
+==== 2) Hack postgres configuration to allow DB access without a password ====
+
+Edit `/etc/postgresql/8.2/main/pg_hba.conf` like so:
+
+{{{
+-host    all         all         127.0.0.1/32          md5
++host    all         all         127.0.0.1/32          trust
+}}}
