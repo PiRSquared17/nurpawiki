@@ -30,6 +30,8 @@ This is the preferred method on making the DB connection authenticate property. 
  * Set postgres DB password for the nurpawiki database
   * Connect to DB: `psql nurpawiki`
   * `ALTER USER postgres PASSWORD 'barfoo';`
+ * Try that your newly set password lets you into the DB:
+  * _As user `janne`_ do: `psql -h localhost -W -U postgres nurpawiki` and type in the password you used above.  Note that the password for `postgres` Unix user and the DB password are not the same.
 
 When running Nurpawiki's `configure` script, specify the same password you used in the above ALTER statement.
 
