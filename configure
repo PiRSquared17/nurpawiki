@@ -59,6 +59,17 @@ if [ "$DBPORT" = "" ]; then
     exit 1
 fi
 
+if [ "$DBPASSWD" = "" ]; then
+    echo
+    echo ERROR!
+    echo
+    echo DBPASSWD environment variable must be set to your nurpawiki DB
+    echo postgres user password.  See DB installation instructions for
+    echo more information on how to configure this.
+    echo
+    exit 1
+fi
+
 cat ocsigen.conf.in | \
     sed -e "s|%_OCSIGEN_ROOT_%|$OCSIGEN_ROOT|g" | \
     sed -e "s|%_STR_CMA_%|${str_path}/str.cma|g" | \
@@ -69,6 +80,7 @@ cat ocsigen.conf.in | \
     sed -e "s|%_CRYPTOKIT_CMA_%|${cryptokit_path}/cryptokit.cma|g" | \
     sed -e "s|%_DBNAME_%|${DBNAME}|g" | \
     sed -e "s|%_DBPORT_%|${DBPORT}|g" | \
+    sed -e "s|%_DBPASSWD_%|${DBPASSWD}|g" | \
     sed -e "s|%_SQLITE3_CMA_%|${sqlite3_path}/sqlite3.cma|g" | \
     sed -e "s|%_OCSIGEN_MODULES_%|${ocsigen_libs}|g" | \
     sed -e "s|%_DBUSER_%|${DBUSER}|g"
