@@ -9,11 +9,7 @@ Read [DatabaseInstallationDebian] and follow instructions.  It's better to get P
 == Installing GODI ==
 
  * `apt-get install libpcre3-dev`
+ * `apt-get install libgdbm-dev`
+ * `apt-get install libsqlite3-dev`
+ * `apt-get install libpq-dev`
  * Download and install GODI as per its installation manual
-
-= Details =
-
-Add your content here.  Format your content with:
-  * Text in *bold* or _italic_
-  * Headings, paragraphs, and lists
-  * Automatic links to other wiki pages
