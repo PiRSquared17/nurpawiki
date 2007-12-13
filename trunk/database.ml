@@ -26,6 +26,7 @@ type db_config =
       db_name : string;
       db_user : string;
       db_port : string;
+      db_pass : string option;
     }
 
 open Simplexmlparser
@@ -33,6 +34,10 @@ open Simplexmlparser
 let (>>) f g = g f
 
 let dbcfg =
+  let get_attr_opt attr attrs = 
+    try Some (List.assoc attr attrs)
+    with Not_found -> None in
+
   let get_attr_with_err attr attrs =
     try (List.assoc attr attrs)
     with Not_found -> 
@@ -44,14 +49,16 @@ let dbcfg =
         let dbname = get_attr_with_err "name" attrs in
         let dbuser = get_attr_with_err "user" attrs in
         let dbport = get_attr_with_err "port" attrs in
-        (dbname,dbuser,dbport)
+        let dbpass = get_attr_opt "password" attrs in
+        (dbname,dbuser,dbport,dbpass)
     | _ -> 
         raise (Extensions.Error_in_config_file ("Unexpected content inside Nurpawiki config")) in
-  let (dbname,dbuser,dbport) = find_dbcfg (get_config ()) in
+  let (dbname,dbuser,dbport,dbpass) = find_dbcfg (get_config ()) in
   { 
     db_name = dbname;
     db_user = dbuser;
     db_port = dbport;
+    db_pass = dbpass;
   }
 
 let db_conn =
@@ -59,7 +66,9 @@ let db_conn =
     Messages.errlog (P.sprintf "connecting to DB '%s' as user '%s' on port '%s'" 
                        dbcfg.db_name dbcfg.db_user dbcfg.db_port);
     new Psql.connection ~host:"localhost"
-      ~dbname:dbcfg.db_name ~user:dbcfg.db_user ~port:dbcfg.db_port ()
+      ~dbname:dbcfg.db_name ~user:dbcfg.db_user ~port:dbcfg.db_port
+      ~password:(Option.default "" dbcfg.db_pass)
+      ()
   with
     (Psql.Error e) as ex ->
       (match e with

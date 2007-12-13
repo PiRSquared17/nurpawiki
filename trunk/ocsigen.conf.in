@@ -30,7 +30,8 @@
       <site dir="" charset="utf-8">
         <redirect regexp="$" dest="/view?p=WikiStart"/>
         <eliom module="site.cma">
-          <database name="%_DBNAME_%" user="%_DBUSER_%" port="%_DBPORT_%"/>
+          <database name="%_DBNAME_%" user="%_DBUSER_%" port="%_DBPORT_%"
+                    password="%_DBPASSWD_%" />
         </eliom>
         <static dir="files" />
       </site>
