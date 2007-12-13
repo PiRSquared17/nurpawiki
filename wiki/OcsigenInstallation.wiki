@@ -1,0 +1,19 @@
+#summary Notes on Ocsigen installation for Debian
+
+= How to install everything required by Ocsigen on Debian =
+
+== Database installation ==
+
+Read [DatabaseInstallationDebian] and follow instructions.  It's better to get Postgresql installed prior to attempting GODI installation.
+
+== Installing GODI ==
+
+ * `apt-get install libpcre3-dev`
+ * Download and install GODI as per its installation manual
+
+= Details =
+
+Add your content here.  Format your content with:
+  * Text in *bold* or _italic_
+  * Headings, paragraphs, and lists
+  * Automatic links to other wiki pages
