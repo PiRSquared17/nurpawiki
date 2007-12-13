@@ -4,7 +4,7 @@
 
 == Install Ocsigen ==
 
-Get the latest version from http://www.ocsigen.org.  Easiest way to install it to use [http://godi.ocaml-programming.de/ GODI] to install it.
+Get the latest version from http://www.ocsigen.org.  Easiest way to install it to use [http://godi.ocaml-programming.de/ GODI] to install it.  See [OcsigenInstallation here] for some installation notes for Debian/Ubuntu.
 
 It's very likely that all the packages install successfully only on Linux.  I use VMware on Windows and run Nurpawiki in a Linux guest.
 
