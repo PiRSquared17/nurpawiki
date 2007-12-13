@@ -34,7 +34,7 @@ env DBNAME=nurpawiki DBUSER=postgres DBPORT=5432 ./configure > nurpawiki.conf.lo
 
 The script will complain if some of the dependent libraries are not installed via ocamlfind.
 
-The `configure` script creates a new Ocsigen configuration file that you need to pass to Ocsigen once its server starts up.
+Pipe the output of `configure` to a file and pass it on to Ocsigen when you start the Ocsigen web server.
 
 == Build Nurpawiki ==
 
