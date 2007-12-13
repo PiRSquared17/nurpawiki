@@ -17,7 +17,8 @@ See [DatabaseInstallationHacks hacks] if you have reason to doubt this is not so
 === Install DB and configure ===
 
  * Become postgres user by `su root; su postgres`
-  * `createdb -h localhost -E UTF-8 nurpawiki`
+  * `createdb -E UTF-8 nurpawiki`
+   * Note: if Postgresql doesn't let you do this and prompts for a password, you need to know `postgres` user's Unix password.  If you can, you can just change it with `passwd postgres`.  Doing this should enable Postgresql to give you local administrative access using the `postgres` user.
   * `psql nurpawiki < nurpawiki/schema.psql` (setup nurpawiki schema with tsearch2)
 
 Make sure you choose the right Postgresql port when running `configure` for Nurpawiki.
