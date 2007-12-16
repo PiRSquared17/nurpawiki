@@ -2,7 +2,15 @@
 
 = Release Process =
 
- # QA according to [DevTestPlan]
  # Update VERSION to the version number being released
+ # Make a release candidate out of the current head (record the revision number)
+  * `svn export -r 158 https://nurpawiki.googlecode.com/svn/trunk nurpawiki-x.y.z`
+  * `tar cf nurpawiki-x.y.z`
+  * `cd nurpawiki-x.y.z`
+  * Configure & build
+ # QA the package according to [DevTestPlan]
+  * Check that VERSION matches About box's version (should be automatic)
  # Snapshot current svn version
-  * svn 
+  * `svn cp -r 158 https://nurpawiki.googlecode.com/svn/trunk https://nurpawiki.googlecode.com/svn/tags/x.y.z`
+ # Upload release tarball to download page
+ # Announce
