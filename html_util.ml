@@ -29,12 +29,8 @@ open Services
 let make_static_uri sp name =
   make_uri (static_dir sp) sp name
 
-
 let disconnect_box sp s = 
-  Eliompredefmod.Xhtml.post_form ~service:disconnect_action ~sp
-    (fun _ -> [p [Eliompredefmod.Xhtml.string_input
-                    ~input_type:`Submit ~value:s ()]]) ()
-
+  Eliompredefmod.Xhtml.a ~service:disconnect_page ~sp [pcdata s] ()
 
 (* Use this as the basis for all pages.  Includes CSS etc. *)
 let html_stub sp ?(javascript=[]) body_html =
@@ -178,7 +174,7 @@ let complete_task_img_link sp task_id =
   let img_html = 
     [img ~alt:"Mark complete" 
        ~src:(make_static_uri sp ["mark_complete.png"]) ()] in
-  Eliompredefmod.Xhtml.a ~service:task_side_effect_complete_action
+  a ~service:task_side_effect_complete_action
     ~a:[a_title "Mark as completed!"] ~sp img_html task_id
 
 let todo_descr_html descr owner = 
@@ -193,3 +189,12 @@ let cancel_link service sp params =
   a ~a:[a_class ["cancel_edit"]] ~service:service ~sp:sp 
     [pcdata "Cancel"] 
     params
+
+let _ =
+  register disconnect_page
+    (fun sp () () ->
+       (Eliomsessions.close_session  ~sp () >>= fun () ->
+          html_stub sp 
+            [h1 [pcdata "Logged out!"];
+             p [a ~sp ~service:wiki_view_page [pcdata "Take me back in.."]
+                  ("WikiStart", None)]]))
