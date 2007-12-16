@@ -56,8 +56,16 @@ let db_upgrade_warning sp =
    p
      [pcdata "Your database appears to be older than your current Nurpawiki server.";
       br ();
-      pcdata "In order to continue, you must upgrade your DB. ";
-      pcdata "Before doing so, please take a backup of your database!";
+      br ();
+      strong [
+        pcdata "You might be seeing this for a couple of reasons:";
+        br ()];
+      br ();
+      pcdata "1) You just installed Nurpawiki and this is the first time you're running Nurpawiki on your database!"; br ();
+      pcdata "2) You have upgraded an existing Nurpawiki installation and this is the first time you're running it since upgrade."; br ();
+      br ();
+      pcdata "In order to continue, your DB needs to be upgraded. ";
+      pcdata "If you have valuable data in your DB, please take a backup of it before proceeding!";
       br ();
       br ();
       a ~service:upgrade_page ~sp [pcdata "Upgrade now!"] ()]]
