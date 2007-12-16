@@ -1,0 +1,8 @@
+#summary Release process
+
+= Release Process =
+
+ # QA according to [DevTestPlan]
+ # Update VERSION to the version number being released
+ # Snapshot current svn version
+  * svn 
