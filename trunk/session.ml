@@ -121,7 +121,8 @@ let with_user_login sp f =
                 else 
                   f user sp
             | None ->
-                login_html sp [] 
+                login_html sp 
+                  [Html_util.error ("Unknown user '"^login^"'")]
           end
       | None ->
           login_html sp []
