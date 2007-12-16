@@ -24,15 +24,6 @@ open Types
 
 open Lwt
 
-(* As the handler is very simple, we register it now: *)
-let disconnect_action = 
-  Eliompredefmod.Actions.register_new_post_coservice'
-    ~post_params:Eliomparameters.unit 
-    (fun sp () () -> 
-      Eliomsessions.close_session  ~sp () >>= fun () -> 
-      Lwt.return [])
-
-
 let wiki_view_page = 
   new_service ["view"] ((string "p")
                         ** (opt (bool "printable"))) ()
@@ -62,8 +53,9 @@ let user_admin_page = new_service ["user_admin"] unit ()
 let edit_user_page = new_service ["edit_user"] 
   (opt (string "caller") ** (string "user_to_edit")) ()
 
+let disconnect_page = new_service ["disconnect"] unit ()
 
-let task_side_effect_complete_action = 
+let task_side_effect_complete_action =
   Eliomservices.new_coservice' ~get_params:(Eliomparameters.int "task_id") ()
 
 let task_side_effect_mod_priority_action = 

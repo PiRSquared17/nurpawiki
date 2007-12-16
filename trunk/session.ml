@@ -25,16 +25,6 @@ open Types
 
 let upgrade_page = new_service ["upgrade"] unit ()
 
-(* /upgrade upgrades the database schema (if needed) *)
-let _ =
-  register upgrade_page
-    (fun sp () () ->
-       let msg = Database.upgrade_schema () in
-       Html_util.html_stub sp
-         [h1 [pcdata "Upgrade DB schema"];
-          (pre [pcdata msg])])
-
-
 let login_table = Eliomsessions.create_volatile_table ()
 
 let connect_action = 
@@ -168,4 +158,14 @@ let connect_action_handler sp () login_nfo =
 
 let () =
   Eliompredefmod.Actions.register ~service:connect_action connect_action_handler
+
+(* /upgrade upgrades the database schema (if needed) *)
+let _ =
+  register upgrade_page
+    (fun sp () () ->
+       let msg = Database.upgrade_schema () in
+       Html_util.html_stub sp
+         [h1 [pcdata "Upgrade DB schema"];
+          (pre [pcdata msg])])
+
 
