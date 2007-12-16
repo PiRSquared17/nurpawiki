@@ -28,8 +28,8 @@ Run configure like so:
 #       Postgresql.
 # NOTE 2: Make sure the DBPORT is correctly set!  It needs to match your
 #       Postgresql configuration variable (in pg_hba.conf)
-
-env DBNAME=nurpawiki DBUSER=postgres DBPORT=5432 ./configure > nurpawiki.conf.local
+# NOTE 3: See DB installation page for info on postgres user password & authentication
+env DBNAME=nurpawiki DBUSER=postgres DBPORT=5432 DBPASSWD=<pass> ./configure > nurpawiki.conf.local
 }}}
 
 The script will complain if some of the dependent libraries are not installed via ocamlfind.
