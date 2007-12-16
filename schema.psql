@@ -2178,3 +2178,8 @@ ALTER TABLE ONLY wikitext
 -- PostgreSQL database dump complete
 --
 
+
+-- Hack to set tsearch2 locale to the same setting as the database.
+-- See issue http://code.google.com/p/nurpawiki/issues/detail?id=2 for
+-- more information.
+update pg_ts_cfg set locale = current_setting('lc_collate') where ts_name = 'default';
