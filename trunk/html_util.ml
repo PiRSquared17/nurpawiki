@@ -104,18 +104,6 @@ let navbar_html sp ~credentials ?(wiki_page_links=[]) ?(todo_list_table=[]) cont
    div ~a:[a_id "content"]
      content]
 
-
-
-(*            [td search_input; *)
-(*             td ~a:[a_class ["top_menu_right_align"]] *)
-(*               [table  *)
-(*                  (tr  *)
-(*                     (td [a ~service:edit_user_page ~sp [pcdata "My Preferences"]  *)
-(*                            (None,credentials.user_login)]) *)
-(*                     (edit_users_link @  *)
-(*                        [td [disconnect_box sp "Logout"]])) *)
-(*                  []]]) []]; *)
-
 let error text = 
   span ~a:[a_class ["error"]] [pcdata text]
 
