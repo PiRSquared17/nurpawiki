@@ -76,7 +76,7 @@ let navbar_html sp ~credentials ?(wiki_page_links=[]) ?(todo_list_table=[]) cont
 
   let edit_users_link = 
     if Privileges.can_view_users credentials then
-      [td [a ~service:user_admin_page ~sp [pcdata "Edit Users"] ()]]
+      [a ~service:user_admin_page ~sp [pcdata "Edit Users"] ()]
     else 
       [] in
 
@@ -92,24 +92,29 @@ let navbar_html sp ~credentials ?(wiki_page_links=[]) ?(todo_list_table=[]) cont
                      td [history_link];
                      td wiki_page_links])
                  []])
-           [td (*~a:[a_class ["top_menu_right_align"]]*)
-              [table 
-                 (tr 
-                    (td search_input)
-                    [td [disconnect_box sp "Logout"]])
-                 []];
-             td ~a:[a_class ["top_menu_right_align"]]
-              [table 
-                 (tr 
-                    (td [a ~service:edit_user_page ~sp [pcdata "My Preferences"] 
-                           (None,credentials.user_login)])
-                    edit_users_link)
-                 []]]) []];
+           [td search_input;
+            td ~a:[a_class ["top_menu_right_align"]]
+              ([a ~service:edit_user_page ~sp [pcdata "My Preferences"]
+                  (None,credentials.user_login)] @
+                 edit_users_link @
+                  [pcdata " "] @
+                  [disconnect_box sp "Logout"])]) []];
    div ~a:[a_id "navbar"]
      (user_greeting @ [br ()] @ todo_list_table);
    div ~a:[a_id "content"]
      content]
 
+
+
+(*            [td search_input; *)
+(*             td ~a:[a_class ["top_menu_right_align"]] *)
+(*               [table  *)
+(*                  (tr  *)
+(*                     (td [a ~service:edit_user_page ~sp [pcdata "My Preferences"]  *)
+(*                            (None,credentials.user_login)]) *)
+(*                     (edit_users_link @  *)
+(*                        [td [disconnect_box sp "Logout"]])) *)
+(*                  []]]) []]; *)
 
 let error text = 
   span ~a:[a_class ["error"]] [pcdata text]
