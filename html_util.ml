@@ -181,12 +181,3 @@ let cancel_link service sp params =
   a ~a:[a_class ["cancel_edit"]] ~service:service ~sp:sp 
     [pcdata "Cancel"] 
     params
-
-let _ =
-  register disconnect_page
-    (fun sp () () ->
-       (Eliomsessions.close_session  ~sp () >>= fun () ->
-          html_stub sp 
-            [h1 [pcdata "Logged out!"];
-             p [a ~sp ~service:wiki_view_page [pcdata "Take me back in.."]
-                  ("WikiStart", None)]]))

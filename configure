@@ -84,4 +84,3 @@ cat ocsigen.conf.in | \
     sed -e "s|%_SQLITE3_CMA_%|${sqlite3_path}/sqlite3.cma|g" | \
     sed -e "s|%_OCSIGEN_MODULES_%|${ocsigen_libs}|g" | \
     sed -e "s|%_DBUSER_%|${DBUSER}|g"
-
