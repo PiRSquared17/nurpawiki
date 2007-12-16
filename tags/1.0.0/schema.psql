@@ -1,0 +1,2185 @@
+--
+-- PostgreSQL database dump
+--
+
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = off;
+SET check_function_bodies = false;
+SET client_min_messages = warning;
+SET escape_string_warning = off;
+
+--
+-- Name: SCHEMA public; Type: COMMENT; Schema: -; Owner: -
+--
+
+COMMENT ON SCHEMA public IS 'Standard public schema';
+
+
+SET search_path = public, pg_catalog;
+
+--
+-- Name: gtsq; Type: SHELL TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE gtsq;
+
+
+--
+-- Name: gtsq_in(cstring); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION gtsq_in(cstring) RETURNS gtsq
+    AS '$libdir/tsearch2', 'gtsq_in'
+    LANGUAGE c STRICT;
+
+
+--
+-- Name: gtsq_out(gtsq); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION gtsq_out(gtsq) RETURNS cstring
+    AS '$libdir/tsearch2', 'gtsq_out'
+    LANGUAGE c STRICT;
+
+
+--
+-- Name: gtsq; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE gtsq (
+    INTERNALLENGTH = 8,
+    INPUT = gtsq_in,
+    OUTPUT = gtsq_out,
+    ALIGNMENT = int4,
+    STORAGE = plain
+);
+
+
+--
+-- Name: gtsvector; Type: SHELL TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE gtsvector;
+
+
+--
+-- Name: gtsvector_in(cstring); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION gtsvector_in(cstring) RETURNS gtsvector
+    AS '$libdir/tsearch2', 'gtsvector_in'
+    LANGUAGE c STRICT;
+
+
+--
+-- Name: gtsvector_out(gtsvector); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION gtsvector_out(gtsvector) RETURNS cstring
+    AS '$libdir/tsearch2', 'gtsvector_out'
+    LANGUAGE c STRICT;
+
+
+--
+-- Name: gtsvector; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE gtsvector (
+    INTERNALLENGTH = variable,
+    INPUT = gtsvector_in,
+    OUTPUT = gtsvector_out,
+    ALIGNMENT = int4,
+    STORAGE = plain
+);
+
+
+--
+-- Name: tsquery; Type: SHELL TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE tsquery;
+
+
+--
+-- Name: tsquery_in(cstring); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION tsquery_in(cstring) RETURNS tsquery
+    AS '$libdir/tsearch2', 'tsquery_in'
+    LANGUAGE c STRICT;
+
+
+--
+-- Name: tsquery_out(tsquery); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION tsquery_out(tsquery) RETURNS cstring
+    AS '$libdir/tsearch2', 'tsquery_out'
+    LANGUAGE c STRICT;
+
+
+--
+-- Name: tsquery; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE tsquery (
+    INTERNALLENGTH = variable,
+    INPUT = tsquery_in,
+    OUTPUT = tsquery_out,
+    ALIGNMENT = int4,
+    STORAGE = plain
+);
+
+
+--
+-- Name: tsvector; Type: SHELL TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE tsvector;
+
+
+--
+-- Name: tsvector_in(cstring); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION tsvector_in(cstring) RETURNS tsvector
+    AS '$libdir/tsearch2', 'tsvector_in'
+    LANGUAGE c STRICT;
+
+
+--
+-- Name: tsvector_out(tsvector); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION tsvector_out(tsvector) RETURNS cstring
+    AS '$libdir/tsearch2', 'tsvector_out'
+    LANGUAGE c STRICT;
+
+
+--
+-- Name: tsvector; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE tsvector (
+    INTERNALLENGTH = variable,
+    INPUT = tsvector_in,
+    OUTPUT = tsvector_out,
+    ALIGNMENT = int4,
+    STORAGE = extended
+);
+
+
+--
+-- Name: findwikipage_t; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE findwikipage_t AS (
+	page_id bigint,
+	headline text,
+	rank real
+);
+
+
+--
+-- Name: statinfo; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE statinfo AS (
+	word text,
+	ndoc integer,
+	nentry integer
+);
+
+
+--
+-- Name: tokenout; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE tokenout AS (
+	tokid integer,
+	token text
+);
+
+
+--
+-- Name: tokentype; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE tokentype AS (
+	tokid integer,
+	alias text,
+	descr text
+);
+
+
+--
+-- Name: tsdebug; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE tsdebug AS (
+	ts_name text,
+	tok_type text,
+	description text,
+	token text,
+	dict_name text[],
+	tsvector tsvector
+);
+
+
+--
+-- Name: _get_parser_from_curcfg(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION _get_parser_from_curcfg() RETURNS text
+    AS $$ select prs_name from pg_ts_cfg where oid = show_curcfg() $$
+    LANGUAGE sql IMMUTABLE STRICT;
+
+
+--
+-- Name: concat(tsvector, tsvector); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION concat(tsvector, tsvector) RETURNS tsvector
+    AS '$libdir/tsearch2', 'concat'
+    LANGUAGE c IMMUTABLE STRICT;
+
+
+--
+-- Name: dex_init(internal); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION dex_init(internal) RETURNS internal
+    AS '$libdir/tsearch2', 'dex_init'
+    LANGUAGE c;
+
+
+--
+-- Name: dex_lexize(internal, internal, integer); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION dex_lexize(internal, internal, integer) RETURNS internal
+    AS '$libdir/tsearch2', 'dex_lexize'
+    LANGUAGE c STRICT;
+
+
+--
+-- Name: exectsq(tsvector, tsquery); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION exectsq(tsvector, tsquery) RETURNS boolean
+    AS '$libdir/tsearch2', 'exectsq'
+    LANGUAGE c IMMUTABLE STRICT;
+
+
+--
+-- Name: FUNCTION exectsq(tsvector, tsquery); Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON FUNCTION exectsq(tsvector, tsquery) IS 'boolean operation with text index';
+
+
+--
+-- Name: findwikipage(text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION findwikipage(text) RETURNS SETOF findwikipage_t
+    AS $_$
+SELECT page_id, headline(page_text, q), rank(page_searchv, q) FROM wikitext, to_tsquery($1) AS q WHERE page_searchv @@ q ORDER BY rank(page_searchv, q) DESC$_$
+    LANGUAGE sql;
+
+
+--
+-- Name: get_covers(tsvector, tsquery); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION get_covers(tsvector, tsquery) RETURNS text
+    AS '$libdir/tsearch2', 'get_covers'
+    LANGUAGE c STRICT;
+
+
+--
+-- Name: gin_extract_tsquery(tsquery, internal, internal); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION gin_extract_tsquery(tsquery, internal, internal) RETURNS internal
+    AS '$libdir/tsearch2', 'gin_extract_tsquery'
+    LANGUAGE c STRICT;
+
+
+--
+-- Name: gin_extract_tsvector(tsvector, internal); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION gin_extract_tsvector(tsvector, internal) RETURNS internal
+    AS '$libdir/tsearch2', 'gin_extract_tsvector'
+    LANGUAGE c STRICT;
+
+
+--
+-- Name: gin_ts_consistent(internal, internal, tsquery); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION gin_ts_consistent(internal, internal, tsquery) RETURNS boolean
+    AS '$libdir/tsearch2', 'gin_ts_consistent'
+    LANGUAGE c STRICT;
+
+
+--
+-- Name: gtsq_compress(internal); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION gtsq_compress(internal) RETURNS internal
+    AS '$libdir/tsearch2', 'gtsq_compress'
+    LANGUAGE c;
+
+
+--
+-- Name: gtsq_consistent(gtsq, internal, integer); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION gtsq_consistent(gtsq, internal, integer) RETURNS boolean
+    AS '$libdir/tsearch2', 'gtsq_consistent'
+    LANGUAGE c;
+
+
+--
+-- Name: gtsq_decompress(internal); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION gtsq_decompress(internal) RETURNS internal
+    AS '$libdir/tsearch2', 'gtsq_decompress'
+    LANGUAGE c;
+
+
+--
+-- Name: gtsq_penalty(internal, internal, internal); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION gtsq_penalty(internal, internal, internal) RETURNS internal
+    AS '$libdir/tsearch2', 'gtsq_penalty'
+    LANGUAGE c STRICT;
+
+
+--
+-- Name: gtsq_picksplit(internal, internal); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION gtsq_picksplit(internal, internal) RETURNS internal
+    AS '$libdir/tsearch2', 'gtsq_picksplit'
+    LANGUAGE c;
+
+
+--
+-- Name: gtsq_same(gtsq, gtsq, internal); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION gtsq_same(gtsq, gtsq, internal) RETURNS internal
+    AS '$libdir/tsearch2', 'gtsq_same'
+    LANGUAGE c;
+
+
+--
+-- Name: gtsq_union(bytea, internal); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION gtsq_union(bytea, internal) RETURNS integer[]
+    AS '$libdir/tsearch2', 'gtsq_union'
+    LANGUAGE c;
+
+
+--
+-- Name: gtsvector_compress(internal); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION gtsvector_compress(internal) RETURNS internal
+    AS '$libdir/tsearch2', 'gtsvector_compress'
+    LANGUAGE c;
+
+
+--
+-- Name: gtsvector_consistent(gtsvector, internal, integer); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION gtsvector_consistent(gtsvector, internal, integer) RETURNS boolean
+    AS '$libdir/tsearch2', 'gtsvector_consistent'
+    LANGUAGE c;
+
+
+--
+-- Name: gtsvector_decompress(internal); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION gtsvector_decompress(internal) RETURNS internal
+    AS '$libdir/tsearch2', 'gtsvector_decompress'
+    LANGUAGE c;
+
+
+--
+-- Name: gtsvector_penalty(internal, internal, internal); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION gtsvector_penalty(internal, internal, internal) RETURNS internal
+    AS '$libdir/tsearch2', 'gtsvector_penalty'
+    LANGUAGE c STRICT;
+
+
+--
+-- Name: gtsvector_picksplit(internal, internal); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION gtsvector_picksplit(internal, internal) RETURNS internal
+    AS '$libdir/tsearch2', 'gtsvector_picksplit'
+    LANGUAGE c;
+
+
+--
+-- Name: gtsvector_same(gtsvector, gtsvector, internal); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION gtsvector_same(gtsvector, gtsvector, internal) RETURNS internal
+    AS '$libdir/tsearch2', 'gtsvector_same'
+    LANGUAGE c;
+
+
+--
+-- Name: gtsvector_union(internal, internal); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION gtsvector_union(internal, internal) RETURNS integer[]
+    AS '$libdir/tsearch2', 'gtsvector_union'
+    LANGUAGE c;
+
+
+--
+-- Name: headline(oid, text, tsquery, text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION headline(oid, text, tsquery, text) RETURNS text
+    AS '$libdir/tsearch2', 'headline'
+    LANGUAGE c IMMUTABLE STRICT;
+
+
+--
+-- Name: headline(oid, text, tsquery); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION headline(oid, text, tsquery) RETURNS text
+    AS '$libdir/tsearch2', 'headline'
+    LANGUAGE c IMMUTABLE STRICT;
+
+
+--
+-- Name: headline(text, text, tsquery, text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION headline(text, text, tsquery, text) RETURNS text
+    AS '$libdir/tsearch2', 'headline_byname'
+    LANGUAGE c IMMUTABLE STRICT;
+
+
+--
+-- Name: headline(text, text, tsquery); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION headline(text, text, tsquery) RETURNS text
+    AS '$libdir/tsearch2', 'headline_byname'
+    LANGUAGE c IMMUTABLE STRICT;
+
+
+--
+-- Name: headline(text, tsquery, text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION headline(text, tsquery, text) RETURNS text
+    AS '$libdir/tsearch2', 'headline_current'
+    LANGUAGE c IMMUTABLE STRICT;
+
+
+--
+-- Name: headline(text, tsquery); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION headline(text, tsquery) RETURNS text
+    AS '$libdir/tsearch2', 'headline_current'
+    LANGUAGE c IMMUTABLE STRICT;
+
+
+--
+-- Name: length(tsvector); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION length(tsvector) RETURNS integer
+    AS '$libdir/tsearch2', 'tsvector_length'
+    LANGUAGE c IMMUTABLE STRICT;
+
+
+--
+-- Name: lexize(oid, text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION lexize(oid, text) RETURNS text[]
+    AS '$libdir/tsearch2', 'lexize'
+    LANGUAGE c STRICT;
+
+
+--
+-- Name: lexize(text, text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION lexize(text, text) RETURNS text[]
+    AS '$libdir/tsearch2', 'lexize_byname'
+    LANGUAGE c STRICT;
+
+
+--
+-- Name: lexize(text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION lexize(text) RETURNS text[]
+    AS '$libdir/tsearch2', 'lexize_bycurrent'
+    LANGUAGE c STRICT;
+
+
+--
+-- Name: numnode(tsquery); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION numnode(tsquery) RETURNS integer
+    AS '$libdir/tsearch2', 'tsquery_numnode'
+    LANGUAGE c IMMUTABLE STRICT;
+
+
+--
+-- Name: parse(oid, text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION parse(oid, text) RETURNS SETOF tokenout
+    AS '$libdir/tsearch2', 'parse'
+    LANGUAGE c STRICT;
+
+
+--
+-- Name: parse(text, text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION parse(text, text) RETURNS SETOF tokenout
+    AS '$libdir/tsearch2', 'parse_byname'
+    LANGUAGE c STRICT;
+
+
+--
+-- Name: parse(text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION parse(text) RETURNS SETOF tokenout
+    AS '$libdir/tsearch2', 'parse_current'
+    LANGUAGE c STRICT;
+
+
+--
+-- Name: plainto_tsquery(oid, text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION plainto_tsquery(oid, text) RETURNS tsquery
+    AS '$libdir/tsearch2', 'plainto_tsquery'
+    LANGUAGE c IMMUTABLE STRICT;
+
+
+--
+-- Name: plainto_tsquery(text, text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION plainto_tsquery(text, text) RETURNS tsquery
+    AS '$libdir/tsearch2', 'plainto_tsquery_name'
+    LANGUAGE c IMMUTABLE STRICT;
+
+
+--
+-- Name: plainto_tsquery(text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION plainto_tsquery(text) RETURNS tsquery
+    AS '$libdir/tsearch2', 'plainto_tsquery_current'
+    LANGUAGE c IMMUTABLE STRICT;
+
+
+--
+-- Name: prsd_end(internal); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION prsd_end(internal) RETURNS void
+    AS '$libdir/tsearch2', 'prsd_end'
+    LANGUAGE c;
+
+
+--
+-- Name: prsd_getlexeme(internal, internal, internal); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION prsd_getlexeme(internal, internal, internal) RETURNS integer
+    AS '$libdir/tsearch2', 'prsd_getlexeme'
+    LANGUAGE c;
+
+
+--
+-- Name: prsd_headline(internal, internal, internal); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION prsd_headline(internal, internal, internal) RETURNS internal
+    AS '$libdir/tsearch2', 'prsd_headline'
+    LANGUAGE c;
+
+
+--
+-- Name: prsd_lextype(internal); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION prsd_lextype(internal) RETURNS internal
+    AS '$libdir/tsearch2', 'prsd_lextype'
+    LANGUAGE c;
+
+
+--
+-- Name: prsd_start(internal, integer); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION prsd_start(internal, integer) RETURNS internal
+    AS '$libdir/tsearch2', 'prsd_start'
+    LANGUAGE c;
+
+
+--
+-- Name: querytree(tsquery); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION querytree(tsquery) RETURNS text
+    AS '$libdir/tsearch2', 'tsquerytree'
+    LANGUAGE c STRICT;
+
+
+--
+-- Name: rank(real[], tsvector, tsquery); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION rank(real[], tsvector, tsquery) RETURNS real
+    AS '$libdir/tsearch2', 'rank'
+    LANGUAGE c IMMUTABLE STRICT;
+
+
+--
+-- Name: rank(real[], tsvector, tsquery, integer); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION rank(real[], tsvector, tsquery, integer) RETURNS real
+    AS '$libdir/tsearch2', 'rank'
+    LANGUAGE c IMMUTABLE STRICT;
+
+
+--
+-- Name: rank(tsvector, tsquery); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION rank(tsvector, tsquery) RETURNS real
+    AS '$libdir/tsearch2', 'rank_def'
+    LANGUAGE c IMMUTABLE STRICT;
+
+
+--
+-- Name: rank(tsvector, tsquery, integer); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION rank(tsvector, tsquery, integer) RETURNS real
+    AS '$libdir/tsearch2', 'rank_def'
+    LANGUAGE c IMMUTABLE STRICT;
+
+
+--
+-- Name: rank_cd(real[], tsvector, tsquery); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION rank_cd(real[], tsvector, tsquery) RETURNS real
+    AS '$libdir/tsearch2', 'rank_cd'
+    LANGUAGE c IMMUTABLE STRICT;
+
+
+--
+-- Name: rank_cd(real[], tsvector, tsquery, integer); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION rank_cd(real[], tsvector, tsquery, integer) RETURNS real
+    AS '$libdir/tsearch2', 'rank_cd'
+    LANGUAGE c IMMUTABLE STRICT;
+
+
+--
+-- Name: rank_cd(tsvector, tsquery); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION rank_cd(tsvector, tsquery) RETURNS real
+    AS '$libdir/tsearch2', 'rank_cd_def'
+    LANGUAGE c IMMUTABLE STRICT;
+
+
+--
+-- Name: rank_cd(tsvector, tsquery, integer); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION rank_cd(tsvector, tsquery, integer) RETURNS real
+    AS '$libdir/tsearch2', 'rank_cd_def'
+    LANGUAGE c IMMUTABLE STRICT;
+
+
+--
+-- Name: reset_tsearch(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION reset_tsearch() RETURNS void
+    AS '$libdir/tsearch2', 'reset_tsearch'
+    LANGUAGE c STRICT;
+
+
+--
+-- Name: rewrite(tsquery, text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION rewrite(tsquery, text) RETURNS tsquery
+    AS '$libdir/tsearch2', 'tsquery_rewrite'
+    LANGUAGE c IMMUTABLE STRICT;
+
+
+--
+-- Name: rewrite(tsquery, tsquery, tsquery); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION rewrite(tsquery, tsquery, tsquery) RETURNS tsquery
+    AS '$libdir/tsearch2', 'tsquery_rewrite_query'
+    LANGUAGE c IMMUTABLE STRICT;
+
+
+--
+-- Name: rewrite_accum(tsquery, tsquery[]); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION rewrite_accum(tsquery, tsquery[]) RETURNS tsquery
+    AS '$libdir/tsearch2', 'rewrite_accum'
+    LANGUAGE c;
+
+
+--
+-- Name: rewrite_finish(tsquery); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION rewrite_finish(tsquery) RETURNS tsquery
+    AS '$libdir/tsearch2', 'rewrite_finish'
+    LANGUAGE c;
+
+
+--
+-- Name: rexectsq(tsquery, tsvector); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION rexectsq(tsquery, tsvector) RETURNS boolean
+    AS '$libdir/tsearch2', 'rexectsq'
+    LANGUAGE c IMMUTABLE STRICT;
+
+
+--
+-- Name: FUNCTION rexectsq(tsquery, tsvector); Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON FUNCTION rexectsq(tsquery, tsvector) IS 'boolean operation with text index';
+
+
+--
+-- Name: set_curcfg(integer); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION set_curcfg(integer) RETURNS void
+    AS '$libdir/tsearch2', 'set_curcfg'
+    LANGUAGE c STRICT;
+
+
+--
+-- Name: set_curcfg(text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION set_curcfg(text) RETURNS void
+    AS '$libdir/tsearch2', 'set_curcfg_byname'
+    LANGUAGE c STRICT;
+
+
+--
+-- Name: set_curdict(integer); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION set_curdict(integer) RETURNS void
+    AS '$libdir/tsearch2', 'set_curdict'
+    LANGUAGE c STRICT;
+
+
+--
+-- Name: set_curdict(text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION set_curdict(text) RETURNS void
+    AS '$libdir/tsearch2', 'set_curdict_byname'
+    LANGUAGE c STRICT;
+
+
+--
+-- Name: set_curprs(integer); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION set_curprs(integer) RETURNS void
+    AS '$libdir/tsearch2', 'set_curprs'
+    LANGUAGE c STRICT;
+
+
+--
+-- Name: set_curprs(text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION set_curprs(text) RETURNS void
+    AS '$libdir/tsearch2', 'set_curprs_byname'
+    LANGUAGE c STRICT;
+
+
+--
+-- Name: setweight(tsvector, "char"); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION setweight(tsvector, "char") RETURNS tsvector
+    AS '$libdir/tsearch2', 'setweight'
+    LANGUAGE c IMMUTABLE STRICT;
+
+
+--
+-- Name: show_curcfg(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION show_curcfg() RETURNS oid
+    AS '$libdir/tsearch2', 'show_curcfg'
+    LANGUAGE c STRICT;
+
+
+--
+-- Name: snb_en_init(internal); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION snb_en_init(internal) RETURNS internal
+    AS '$libdir/tsearch2', 'snb_en_init'
+    LANGUAGE c;
+
+
+--
+-- Name: snb_lexize(internal, internal, integer); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION snb_lexize(internal, internal, integer) RETURNS internal
+    AS '$libdir/tsearch2', 'snb_lexize'
+    LANGUAGE c STRICT;
+
+
+--
+-- Name: snb_ru_init_koi8(internal); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION snb_ru_init_koi8(internal) RETURNS internal
+    AS '$libdir/tsearch2', 'snb_ru_init_koi8'
+    LANGUAGE c;
+
+
+--
+-- Name: snb_ru_init_utf8(internal); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION snb_ru_init_utf8(internal) RETURNS internal
+    AS '$libdir/tsearch2', 'snb_ru_init_utf8'
+    LANGUAGE c;
+
+
+--
+-- Name: spell_init(internal); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION spell_init(internal) RETURNS internal
+    AS '$libdir/tsearch2', 'spell_init'
+    LANGUAGE c;
+
+
+--
+-- Name: spell_lexize(internal, internal, integer); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION spell_lexize(internal, internal, integer) RETURNS internal
+    AS '$libdir/tsearch2', 'spell_lexize'
+    LANGUAGE c STRICT;
+
+
+--
+-- Name: stat(text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION stat(text) RETURNS SETOF statinfo
+    AS '$libdir/tsearch2', 'ts_stat'
+    LANGUAGE c STRICT;
+
+
+--
+-- Name: stat(text, text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION stat(text, text) RETURNS SETOF statinfo
+    AS '$libdir/tsearch2', 'ts_stat'
+    LANGUAGE c STRICT;
+
+
+--
+-- Name: strip(tsvector); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION strip(tsvector) RETURNS tsvector
+    AS '$libdir/tsearch2', 'strip'
+    LANGUAGE c IMMUTABLE STRICT;
+
+
+--
+-- Name: syn_init(internal); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION syn_init(internal) RETURNS internal
+    AS '$libdir/tsearch2', 'syn_init'
+    LANGUAGE c;
+
+
+--
+-- Name: syn_lexize(internal, internal, integer); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION syn_lexize(internal, internal, integer) RETURNS internal
+    AS '$libdir/tsearch2', 'syn_lexize'
+    LANGUAGE c STRICT;
+
+
+--
+-- Name: thesaurus_init(internal); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION thesaurus_init(internal) RETURNS internal
+    AS '$libdir/tsearch2', 'thesaurus_init'
+    LANGUAGE c;
+
+
+--
+-- Name: thesaurus_lexize(internal, internal, integer, internal); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION thesaurus_lexize(internal, internal, integer, internal) RETURNS internal
+    AS '$libdir/tsearch2', 'thesaurus_lexize'
+    LANGUAGE c STRICT;
+
+
+--
+-- Name: to_tsquery(oid, text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION to_tsquery(oid, text) RETURNS tsquery
+    AS '$libdir/tsearch2', 'to_tsquery'
+    LANGUAGE c IMMUTABLE STRICT;
+
+
+--
+-- Name: to_tsquery(text, text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION to_tsquery(text, text) RETURNS tsquery
+    AS '$libdir/tsearch2', 'to_tsquery_name'
+    LANGUAGE c IMMUTABLE STRICT;
+
+
+--
+-- Name: to_tsquery(text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION to_tsquery(text) RETURNS tsquery
+    AS '$libdir/tsearch2', 'to_tsquery_current'
+    LANGUAGE c IMMUTABLE STRICT;
+
+
+--
+-- Name: to_tsvector(oid, text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION to_tsvector(oid, text) RETURNS tsvector
+    AS '$libdir/tsearch2', 'to_tsvector'
+    LANGUAGE c IMMUTABLE STRICT;
+
+
+--
+-- Name: to_tsvector(text, text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION to_tsvector(text, text) RETURNS tsvector
+    AS '$libdir/tsearch2', 'to_tsvector_name'
+    LANGUAGE c IMMUTABLE STRICT;
+
+
+--
+-- Name: to_tsvector(text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION to_tsvector(text) RETURNS tsvector
+    AS '$libdir/tsearch2', 'to_tsvector_current'
+    LANGUAGE c IMMUTABLE STRICT;
+
+
+--
+-- Name: token_type(integer); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION token_type(integer) RETURNS SETOF tokentype
+    AS '$libdir/tsearch2', 'token_type'
+    LANGUAGE c STRICT;
+
+
+--
+-- Name: token_type(text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION token_type(text) RETURNS SETOF tokentype
+    AS '$libdir/tsearch2', 'token_type_byname'
+    LANGUAGE c STRICT;
+
+
+--
+-- Name: token_type(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION token_type() RETURNS SETOF tokentype
+    AS '$libdir/tsearch2', 'token_type_current'
+    LANGUAGE c STRICT;
+
+
+--
+-- Name: ts_debug(text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION ts_debug(text) RETURNS SETOF tsdebug
+    AS $_$
+select 
+        m.ts_name,
+        t.alias as tok_type,
+        t.descr as description,
+        p.token,
+        m.dict_name,
+        strip(to_tsvector(p.token)) as tsvector
+from
+        parse( _get_parser_from_curcfg(), $1 ) as p,
+        token_type() as t,
+        pg_ts_cfgmap as m,
+        pg_ts_cfg as c
+where
+        t.tokid=p.tokid and
+        t.alias = m.tok_alias and 
+        m.ts_name=c.ts_name and 
+        c.oid=show_curcfg() 
+$_$
+    LANGUAGE sql STRICT;
+
+
+--
+-- Name: tsearch2(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION tsearch2() RETURNS "trigger"
+    AS '$libdir/tsearch2', 'tsearch2'
+    LANGUAGE c;
+
+
+--
+-- Name: tsq_mcontained(tsquery, tsquery); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION tsq_mcontained(tsquery, tsquery) RETURNS boolean
+    AS '$libdir/tsearch2', 'tsq_mcontained'
+    LANGUAGE c IMMUTABLE STRICT;
+
+
+--
+-- Name: tsq_mcontains(tsquery, tsquery); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION tsq_mcontains(tsquery, tsquery) RETURNS boolean
+    AS '$libdir/tsearch2', 'tsq_mcontains'
+    LANGUAGE c IMMUTABLE STRICT;
+
+
+--
+-- Name: tsquery_and(tsquery, tsquery); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION tsquery_and(tsquery, tsquery) RETURNS tsquery
+    AS '$libdir/tsearch2', 'tsquery_and'
+    LANGUAGE c IMMUTABLE STRICT;
+
+
+--
+-- Name: tsquery_cmp(tsquery, tsquery); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION tsquery_cmp(tsquery, tsquery) RETURNS integer
+    AS '$libdir/tsearch2', 'tsquery_cmp'
+    LANGUAGE c IMMUTABLE STRICT;
+
+
+--
+-- Name: tsquery_eq(tsquery, tsquery); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION tsquery_eq(tsquery, tsquery) RETURNS boolean
+    AS '$libdir/tsearch2', 'tsquery_eq'
+    LANGUAGE c IMMUTABLE STRICT;
+
+
+--
+-- Name: tsquery_ge(tsquery, tsquery); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION tsquery_ge(tsquery, tsquery) RETURNS boolean
+    AS '$libdir/tsearch2', 'tsquery_ge'
+    LANGUAGE c IMMUTABLE STRICT;
+
+
+--
+-- Name: tsquery_gt(tsquery, tsquery); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION tsquery_gt(tsquery, tsquery) RETURNS boolean
+    AS '$libdir/tsearch2', 'tsquery_gt'
+    LANGUAGE c IMMUTABLE STRICT;
+
+
+--
+-- Name: tsquery_le(tsquery, tsquery); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION tsquery_le(tsquery, tsquery) RETURNS boolean
+    AS '$libdir/tsearch2', 'tsquery_le'
+    LANGUAGE c IMMUTABLE STRICT;
+
+
+--
+-- Name: tsquery_lt(tsquery, tsquery); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION tsquery_lt(tsquery, tsquery) RETURNS boolean
+    AS '$libdir/tsearch2', 'tsquery_lt'
+    LANGUAGE c IMMUTABLE STRICT;
+
+
+--
+-- Name: tsquery_ne(tsquery, tsquery); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION tsquery_ne(tsquery, tsquery) RETURNS boolean
+    AS '$libdir/tsearch2', 'tsquery_ne'
+    LANGUAGE c IMMUTABLE STRICT;
+
+
+--
+-- Name: tsquery_not(tsquery); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION tsquery_not(tsquery) RETURNS tsquery
+    AS '$libdir/tsearch2', 'tsquery_not'
+    LANGUAGE c IMMUTABLE STRICT;
+
+
+--
+-- Name: tsquery_or(tsquery, tsquery); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION tsquery_or(tsquery, tsquery) RETURNS tsquery
+    AS '$libdir/tsearch2', 'tsquery_or'
+    LANGUAGE c IMMUTABLE STRICT;
+
+
+--
+-- Name: tsvector_cmp(tsvector, tsvector); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION tsvector_cmp(tsvector, tsvector) RETURNS integer
+    AS '$libdir/tsearch2', 'tsvector_cmp'
+    LANGUAGE c IMMUTABLE STRICT;
+
+
+--
+-- Name: tsvector_eq(tsvector, tsvector); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION tsvector_eq(tsvector, tsvector) RETURNS boolean
+    AS '$libdir/tsearch2', 'tsvector_eq'
+    LANGUAGE c IMMUTABLE STRICT;
+
+
+--
+-- Name: tsvector_ge(tsvector, tsvector); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION tsvector_ge(tsvector, tsvector) RETURNS boolean
+    AS '$libdir/tsearch2', 'tsvector_ge'
+    LANGUAGE c IMMUTABLE STRICT;
+
+
+--
+-- Name: tsvector_gt(tsvector, tsvector); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION tsvector_gt(tsvector, tsvector) RETURNS boolean
+    AS '$libdir/tsearch2', 'tsvector_gt'
+    LANGUAGE c IMMUTABLE STRICT;
+
+
+--
+-- Name: tsvector_le(tsvector, tsvector); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION tsvector_le(tsvector, tsvector) RETURNS boolean
+    AS '$libdir/tsearch2', 'tsvector_le'
+    LANGUAGE c IMMUTABLE STRICT;
+
+
+--
+-- Name: tsvector_lt(tsvector, tsvector); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION tsvector_lt(tsvector, tsvector) RETURNS boolean
+    AS '$libdir/tsearch2', 'tsvector_lt'
+    LANGUAGE c IMMUTABLE STRICT;
+
+
+--
+-- Name: tsvector_ne(tsvector, tsvector); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION tsvector_ne(tsvector, tsvector) RETURNS boolean
+    AS '$libdir/tsearch2', 'tsvector_ne'
+    LANGUAGE c IMMUTABLE STRICT;
+
+
+--
+-- Name: rewrite(tsquery[]); Type: AGGREGATE; Schema: public; Owner: -
+--
+
+CREATE AGGREGATE rewrite(tsquery[]) (
+    SFUNC = rewrite_accum,
+    STYPE = tsquery,
+    FINALFUNC = rewrite_finish
+);
+
+
+--
+-- Name: !!; Type: OPERATOR; Schema: public; Owner: -
+--
+
+CREATE OPERATOR !! (
+    PROCEDURE = tsquery_not,
+    RIGHTARG = tsquery
+);
+
+
+--
+-- Name: &&; Type: OPERATOR; Schema: public; Owner: -
+--
+
+CREATE OPERATOR && (
+    PROCEDURE = tsquery_and,
+    LEFTARG = tsquery,
+    RIGHTARG = tsquery,
+    COMMUTATOR = &&,
+    RESTRICT = contsel,
+    JOIN = contjoinsel
+);
+
+
+--
+-- Name: <; Type: OPERATOR; Schema: public; Owner: -
+--
+
+CREATE OPERATOR < (
+    PROCEDURE = tsvector_lt,
+    LEFTARG = tsvector,
+    RIGHTARG = tsvector,
+    COMMUTATOR = >,
+    NEGATOR = >=,
+    RESTRICT = contsel,
+    JOIN = contjoinsel
+);
+
+
+--
+-- Name: <; Type: OPERATOR; Schema: public; Owner: -
+--
+
+CREATE OPERATOR < (
+    PROCEDURE = tsquery_lt,
+    LEFTARG = tsquery,
+    RIGHTARG = tsquery,
+    COMMUTATOR = >,
+    NEGATOR = >=,
+    RESTRICT = contsel,
+    JOIN = contjoinsel
+);
+
+
+--
+-- Name: <=; Type: OPERATOR; Schema: public; Owner: -
+--
+
+CREATE OPERATOR <= (
+    PROCEDURE = tsvector_le,
+    LEFTARG = tsvector,
+    RIGHTARG = tsvector,
+    COMMUTATOR = >=,
+    NEGATOR = >,
+    RESTRICT = contsel,
+    JOIN = contjoinsel
+);
+
+
+--
+-- Name: <=; Type: OPERATOR; Schema: public; Owner: -
+--
+
+CREATE OPERATOR <= (
+    PROCEDURE = tsquery_le,
+    LEFTARG = tsquery,
+    RIGHTARG = tsquery,
+    COMMUTATOR = >=,
+    NEGATOR = >,
+    RESTRICT = contsel,
+    JOIN = contjoinsel
+);
+
+
+--
+-- Name: <>; Type: OPERATOR; Schema: public; Owner: -
+--
+
+CREATE OPERATOR <> (
+    PROCEDURE = tsvector_ne,
+    LEFTARG = tsvector,
+    RIGHTARG = tsvector,
+    COMMUTATOR = <>,
+    NEGATOR = =,
+    RESTRICT = neqsel,
+    JOIN = neqjoinsel
+);
+
+
+--
+-- Name: <>; Type: OPERATOR; Schema: public; Owner: -
+--
+
+CREATE OPERATOR <> (
+    PROCEDURE = tsquery_ne,
+    LEFTARG = tsquery,
+    RIGHTARG = tsquery,
+    COMMUTATOR = <>,
+    NEGATOR = =,
+    RESTRICT = neqsel,
+    JOIN = neqjoinsel
+);
+
+
+--
+-- Name: <@; Type: OPERATOR; Schema: public; Owner: -
+--
+
+CREATE OPERATOR <@ (
+    PROCEDURE = tsq_mcontained,
+    LEFTARG = tsquery,
+    RIGHTARG = tsquery,
+    COMMUTATOR = @>,
+    RESTRICT = contsel,
+    JOIN = contjoinsel
+);
+
+
+--
+-- Name: =; Type: OPERATOR; Schema: public; Owner: -
+--
+
+CREATE OPERATOR = (
+    PROCEDURE = tsvector_eq,
+    LEFTARG = tsvector,
+    RIGHTARG = tsvector,
+    COMMUTATOR = =,
+    NEGATOR = <>,
+    RESTRICT = eqsel,
+    JOIN = eqjoinsel,
+    SORT1 = <,
+    SORT2 = <,
+    LTCMP = <,
+    GTCMP = >
+);
+
+
+--
+-- Name: =; Type: OPERATOR; Schema: public; Owner: -
+--
+
+CREATE OPERATOR = (
+    PROCEDURE = tsquery_eq,
+    LEFTARG = tsquery,
+    RIGHTARG = tsquery,
+    COMMUTATOR = =,
+    NEGATOR = <>,
+    RESTRICT = eqsel,
+    JOIN = eqjoinsel,
+    SORT1 = <,
+    SORT2 = <,
+    LTCMP = <,
+    GTCMP = >
+);
+
+
+--
+-- Name: >; Type: OPERATOR; Schema: public; Owner: -
+--
+
+CREATE OPERATOR > (
+    PROCEDURE = tsvector_gt,
+    LEFTARG = tsvector,
+    RIGHTARG = tsvector,
+    COMMUTATOR = <,
+    NEGATOR = <=,
+    RESTRICT = contsel,
+    JOIN = contjoinsel
+);
+
+
+--
+-- Name: >; Type: OPERATOR; Schema: public; Owner: -
+--
+
+CREATE OPERATOR > (
+    PROCEDURE = tsquery_gt,
+    LEFTARG = tsquery,
+    RIGHTARG = tsquery,
+    COMMUTATOR = <,
+    NEGATOR = <=,
+    RESTRICT = contsel,
+    JOIN = contjoinsel
+);
+
+
+--
+-- Name: >=; Type: OPERATOR; Schema: public; Owner: -
+--
+
+CREATE OPERATOR >= (
+    PROCEDURE = tsvector_ge,
+    LEFTARG = tsvector,
+    RIGHTARG = tsvector,
+    COMMUTATOR = <=,
+    NEGATOR = <,
+    RESTRICT = contsel,
+    JOIN = contjoinsel
+);
+
+
+--
+-- Name: >=; Type: OPERATOR; Schema: public; Owner: -
+--
+
+CREATE OPERATOR >= (
+    PROCEDURE = tsquery_ge,
+    LEFTARG = tsquery,
+    RIGHTARG = tsquery,
+    COMMUTATOR = <=,
+    NEGATOR = <,
+    RESTRICT = contsel,
+    JOIN = contjoinsel
+);
+
+
+--
+-- Name: @; Type: OPERATOR; Schema: public; Owner: -
+--
+
+CREATE OPERATOR @ (
+    PROCEDURE = tsq_mcontains,
+    LEFTARG = tsquery,
+    RIGHTARG = tsquery,
+    COMMUTATOR = ~,
+    RESTRICT = contsel,
+    JOIN = contjoinsel
+);
+
+
+--
+-- Name: @>; Type: OPERATOR; Schema: public; Owner: -
+--
+
+CREATE OPERATOR @> (
+    PROCEDURE = tsq_mcontains,
+    LEFTARG = tsquery,
+    RIGHTARG = tsquery,
+    COMMUTATOR = <@,
+    RESTRICT = contsel,
+    JOIN = contjoinsel
+);
+
+
+--
+-- Name: @@; Type: OPERATOR; Schema: public; Owner: -
+--
+
+CREATE OPERATOR @@ (
+    PROCEDURE = rexectsq,
+    LEFTARG = tsquery,
+    RIGHTARG = tsvector,
+    COMMUTATOR = @@,
+    RESTRICT = contsel,
+    JOIN = contjoinsel
+);
+
+
+--
+-- Name: @@; Type: OPERATOR; Schema: public; Owner: -
+--
+
+CREATE OPERATOR @@ (
+    PROCEDURE = exectsq,
+    LEFTARG = tsvector,
+    RIGHTARG = tsquery,
+    COMMUTATOR = @@,
+    RESTRICT = contsel,
+    JOIN = contjoinsel
+);
+
+
+--
+-- Name: @@@; Type: OPERATOR; Schema: public; Owner: -
+--
+
+CREATE OPERATOR @@@ (
+    PROCEDURE = rexectsq,
+    LEFTARG = tsquery,
+    RIGHTARG = tsvector,
+    COMMUTATOR = @@@,
+    RESTRICT = contsel,
+    JOIN = contjoinsel
+);
+
+
+--
+-- Name: @@@; Type: OPERATOR; Schema: public; Owner: -
+--
+
+CREATE OPERATOR @@@ (
+    PROCEDURE = exectsq,
+    LEFTARG = tsvector,
+    RIGHTARG = tsquery,
+    COMMUTATOR = @@@,
+    RESTRICT = contsel,
+    JOIN = contjoinsel
+);
+
+
+--
+-- Name: ||; Type: OPERATOR; Schema: public; Owner: -
+--
+
+CREATE OPERATOR || (
+    PROCEDURE = concat,
+    LEFTARG = tsvector,
+    RIGHTARG = tsvector
+);
+
+
+--
+-- Name: ||; Type: OPERATOR; Schema: public; Owner: -
+--
+
+CREATE OPERATOR || (
+    PROCEDURE = tsquery_or,
+    LEFTARG = tsquery,
+    RIGHTARG = tsquery,
+    COMMUTATOR = ||,
+    RESTRICT = contsel,
+    JOIN = contjoinsel
+);
+
+
+--
+-- Name: ~; Type: OPERATOR; Schema: public; Owner: -
+--
+
+CREATE OPERATOR ~ (
+    PROCEDURE = tsq_mcontained,
+    LEFTARG = tsquery,
+    RIGHTARG = tsquery,
+    COMMUTATOR = @,
+    RESTRICT = contsel,
+    JOIN = contjoinsel
+);
+
+
+--
+-- Name: gin_tsvector_ops; Type: OPERATOR CLASS; Schema: public; Owner: -
+--
+
+CREATE OPERATOR CLASS gin_tsvector_ops
+    DEFAULT FOR TYPE tsvector USING gin AS
+    STORAGE text ,
+    OPERATOR 1 @@(tsvector,tsquery) ,
+    OPERATOR 2 @@@(tsvector,tsquery) RECHECK ,
+    FUNCTION 1 bttextcmp(text,text) ,
+    FUNCTION 2 gin_extract_tsvector(tsvector,internal) ,
+    FUNCTION 3 gin_extract_tsquery(tsquery,internal,internal) ,
+    FUNCTION 4 gin_ts_consistent(internal,internal,tsquery);
+
+
+--
+-- Name: gist_tp_tsquery_ops; Type: OPERATOR CLASS; Schema: public; Owner: -
+--
+
+CREATE OPERATOR CLASS gist_tp_tsquery_ops
+    DEFAULT FOR TYPE tsquery USING gist AS
+    STORAGE gtsq ,
+    OPERATOR 7 @>(tsquery,tsquery) RECHECK ,
+    OPERATOR 8 <@(tsquery,tsquery) RECHECK ,
+    OPERATOR 13 @(tsquery,tsquery) RECHECK ,
+    OPERATOR 14 ~(tsquery,tsquery) RECHECK ,
+    FUNCTION 1 gtsq_consistent(gtsq,internal,integer) ,
+    FUNCTION 2 gtsq_union(bytea,internal) ,
+    FUNCTION 3 gtsq_compress(internal) ,
+    FUNCTION 4 gtsq_decompress(internal) ,
+    FUNCTION 5 gtsq_penalty(internal,internal,internal) ,
+    FUNCTION 6 gtsq_picksplit(internal,internal) ,
+    FUNCTION 7 gtsq_same(gtsq,gtsq,internal);
+
+
+--
+-- Name: gist_tsvector_ops; Type: OPERATOR CLASS; Schema: public; Owner: -
+--
+
+CREATE OPERATOR CLASS gist_tsvector_ops
+    DEFAULT FOR TYPE tsvector USING gist AS
+    STORAGE gtsvector ,
+    OPERATOR 1 @@(tsvector,tsquery) RECHECK ,
+    FUNCTION 1 gtsvector_consistent(gtsvector,internal,integer) ,
+    FUNCTION 2 gtsvector_union(internal,internal) ,
+    FUNCTION 3 gtsvector_compress(internal) ,
+    FUNCTION 4 gtsvector_decompress(internal) ,
+    FUNCTION 5 gtsvector_penalty(internal,internal,internal) ,
+    FUNCTION 6 gtsvector_picksplit(internal,internal) ,
+    FUNCTION 7 gtsvector_same(gtsvector,gtsvector,internal);
+
+
+--
+-- Name: tsquery_ops; Type: OPERATOR CLASS; Schema: public; Owner: -
+--
+
+CREATE OPERATOR CLASS tsquery_ops
+    DEFAULT FOR TYPE tsquery USING btree AS
+    OPERATOR 1 <(tsquery,tsquery) ,
+    OPERATOR 2 <=(tsquery,tsquery) ,
+    OPERATOR 3 =(tsquery,tsquery) ,
+    OPERATOR 4 >=(tsquery,tsquery) ,
+    OPERATOR 5 >(tsquery,tsquery) ,
+    FUNCTION 1 tsquery_cmp(tsquery,tsquery);
+
+
+--
+-- Name: tsvector_ops; Type: OPERATOR CLASS; Schema: public; Owner: -
+--
+
+CREATE OPERATOR CLASS tsvector_ops
+    DEFAULT FOR TYPE tsvector USING btree AS
+    OPERATOR 1 <(tsvector,tsvector) ,
+    OPERATOR 2 <=(tsvector,tsvector) ,
+    OPERATOR 3 =(tsvector,tsvector) ,
+    OPERATOR 4 >=(tsvector,tsvector) ,
+    OPERATOR 5 >(tsvector,tsvector) ,
+    FUNCTION 1 tsvector_cmp(tsvector,tsvector);
+
+
+SET default_tablespace = '';
+
+SET default_with_oids = false;
+
+--
+-- Name: activity_in_pages; Type: TABLE; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE TABLE activity_in_pages (
+    activity_log_id bigint NOT NULL,
+    page_id bigint NOT NULL
+);
+
+
+--
+-- Name: activity_log; Type: TABLE; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE TABLE activity_log (
+    id integer NOT NULL,
+    activity_timestamp timestamp without time zone DEFAULT now(),
+    activity_id bigint NOT NULL,
+    todo_id bigint
+);
+
+
+--
+-- Name: activity_log_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE activity_log_id_seq
+    INCREMENT BY 1
+    NO MAXVALUE
+    NO MINVALUE
+    CACHE 1;
+
+
+--
+-- Name: activity_log_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE activity_log_id_seq OWNED BY activity_log.id;
+
+
+--
+-- Name: activity_log_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('activity_log_id_seq', 2706, true);
+
+
+--
+-- Name: pages; Type: TABLE; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE TABLE pages (
+    id integer NOT NULL,
+    page_descr character varying(256)
+);
+
+
+--
+-- Name: pages_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE pages_id_seq
+    INCREMENT BY 1
+    NO MAXVALUE
+    NO MINVALUE
+    CACHE 1;
+
+
+--
+-- Name: pages_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE pages_id_seq OWNED BY pages.id;
+
+
+--
+-- Name: pages_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('pages_id_seq', 331, true);
+
+
+SET default_with_oids = true;
+
+--
+-- Name: pg_ts_cfg; Type: TABLE; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE TABLE pg_ts_cfg (
+    ts_name text NOT NULL,
+    prs_name text NOT NULL,
+    locale text
+);
+
+
+--
+-- Name: pg_ts_cfgmap; Type: TABLE; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE TABLE pg_ts_cfgmap (
+    ts_name text NOT NULL,
+    tok_alias text NOT NULL,
+    dict_name text[]
+);
+
+
+--
+-- Name: pg_ts_dict; Type: TABLE; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE TABLE pg_ts_dict (
+    dict_name text NOT NULL,
+    dict_init regprocedure,
+    dict_initoption text,
+    dict_lexize regprocedure NOT NULL,
+    dict_comment text
+);
+
+
+--
+-- Name: pg_ts_parser; Type: TABLE; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE TABLE pg_ts_parser (
+    prs_name text NOT NULL,
+    prs_start regprocedure NOT NULL,
+    prs_nexttoken regprocedure NOT NULL,
+    prs_end regprocedure NOT NULL,
+    prs_headline regprocedure NOT NULL,
+    prs_lextype regprocedure NOT NULL,
+    prs_comment text
+);
+
+
+SET default_with_oids = false;
+
+--
+-- Name: todos; Type: TABLE; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE TABLE todos (
+    id integer NOT NULL,
+    completed boolean DEFAULT false,
+    created timestamp without time zone DEFAULT now(),
+    priority integer DEFAULT 3,
+    descr text,
+    activation_date date DEFAULT now(),
+    CONSTRAINT todos_priority CHECK ((((priority = 1) OR (priority = 2)) OR (priority = 3)))
+);
+
+
+--
+-- Name: todos_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE todos_id_seq
+    INCREMENT BY 1
+    NO MAXVALUE
+    NO MINVALUE
+    CACHE 1;
+
+
+--
+-- Name: todos_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE todos_id_seq OWNED BY todos.id;
+
+
+--
+-- Name: todos_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('todos_id_seq', 456, true);
+
+
+--
+-- Name: todos_in_pages; Type: TABLE; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE TABLE todos_in_pages (
+    todo_id bigint NOT NULL,
+    page_id bigint NOT NULL
+);
+
+
+--
+-- Name: wikitext; Type: TABLE; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE TABLE wikitext (
+    page_id bigint,
+    page_text text,
+    page_searchv tsvector
+);
+
+
+--
+-- Name: id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE activity_log ALTER COLUMN id SET DEFAULT nextval('activity_log_id_seq'::regclass);
+
+
+--
+-- Name: id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE pages ALTER COLUMN id SET DEFAULT nextval('pages_id_seq'::regclass);
+
+
+--
+-- Name: id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE todos ALTER COLUMN id SET DEFAULT nextval('todos_id_seq'::regclass);
+
+
+
+
+--
+-- Data for Name: pg_ts_cfg; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+COPY pg_ts_cfg (ts_name, prs_name, locale) FROM stdin;
+default_russian	default	ru_RU.KOI8-R
+utf8_russian	default	ru_RU.UTF-8
+simple	default	\N
+default	default	en_US.UTF-8
+\.
+
+
+--
+-- Data for Name: pg_ts_cfgmap; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+COPY pg_ts_cfgmap (ts_name, tok_alias, dict_name) FROM stdin;
+default	lword	{en_stem}
+default	nlword	{simple}
+default	word	{simple}
+default	email	{simple}
+default	url	{simple}
+default	host	{simple}
+default	sfloat	{simple}
+default	version	{simple}
+default	part_hword	{simple}
+default	nlpart_hword	{simple}
+default	lpart_hword	{en_stem}
+default	hword	{simple}
+default	lhword	{en_stem}
+default	nlhword	{simple}
+default	uri	{simple}
+default	file	{simple}
+default	float	{simple}
+default	int	{simple}
+default	uint	{simple}
+default_russian	lword	{en_stem}
+default_russian	nlword	{ru_stem_koi8}
+default_russian	word	{ru_stem_koi8}
+default_russian	email	{simple}
+default_russian	url	{simple}
+default_russian	host	{simple}
+default_russian	sfloat	{simple}
+default_russian	version	{simple}
+default_russian	part_hword	{simple}
+default_russian	nlpart_hword	{ru_stem_koi8}
+default_russian	lpart_hword	{en_stem}
+default_russian	hword	{ru_stem_koi8}
+default_russian	lhword	{en_stem}
+default_russian	nlhword	{ru_stem_koi8}
+default_russian	uri	{simple}
+default_russian	file	{simple}
+default_russian	float	{simple}
+default_russian	int	{simple}
+default_russian	uint	{simple}
+utf8_russian	lword	{en_stem}
+utf8_russian	nlword	{ru_stem_utf8}
+utf8_russian	word	{ru_stem_utf8}
+utf8_russian	email	{simple}
+utf8_russian	url	{simple}
+utf8_russian	host	{simple}
+utf8_russian	sfloat	{simple}
+utf8_russian	version	{simple}
+utf8_russian	part_hword	{simple}
+utf8_russian	nlpart_hword	{ru_stem_utf8}
+utf8_russian	lpart_hword	{en_stem}
+utf8_russian	hword	{ru_stem_utf8}
+utf8_russian	lhword	{en_stem}
+utf8_russian	nlhword	{ru_stem_utf8}
+utf8_russian	uri	{simple}
+utf8_russian	file	{simple}
+utf8_russian	float	{simple}
+utf8_russian	int	{simple}
+utf8_russian	uint	{simple}
+simple	lword	{simple}
+simple	nlword	{simple}
+simple	word	{simple}
+simple	email	{simple}
+simple	url	{simple}
+simple	host	{simple}
+simple	sfloat	{simple}
+simple	version	{simple}
+simple	part_hword	{simple}
+simple	nlpart_hword	{simple}
+simple	lpart_hword	{simple}
+simple	hword	{simple}
+simple	lhword	{simple}
+simple	nlhword	{simple}
+simple	uri	{simple}
+simple	file	{simple}
+simple	float	{simple}
+simple	int	{simple}
+simple	uint	{simple}
+\.
+
+
+--
+-- Data for Name: pg_ts_dict; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+COPY pg_ts_dict (dict_name, dict_init, dict_initoption, dict_lexize, dict_comment) FROM stdin;
+simple	dex_init(internal)	\N	dex_lexize(internal,internal,integer)	Simple example of dictionary.
+en_stem	snb_en_init(internal)	contrib/english.stop	snb_lexize(internal,internal,integer)	English Stemmer. Snowball.
+ru_stem_koi8	snb_ru_init_koi8(internal)	contrib/russian.stop	snb_lexize(internal,internal,integer)	Russian Stemmer. Snowball. KOI8 Encoding
+ru_stem_utf8	snb_ru_init_utf8(internal)	contrib/russian.stop.utf8	snb_lexize(internal,internal,integer)	Russian Stemmer. Snowball. UTF8 Encoding
+ispell_template	spell_init(internal)	\N	spell_lexize(internal,internal,integer)	ISpell interface. Must have .dict and .aff files
+synonym	syn_init(internal)	\N	syn_lexize(internal,internal,integer)	Example of synonym dictionary
+thesaurus_template	thesaurus_init(internal)	\N	thesaurus_lexize(internal,internal,integer,internal)	Thesaurus template, must be pointed Dictionary and DictFile
+\.
+
+
+--
+-- Data for Name: pg_ts_parser; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+COPY pg_ts_parser (prs_name, prs_start, prs_nexttoken, prs_end, prs_headline, prs_lextype, prs_comment) FROM stdin;
+default	prsd_start(internal,integer)	prsd_getlexeme(internal,internal,internal)	prsd_end(internal)	prsd_headline(internal,internal,internal)	prsd_lextype(internal)	Parser from OpenFTS v0.34
+\.
+
+
+
+
+--
+-- Name: activity_log_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
+--
+
+ALTER TABLE ONLY activity_log
+    ADD CONSTRAINT activity_log_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: pages_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
+--
+
+ALTER TABLE ONLY pages
+    ADD CONSTRAINT pages_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: pg_ts_cfg_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
+--
+
+ALTER TABLE ONLY pg_ts_cfg
+    ADD CONSTRAINT pg_ts_cfg_pkey PRIMARY KEY (ts_name);
+
+
+--
+-- Name: pg_ts_cfgmap_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
+--
+
+ALTER TABLE ONLY pg_ts_cfgmap
+    ADD CONSTRAINT pg_ts_cfgmap_pkey PRIMARY KEY (ts_name, tok_alias);
+
+
+--
+-- Name: pg_ts_dict_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
+--
+
+ALTER TABLE ONLY pg_ts_dict
+    ADD CONSTRAINT pg_ts_dict_pkey PRIMARY KEY (dict_name);
+
+
+--
+-- Name: pg_ts_parser_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
+--
+
+ALTER TABLE ONLY pg_ts_parser
+    ADD CONSTRAINT pg_ts_parser_pkey PRIMARY KEY (prs_name);
+
+
+--
+-- Name: todos_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
+--
+
+ALTER TABLE ONLY todos
+    ADD CONSTRAINT todos_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: wikitext_index; Type: INDEX; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE INDEX wikitext_index ON wikitext USING gist (page_searchv);
+
+
+--
+-- Name: wikitext_searchv_update; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER wikitext_searchv_update
+    BEFORE INSERT OR UPDATE ON wikitext
+    FOR EACH ROW
+    EXECUTE PROCEDURE tsearch2('page_searchv', 'page_text');
+
+
+--
+-- Name: $1; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY todos_in_pages
+    ADD CONSTRAINT "$1" FOREIGN KEY (todo_id) REFERENCES todos(id);
+
+
+--
+-- Name: $1; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY activity_in_pages
+    ADD CONSTRAINT "$1" FOREIGN KEY (activity_log_id) REFERENCES activity_log(id);
+
+
+--
+-- Name: $2; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY activity_log
+    ADD CONSTRAINT "$2" FOREIGN KEY (todo_id) REFERENCES todos(id);
+
+
+--
+-- Name: $2; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY todos_in_pages
+    ADD CONSTRAINT "$2" FOREIGN KEY (page_id) REFERENCES pages(id);
+
+
+--
+-- Name: $2; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY activity_in_pages
+    ADD CONSTRAINT "$2" FOREIGN KEY (page_id) REFERENCES pages(id);
+
+
+--
+-- Name: wikitext_page_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY wikitext
+    ADD CONSTRAINT wikitext_page_id_fkey FOREIGN KEY (page_id) REFERENCES pages(id);
+
+
+--
+-- PostgreSQL database dump complete
+--
+
+
+-- Hack to set tsearch2 locale to the same setting as the database.
+-- See issue http://code.google.com/p/nurpawiki/issues/detail?id=2 for
+-- more information.
+update pg_ts_cfg set locale = current_setting('lc_collate') where ts_name = 'default';
