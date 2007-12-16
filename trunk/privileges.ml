@@ -54,4 +54,18 @@ let with_can_edit_user cur_user target f ~on_fail =
 (** Privileged enough to schedule tasks for all users? *)
 let can_schedule_all_tasks cur_user =
   cur_user.user_login = "admin"
-    
+
+let user_owns_task_or_is_admin task_id cur_user =
+  if cur_user.user_login = "admin" then
+    true
+  else 
+    match Database.query_todo task_id with
+      Some t ->
+        (match t.t_owner with
+           Some o -> o.owner_id = cur_user.user_id
+         | None -> false)
+    | None -> false
+
+let can_complete_task = user_owns_task_or_is_admin
+
+let can_modify_task_priority = user_owns_task_or_is_admin

@@ -41,19 +41,20 @@ let (>>) f g = g f
 let newline_re = Pcre.regexp "\n"
 
 let task_side_effect_complete sp task_id () =
-  (* TODO error handling! (should not break anything though even on
-     errors) *)
   Session.action_with_user_login sp 
     (fun user ->
-       Database.complete_task user.user_id task_id)
+       if Privileges.can_complete_task task_id user then
+         Database.complete_task user.user_id task_id)
 
 
 let task_side_effect_mod_priority sp (task_id, dir) () =
-  if dir = false then 
-    Database.down_task_priority task_id
-  else 
-    Database.up_task_priority task_id;
-  return []
+  Session.action_with_user_login sp 
+    (fun user ->
+       if Privileges.can_modify_task_priority task_id user then
+         if dir = false then 
+           Database.down_task_priority task_id
+         else 
+           Database.up_task_priority task_id)
 
 
 let () =
@@ -595,9 +596,10 @@ let view_wiki_page sp ~credentials (page_name,printable) =
 (* /view?p=Page *)
 let _ = 
   register wiki_view_page
-    (fun sp (page_name,printable) () ->
+    (fun sp params () ->
        Session.with_user_login sp
-         (fun credentials sp -> view_wiki_page sp ~credentials (page_name,printable)))
+         (fun credentials sp -> 
+            view_wiki_page sp ~credentials params))
 
 
 let descr_of_activity_type = function
