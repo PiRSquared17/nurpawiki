@@ -55,6 +55,8 @@ let edit_user_page = new_service ["edit_user"]
 
 let disconnect_page = new_service ["disconnect"] unit ()
 
+let about_page = new_service ["about"] unit ()
+
 let task_side_effect_complete_action =
   Eliomservices.new_coservice' ~get_params:(Eliomparameters.int "task_id") ()
 

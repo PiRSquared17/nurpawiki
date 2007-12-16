@@ -21,6 +21,7 @@ open Eliomparameters
 open Eliomsessions
 open Eliompredefmod.Xhtml
 
+open Services
 open Types
 
 let upgrade_page = new_service ["upgrade"] unit ()
@@ -169,3 +170,12 @@ let _ =
           (pre [pcdata msg])])
 
 
+
+let _ =
+  register disconnect_page
+    (fun sp () () ->
+       (Eliomsessions.close_session  ~sp () >>= fun () ->
+          Html_util.html_stub sp 
+            [h1 [pcdata "Logged out!"];
+             p [a ~sp ~service:wiki_view_page [pcdata "Take me back in.."]
+                  ("WikiStart", None)]]))
