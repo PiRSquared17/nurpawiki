@@ -179,6 +179,12 @@ let query_todos_by_ids todo_ids =
   else
     []
 
+let query_todo id = 
+  match query_todos_by_ids [id] with
+    [task] -> Some task
+  | [] -> None
+  | _ -> None
+
 let update_todo_activation_date todo_id new_date =
   let sql = 
     "UPDATE todos SET activation_date = '"^new_date^"' WHERE id = "^
