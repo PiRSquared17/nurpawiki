@@ -547,3 +547,12 @@ let db_schema_version () =
     let r = guarded_exec "SELECT (version.schema_version) FROM version" in
     int_of_string (r#get_tuple 0).(0)
 
+
+(** Check whether the nurpawiki schema is properly installed on Psql *)
+let is_schema_installed =
+  let sql = 
+    "SELECT * from pg_tables WHERE schemaname = 'public' AND "^
+      "tablename = 'todos'" in
+  let r = guarded_exec sql in
+  r#ntuples = 0
+

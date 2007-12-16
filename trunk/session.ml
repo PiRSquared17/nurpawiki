@@ -62,6 +62,11 @@ let db_upgrade_warning sp =
       br ();
       a ~service:upgrade_page ~sp [pcdata "Upgrade now!"] ()]]
 
+let db_installation_error  sp = 
+  [h1 [pcdata "Database Not Properly Installed!"];
+   p
+     [pcdata "Your database does not seem to be installed as per installation instructions.  Please see database installation instructions in the documentation."]]
+
 let login_html sp ~err =
   Html_util.html_stub sp 
     [div ~a:[a_id "login_outer"]
@@ -87,8 +92,11 @@ let login_html sp ~err =
     automatically check for user login and redirect to login screen if
     not logged in. *)
 let with_user_login sp f =
-  (* First check for the need of DB upgrade: *)
-  if Database.db_schema_version () < Database.nurpawiki_schema_version then
+  (* Check if the DB is installed.  If so, check that it doesn't need
+     an upgrade. *)
+  if Database.is_schema_installed then
+    Html_util.html_stub sp (db_installation_error sp)
+  else if Database.db_schema_version () < Database.nurpawiki_schema_version then
     Html_util.html_stub sp (db_upgrade_warning sp)
   else
     get_login_user sp >>= fun maybe_user ->
