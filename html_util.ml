@@ -92,8 +92,7 @@ let navbar_html sp ~credentials ?(wiki_page_links=[]) ?(todo_list_table=[]) cont
                      td [history_link];
                      td wiki_page_links])
                  []])
-           [(*td search_input;*)
-            td ~a:[a_class ["top_menu_right_align"]]
+           [td ~a:[a_class ["top_menu_right_align"]]
               ([a ~service:edit_user_page ~sp [pcdata "My Preferences"]
                   (None,credentials.user_login)] @
                  edit_users_link @
