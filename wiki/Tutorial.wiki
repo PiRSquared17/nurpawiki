@@ -4,6 +4,8 @@
 
 The first thing to do after installing and starting Nurpawiki is to point your browser at http://localhost:8080/view?p=WikiStart.
 
+You will arrive at a login screen.  Type in "admin" as your login and leave the password empty.  That's the default after a fresh install.
+
 You will be greeted with an empty page:
 
 http://nurpawiki.googlecode.com/svn/wiki/img/empty_nurpawiki.png
