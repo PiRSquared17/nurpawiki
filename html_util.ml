@@ -93,14 +93,14 @@ let navbar_html sp ~credentials ?(wiki_page_links=[]) ?(todo_list_table=[]) cont
                      td wiki_page_links])
                  []])
            [td ~a:[a_class ["top_menu_right_align"]]
-              ([a ~service:edit_user_page ~sp [pcdata "My Preferences"]
-                  (None,credentials.user_login)] @
+              ([a ~service:about_page ~sp [pcdata "About"] ()] @
                  [pcdata " "] @
-                  [a ~service:about_page ~sp [pcdata "About"] ()] @
-                  [pcdata " "] @
-                  edit_users_link @
-                  [pcdata " "] @
-                  [disconnect_box sp "Logout"])]) []];
+                 [a ~service:edit_user_page ~sp [pcdata "My Preferences"]
+                    (None,credentials.user_login)] @
+                 [pcdata " "] @
+                 edit_users_link @
+                 [pcdata " "] @
+                 [disconnect_box sp "Logout"])]) []];
    div ~a:[a_id "navbar"]
      (user_greeting @ [br ()] @ search_input @ todo_list_table);
    div ~a:[a_id "content"]
