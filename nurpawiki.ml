@@ -73,7 +73,7 @@ module WikiML =
         | `NoWiki of string list
         ]
 
-    let ws_or_empty_re = Pcre.regexp "^\\([ \t\n\r]*\\)$"
+    let ws_or_empty_re = Pcre.regexp "^([ \t\n\r]*)$"
 
     let h1_re = Pcre.regexp "^=(.*)=([ \n\r]*)?$"
     let h2_re = Pcre.regexp "^==(.*)==([ \n\r]*)?$"
@@ -333,8 +333,8 @@ module WikiML =
               [(h3_re, (fun r -> loop ((h3 [pcdata r.(1)])::acc) xs));
                (h2_re, (fun r -> loop ((h2 [pcdata r.(1)])::acc) xs));
                (h1_re, (fun r -> loop ((h1 [pcdata r.(1)])::acc) xs));
-               (list_re, (fun r -> parse_list r));
-               (ws_or_empty_re, (fun r -> loop acc xs))] in
+               (ws_or_empty_re, (fun r -> loop acc xs));
+               (list_re, (fun r -> parse_list r))] in
 
             begin
               match pcre_first_match x 0 wiki_pats with
