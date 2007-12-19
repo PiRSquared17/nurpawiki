@@ -2183,3 +2183,50 @@ ALTER TABLE ONLY wikitext
 -- See issue http://code.google.com/p/nurpawiki/issues/detail?id=2 for
 -- more information.
 update pg_ts_cfg set locale = current_setting('lc_collate') where ts_name = 'default';
+
+
+-- Insert main page and WikiMarkup pages into the DB
+INSERT INTO pages (page_descr) VALUES ('WikiStart');
+INSERT INTO wikitext (page_id,page_text)
+       VALUES ((SELECT CURRVAL('pages_id_seq')), '
+= Nurpawiki =
+
+See WikiMarkup for help on getting started.
+');
+
+
+INSERT INTO pages (page_descr) VALUES ('WikiMarkup');
+INSERT INTO wikitext (page_id,page_text)
+       VALUES ((SELECT CURRVAL('pages_id_seq')), '
+= Wiki Markup Page =
+
+== Section heading ==
+
+=== Sub-section heading ===
+
+== Formatting ==
+=== Italic ===
+_Italic text_.  Single _italic_ word.  _Two_ _italic_ words.
+
+=== Bold ===
+*Bold faced text*. *Bold* word. *Bold* _with_ italic in same sentence.
+
+== Bullet list ==
+
+Paragraph of text.
+
+Second paragraph of text.
+
+* Bullet list top-level
+* Another bullet on top-level
+** Sub bullet
+* Top-level again
+
+== Links ==
+
+A [wiki:WikiStart link] to the WikiStart main page.
+
+Another [http://www.google.com link], this time to [http://www.google.com].
+
+And !WikiText that does not become a link.  Write these as `!WikiText` to make Nurpawiki not regard it as a !WikiLink.  I.e., prefix it with a bang (!).
+');
