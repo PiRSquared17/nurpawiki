@@ -1,0 +1,14 @@
+#summary Test plan for testing a new release.
+
+= How to test a new release =
+
+ * Check that VERSION matches About box's version (should be automatic)
+ * Go through the sample wiki page to check that Wiki markup is parsing hasn't regressed
+
+== Patch revision releases ==
+Patch revision releases should never add or modify the DB schema, so they're slightly easier to QA.
+
+== Minor revision releases ==
+
+== Major revision releases ==
+ * TODO DB upgrades
