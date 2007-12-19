@@ -43,3 +43,23 @@ let date_of_date_time_string s =
       Messages.errlog ("invalid date '"^s^"'");
       assert false
 
+
+(** [del_substring s c] return [s] with all occurrences of substring [c]
+    removed. *)
+let del_substring s c =
+  let q = Pcre.regexp (Pcre.quote c) in
+  Pcre.replace ~rex:q ~templ:"" s
+
+(* Unit tests *)
+let _ =
+  let a = "\\*foo\\*baz\\*" in
+  assert (del_substring a "\\*" = "foobaz");
+  let b = "__foo__" in
+  assert (del_substring b "_" = "foo")
+
+let apply_if_else s rex if_so if_else =
+  match match_pcre_option rex s with
+    Some s ->
+      if_so s
+  | None ->
+      if_else ()

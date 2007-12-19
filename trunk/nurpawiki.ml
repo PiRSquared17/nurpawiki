@@ -105,8 +105,18 @@ module WikiML =
     let accepted_chars_ = "a-zA-Z\128-\2550-9_!\"§°#%&/()=?+.,;:{}'@\\$\\^\\*`´<>"
     let accepted_chars_sans_ws = "["^accepted_chars_^"-]+"
     let accepted_chars = "["^accepted_chars_^" -]+"
+
+    let italic_re = 
+      Str.regexp ("\\(_\\("^(del_substring accepted_chars "_")^"\\)_\\)")
+
+    let bold_re = 
+      Str.regexp ("\\(\\*\\("^del_substring accepted_chars "\\*" ^"\\)\\*\\)")
+
+    let code_re = 
+      Str.regexp ("\\(`\\("^del_substring accepted_chars "`" ^"\\)`\\)")
+
     let text_re = Str.regexp ("\\("^accepted_chars_sans_ws^"\\)")
-    let wikilink_re = Str.regexp "\\([A-Z][a-z]+\\([A-Z][a-z]+\\)+\\)"
+    let wikilink_re = Str.regexp "\\([!]?[A-Z][a-z]+\\([A-Z][a-z]+\\)+\\)"
       
     let todo_re = 
       Str.regexp ("\\[todo:\\([0-9]+\\)\\( "^accepted_chars^"\\)?\\]")
@@ -117,8 +127,6 @@ module WikiML =
 
     let wikilinkanum_no_text_re = 
       Str.regexp ("\\(\\[\\(wiki\\|file\\|http\\):\\("^accepted_chars_sans_ws^"\\)\\]\\)")
-
-    let ws_re = Str.regexp "\\([ \t]+\\).*"
 
     let open_pre_re = Str.regexp "^\\(<pre>\\|8<\\)[ \r\n]*$"
     let close_pre_re = Str.regexp "^\\(</pre>\\|8<\\)[ \r\n]*$"
@@ -270,7 +278,13 @@ module WikiML =
               loop (add_todo acc todo_id) (charpos+fm_len)
             else if Str.string_match wikilink_re s charpos then
               let m = Str.matched_group 1 s in
-              loop (add_html acc (wikilink "" m m)) (charpos+(String.length m))
+              (* If the WikiLink starts with a bang (!), don't create
+                 a link but leave it as text. *)
+              if m.[0] = '!' then
+                let s = String.sub m 1 (String.length m - 1) in
+                loop (add_html acc (pcdata s)) (charpos+(String.length m))
+              else
+                loop (add_html acc (wikilink "" m m)) (charpos+(String.length m))
             else if Str.string_match wikilinkanum_re s charpos then
               let scheme = Str.matched_group 2 s in
               let page = Str.matched_group 3 s in
@@ -283,6 +297,21 @@ module WikiML =
               let text = "" in
               let fm_len = String.length (Str.matched_group 1 s) in
               loop (add_html acc (wikilink scheme page text)) (charpos+fm_len)
+            else if Str.string_match italic_re s charpos then
+              let m = Str.matched_group 1 s in
+              let inner_m = Str.matched_group 2 s in
+              let h = em [pcdata inner_m] in
+              loop (add_html acc h) (charpos+(String.length m))
+            else if Str.string_match bold_re s charpos then
+              let m = Str.matched_group 1 s in
+              let inner_m = Str.matched_group 2 s in
+              let h = strong [pcdata inner_m] in
+              loop (add_html acc h) (charpos+(String.length m))
+            else if Str.string_match code_re s charpos then
+              let m = Str.matched_group 1 s in
+              let inner_m = Str.matched_group 2 s in
+              let h = code [pcdata inner_m] in
+              loop (add_html acc h) (charpos+(String.length m))
             else if Str.string_match text_re s charpos then
               let m = Str.matched_group 1 s in
               loop (add_html acc (pcdata m)) (charpos+(String.length m))
