@@ -6,7 +6,7 @@
 
 Get the latest version from http://www.ocsigen.org.  Easiest installation method is to install Ocsigen through [http://godi.ocaml-programming.de/ GODI package manager].
 
-Follow [OcsigenInstallation these instructions] in order to successfully install Nurpawiki on Debian / Ubuntu.  If you encounter any problems, please file them as bugs into the issue tracker.
+Follow [OcsigenInstallation these instructions] to install Nurpawiki on Debian / Ubuntu.  If you encounter any problems, please file them as bugs into the issue tracker.
 
 Successful installation should be easy enough on Debian testing and Ubuntu 7.x or above.  For Windows, I find it convenient to run Linux in vmware and use Linux for serving pages and Windows for browsing.
 
