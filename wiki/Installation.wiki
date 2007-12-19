@@ -4,7 +4,7 @@
 
 == Install Ocsigen & other required packages ==
 
-Get the latest version from http://www.ocsigen.org.  Easiest way to install it to use [http://godi.ocaml-programming.de/ GODI] to install it.  
+Get the latest version from http://www.ocsigen.org.  Easiest installation method is to install Ocsigen through [http://godi.ocaml-programming.de/ GODI package manager].
 
 Follow [OcsigenInstallation these instructions] in order to successfully install Nurpawiki on Debian / Ubuntu.  If you encounter any problems, please file them as bugs into the issue tracker.
 
