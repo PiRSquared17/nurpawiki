@@ -33,7 +33,7 @@ This is the preferred method on making the DB connection authenticate property. 
 
 You can now test that your newly set password actually lets you access you database:
 
- * _As user `janne`_ do: `psql -h localhost -W -U postgres nurpawiki` and type in the password you used above.  Note that the password for `postgres` Unix user and the DB password are not the same.
+ * _As a normal user_ do: `psql -h localhost -W -U postgres nurpawiki` and type in the password you used above.  Note that the password for `postgres` Unix user and the DB password are not the same.
 
 When running Nurpawiki's `configure` script, specify the same password you used in the above ALTER statement.
 
