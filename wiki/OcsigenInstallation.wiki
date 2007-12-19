@@ -12,7 +12,7 @@ Read [DatabaseInstallationDebian] and follow instructions.  It's better to get P
  * `apt-get install libgdbm-dev`
  * `apt-get install libsqlite3-dev`
  * `apt-get install libpq-dev`
- * Download and install GODI as per its installation manual
+ * Download and install GODI as per its installation manual (http://godi.ocaml-programming.de/)
 
 == Install Ocsigen through GODI ==
 
