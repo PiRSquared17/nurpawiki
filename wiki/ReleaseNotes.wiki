@@ -4,8 +4,8 @@
 
 == Nurpawiki 1.0.1 ==
  * Automatically create !WikiStart and !WikiMarkup wiki pages on DB init so that the user is taken to a simple help screen after first install.
- * Implement bold, italic and code styles in wiki markup
- * Fix a bug in bullet list whitespace handling
+ * Implement bold, italic and code styles in wiki markup.
+ * Fix a bug in bullet list whitespace handling.
 
 == Nurpawiki 1.0.0 ==
- * First ever public release
+ * First ever public release.
