@@ -56,10 +56,3 @@ let _ =
   assert (del_substring a "\\*" = "foobaz");
   let b = "__foo__" in
   assert (del_substring b "_" = "foo")
-
-let apply_if_else s rex if_so if_else =
-  match match_pcre_option rex s with
-    Some s ->
-      if_so s
-  | None ->
-      if_else ()
