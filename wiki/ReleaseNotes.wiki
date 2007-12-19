@@ -5,7 +5,7 @@
 == 1.0.1 ==
 
 === Improvements ===
- * Automatically create WikiStart and WikiMarkup wiki pages on DB init so that the user is taken to a simple help screen after first install.
+ * Automatically create !WikiStart and !WikiMarkup wiki pages on DB init so that the user is taken to a simple help screen after first install.
  * Implement bold, italic and code styles in wiki markup
 
 === Bugs ===
