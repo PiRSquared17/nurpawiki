@@ -134,14 +134,15 @@ let action_with_user_login sp f =
                  let passwd_md5 = Digest.to_hex (Digest.string passwd) in
                  (* Autheticate user against his password *)
                  if passwd_md5 = user.user_passwd then
-                   f user
+                   begin
+                     return (f user)
+                   end
                  else 
-                   ()
+                   return []
              | None ->
-                 ()
+                 return []
            end
-       | None -> ());
-      return []
+       | None -> return [])
   else
     return []
 
