@@ -163,7 +163,7 @@ let view_history_page sp ~credentials =
                    prettified_date))
                activity_groups ([],"")))) in
   Html_util.html_stub sp
-    (Html_util.navbar_html sp ~credentials
+    (Html_util.navbar_html sp ~credentials ~undo_task_id:None
        ([h1 [pcdata "Blast from the past"]] @ [act_table]))
 
 (* /history *)
