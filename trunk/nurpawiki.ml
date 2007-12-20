@@ -41,30 +41,34 @@ let (>>) f g = g f
 let newline_re = Pcre.regexp "\n"
 
 let task_side_effect_complete sp task_id () =
-  ignore 
-    (Session.action_with_user_login sp 
-       (fun user ->
-          if Privileges.can_complete_task task_id user then
-            Database.complete_task user.user_id task_id));
-  return [Action_completed_task task_id]
+  Session.action_with_user_login sp
+    (fun user ->
+       if Privileges.can_complete_task task_id user then
+         begin
+           Database.complete_task user.user_id task_id;
+           [Action_completed_task task_id]
+         end
+       else
+         [])
+
 
 let task_side_effect_undo_complete sp task_id () =
-  ignore 
-    (Session.action_with_user_login sp 
-       (fun user ->
-          if Privileges.can_complete_task task_id user then
-            Database.uncomplete_task user.user_id task_id));
-  return []
-
+  Session.action_with_user_login sp
+    (fun user ->
+       if Privileges.can_complete_task task_id user then
+         Database.uncomplete_task user.user_id task_id;
+       [])
 
 let task_side_effect_mod_priority sp (task_id, dir) () =
-  Session.action_with_user_login sp 
+  Session.action_with_user_login sp
     (fun user ->
        if Privileges.can_modify_task_priority task_id user then
          if dir = false then 
            Database.down_task_priority task_id
          else 
-           Database.up_task_priority task_id)
+           Database.up_task_priority task_id;
+       [])
+             
 
 
 let () =
