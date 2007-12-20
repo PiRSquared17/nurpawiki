@@ -41,10 +41,20 @@ let (>>) f g = g f
 let newline_re = Pcre.regexp "\n"
 
 let task_side_effect_complete sp task_id () =
-  Session.action_with_user_login sp 
-    (fun user ->
-       if Privileges.can_complete_task task_id user then
-         Database.complete_task user.user_id task_id)
+  ignore 
+    (Session.action_with_user_login sp 
+       (fun user ->
+          if Privileges.can_complete_task task_id user then
+            Database.complete_task user.user_id task_id));
+  return [Action_completed_task task_id]
+
+let task_side_effect_undo_complete sp task_id () =
+  ignore 
+    (Session.action_with_user_login sp 
+       (fun user ->
+          if Privileges.can_complete_task task_id user then
+            Database.uncomplete_task user.user_id task_id));
+  return []
 
 
 let task_side_effect_mod_priority sp (task_id, dir) () =
@@ -60,6 +70,8 @@ let task_side_effect_mod_priority sp (task_id, dir) () =
 let () =
   Eliompredefmod.Actions.register 
     ~service:task_side_effect_complete_action task_side_effect_complete;
+  Eliompredefmod.Actions.register 
+    ~service:task_side_effect_undo_complete_action task_side_effect_undo_complete;
   Eliompredefmod.Actions.register 
     ~service:task_side_effect_mod_priority_action task_side_effect_mod_priority
 
@@ -418,7 +430,7 @@ let todo_list_table_html sp cur_page todos =
               td [(WikiML.todo_modify_buttons sp cur_page id todo)]]))
        todos)
 
-let wiki_page_menu_html sp ~credentials page content =
+let wiki_page_menu_html sp ~credentials ~undo_task_id page content =
   let edit_link = 
     [a ~service:wiki_edit_page ~sp:sp ~a:[a_accesskey '1'; a_class ["ak"]]
        [img ~alt:"Edit" ~src:(make_static_uri sp ["edit.png"]) ();
@@ -433,20 +445,26 @@ let wiki_page_menu_html sp ~credentials page content =
       (Database.query_all_active_todos ~current_user_id ()) in
   Html_util.navbar_html sp ~credentials 
     ~wiki_page_links:(edit_link @ [pcdata " "] @  printable_link)
+    ~undo_task_id
     ~todo_list_table:[todo_list] content
 
-let wiki_page_contents_html sp page_id page_name todo_data ?(content=[]) () =
-  wiki_page_menu_html sp page_name
+let wiki_page_contents_html sp ~undo_task_id page_id page_name todo_data ?(content=[]) () =
+  wiki_page_menu_html sp ~undo_task_id page_name
     (content @ wikiml_to_html sp page_id page_name todo_data)
 
 let view_page sp ~credentials page_id page_name ~printable =
+  let undo_task_id = Session.any_complete_undos sp in
+  
   let todos = Database.query_page_todos page_id in
   if printable <> None && Option.get printable = true then
     let page_content = wikiml_to_html sp page_id page_name todos in
     Html_util.html_stub sp page_content
   else 
     Html_util.html_stub sp
-      (wiki_page_contents_html sp ~credentials page_id page_name todos ())
+      (wiki_page_contents_html 
+         sp 
+         ~credentials 
+         ~undo_task_id page_id page_name todos ())
       
 let new_todo_re = 
   Str.regexp ("\\[todo \\("^WikiML. accepted_chars^"\\)\\]")
@@ -610,8 +628,8 @@ let _ =
                           ~value:(pcdata wikitext) ()])])
                 (page_name,None) in
             Html_util.html_stub sp
-              (wiki_page_contents_html sp ~credentials page_id page_name page_todos 
-                 ~content:[f] ())))
+              (wiki_page_contents_html sp ~credentials ~undo_task_id:None
+                 page_id page_name page_todos ~content:[f] ())))
 
 let view_wiki_page sp ~credentials (page_name,printable) =
   match Database.find_page_id page_name with
@@ -621,7 +639,7 @@ let view_wiki_page sp ~credentials (page_name,printable) =
       let f = 
         a wiki_edit_page sp [pcdata "Create new page"] page_name in
       Html_util.html_stub sp
-        (wiki_page_menu_html sp ~credentials page_name [f])
+        (wiki_page_menu_html sp ~credentials ~undo_task_id:None page_name [f])
 
 (* /view?p=Page *)
 let _ = 
@@ -689,7 +707,7 @@ let _ =
   let gen_search_page sp ~credentials search_str =
     let search_results = Database.search_wikipage search_str in
     Html_util.html_stub sp
-      (Html_util.navbar_html sp ~credentials
+      (Html_util.navbar_html sp ~credentials ~undo_task_id:None
          ([h1 [pcdata "Search results"]] @ (render_results sp search_results))) in
     
   register search_page

@@ -17,6 +17,9 @@
 module OrdInt = struct type t = int let compare a b = compare a b end
 module IMap = Map.Make (OrdInt)
 
+(* Exceptions returned by Eliom actions *)
+exception Action_completed_task of int
+
 type user = 
     {
       user_id : int;

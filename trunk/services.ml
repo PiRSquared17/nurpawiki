@@ -60,6 +60,9 @@ let about_page = new_service ["about"] unit ()
 let task_side_effect_complete_action =
   Eliomservices.new_coservice' ~get_params:(Eliomparameters.int "task_id") ()
 
+let task_side_effect_undo_complete_action =
+  Eliomservices.new_coservice' ~get_params:(Eliomparameters.int "task_id") ()
+
 let task_side_effect_mod_priority_action = 
   Eliomservices.new_coservice' ~get_params:((Eliomparameters.int "task_id") **
                                               Eliomparameters.bool "dir") ()

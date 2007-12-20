@@ -152,6 +152,18 @@ let update_session_password sp login new_password =
        Eliomsessions.set_volatile_session_data ~table:login_table ~sp (login,new_password);
        return [])
   
+
+(* Check session to see what happened during page servicing.  If any
+   actions were called, some of them might've set values into session
+   that we want to use for rendering the current page. *)
+let any_complete_undos sp =
+  List.fold_left
+    (fun acc e -> 
+       match e with 
+         Action_completed_task tid -> Some tid
+       | _ -> assert false)
+    None (Eliomsessions.get_exn sp)
+
 let connect_action_handler sp () login_nfo =
   Eliomsessions.close_session  ~sp () >>= fun () -> 
     Eliomsessions.set_volatile_session_data ~table:login_table ~sp login_nfo;

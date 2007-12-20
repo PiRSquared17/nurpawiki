@@ -49,7 +49,7 @@ let html_stub sp ?(javascript=[]) body_html =
        (body 
           body_html))
 
-let navbar_html sp ~credentials ?(wiki_page_links=[]) ?(todo_list_table=[]) content =
+let navbar_html sp ~credentials ~undo_task_id ?(wiki_page_links=[]) ?(todo_list_table=[]) content =
   let home_link link_text =
     a ~service:wiki_view_page 
       ~a:[a_accesskey 'h'; a_class ["ak"]] ~sp:sp link_text 
@@ -100,11 +100,19 @@ let navbar_html sp ~credentials ?(wiki_page_links=[]) ?(todo_list_table=[]) cont
                  [pcdata " "] @
                  edit_users_link @
                  [pcdata " "] @
-                 [disconnect_box sp "Logout"])]) []];
-   div ~a:[a_id "navbar"]
-     (user_greeting @ [br ()] @ search_input @ todo_list_table);
-   div ~a:[a_id "content"]
-     content]
+                 [disconnect_box sp "Logout"])]) []]] 
+  @
+    (match undo_task_id with
+       None -> []
+     | Some id ->
+         [div ~a:[a_id "top_action_bar"]
+           [a ~a:[a_class ["undo_link"]] ~service:task_side_effect_undo_complete_action 
+              ~sp [pcdata "Undo Complete Task!"] id]])
+  @
+    [div ~a:[a_id "navbar"]
+       (user_greeting @ [br ()] @ search_input @ todo_list_table);
+     div ~a:[a_id "content"]
+       content]
 
 let error text = 
   span ~a:[a_class ["error"]] [pcdata text]
