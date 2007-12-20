@@ -128,8 +128,8 @@ module WikiML =
     let wikilinkanum_no_text_re = 
       Str.regexp ("\\(\\[\\(wiki\\|file\\|http\\):\\("^accepted_chars_sans_ws^"\\)\\]\\)")
 
-    let open_pre_re = Str.regexp "^\\(<pre>\\|8<\\)[ \r\n]*$"
-    let close_pre_re = Str.regexp "^\\(</pre>\\|8<\\)[ \r\n]*$"
+    let open_pre_re = Pcre.regexp "^(<pre>|8<)\\s*$"
+    let close_pre_re = Pcre.regexp "^(</pre>|8<)\\s*$"
 
     (* WikiML preprocessor: translate a list of lines into
        normal lines and blocks of PRE blocks that contain
@@ -137,18 +137,19 @@ module WikiML =
     let preprocess lines =
       let rec loop acc = function
           x::xs ->
-            if Str.string_match open_pre_re x 0 then
-              begin
-                (* Handle <pre>..</pre>, {{{..}}} *)
-                let (after_pre,contents) =
-                  take_while 
-                    (fun x -> not (Str.string_match close_pre_re x 0)) xs in
-                let next = 
-                  match after_pre with [] -> [] | _::next -> next in
-                loop (`NoWiki contents :: acc) next
-              end
-            else 
-              loop (`Wiki x::acc) xs
+            (match match_pcre_option open_pre_re x with
+               Some m ->
+                 begin
+                   (* Handle <pre>..</pre> *)
+                   let (after_pre,contents) =
+                     take_while 
+                       (fun x -> match_pcre_option close_pre_re x = None) xs in
+                   let next = 
+                     match after_pre with [] -> [] | _::next -> next in
+                   loop (`NoWiki contents :: acc) next
+                 end
+             | None ->
+                 loop (`Wiki x::acc) xs)
         | [] ->
             List.rev acc in
       loop [] lines
