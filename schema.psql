@@ -2211,6 +2211,16 @@ _Italic text_.  Single _italic_ word.  _Two_ _italic_ words.
 === Bold ===
 *Bold faced text*. *Bold* word. *Bold* _with_ italic in same sentence.
 
+
+=== Preformatted ===
+
+Use `<pre></pre>` or `8<`:
+8<
+Preformatted text
+WikiLink
+[http://localhost/foo]
+8<
+
 == Bullet list ==
 
 Paragraph of text.
