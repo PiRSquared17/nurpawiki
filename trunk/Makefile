@@ -29,7 +29,7 @@ install:
 .PHONY: doc
 
 NWIKI_VER=$(shell cat VERSION)
-config.ml:config.ml.in
+config.ml:config.ml.in VERSION
 	echo $(NWIKI_VER)
 	cat config.ml.in | \
 	    sed -e "s|%_NURPAWIKI_VERSION_%|$(NWIKI_VER)|g" > config.ml
