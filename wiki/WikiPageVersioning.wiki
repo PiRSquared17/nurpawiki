@@ -29,3 +29,19 @@ A revision is:
  * rev_id Revision ID for THIS revision
  * rev_prev_id Previous revision ID that this revision is saved (diff'd) against
  * Diff computed by diffing rev_id -> rev_prev_id full text
+
+Conflict resolution: last save operation becomes most recent revision.
+
+== Approach comparison ==
+A comparison of the strengths and weaknesses of the various approaches.
+
+Scoring: 1 - Good, 2 - Average, 3 - Below avg, bad
+
+|| *Characteristic*  || *A1* || *A2* || *Comments* ||
+|| Speed: Page view|| 1  || 3  || A2: assuming no last-revision-caching ||
+|| Speed: Page view of a page with 1000 revisions|| 1  || 3  || A2: assuming no last-revision-caching ||
+|| Speed: Page view of a page with 1 revision|| 1  || 1  || ||
+|| Speed: DB ops happen autonomously on SQL server|| 1  || 2  || A2: Depends on implementation, could be 1 or could be 3 ||
+|| Disk efficiency || 3  || 1  || A1 stores full text per revision.  A2 stores only changes ||
+|| Ease of implementation: Concurrency|| 1 || 3 || ||
+|| Ease of implementation: Text search|| 1 || 2 || ||
