@@ -49,14 +49,14 @@ Bolded rows are additions to version 1.
 Code to get the latest wiki page version:
 
 {{{
-SELECT page_text FROM wikitext WHERE page_id = x AND page_revision = y
+SELECT page_text FROM wikitext WHERE page_id = x AND page_revision = y;
 }}}
 
 Saving a wiki page changes from an UPDATE to an INSERT:
 
 {{{
 INSERT INTO wikitext (page_id,page_revision,page_text) 
-            VALUES   (x, y, 'wiki page text'),
+            VALUES   (x, y, 'wiki page text');
 }}}
 
 Table `pages` needs to be updated to point to the latest revision when saving a wiki page.  Some row locking (at least) should happen when these writes are being made to protect against two concurrent saves.
