@@ -8,7 +8,7 @@ Install Ocsigen through [http://godi.ocaml-programming.de/ the GODI package mana
 
 Follow [OcsigenInstallation these instructions] to install Nurpawiki on Debian / Ubuntu.  If you encounter any problems, please file them as bugs into the issue tracker.
 
-Successful installation should be easy enough on Debian testing and Ubuntu 7.x or above.  For Windows, I find it convenient to run Linux in vmware and use Linux for serving pages and Windows for browsing.
+The installation procedure has been tested to work on Debian testing and Ubuntu 7.x or above.  For Windows, I find it convenient to run Linux in vmware and use Linux for serving pages and Windows for browsing.
 
 == Install Postgresql & create a database ==
 See [DatabaseInstallationDebian Debian DB instructions] for instructions on installing using Debian's packages.
