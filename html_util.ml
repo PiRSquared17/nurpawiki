@@ -39,8 +39,9 @@ let html_stub sp ?(javascript=[]) body_html =
   let scripts  = 
     script ["nurpawiki.js"] :: (List.map script javascript) in
   return 
-    (html 
-       (head (title (pcdata "")) 
+    (html ~a:[a_xmlns `W3_org_1999_xhtml]
+       (head 
+          (title (pcdata "")) 
           ((scripts) @ 
              [css_link ~a:[] ~uri:(make_uri ~service:(static_dir sp) ~sp 
                                      ["style.css"]) ();
