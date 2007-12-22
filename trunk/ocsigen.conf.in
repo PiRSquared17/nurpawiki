@@ -7,7 +7,7 @@
     <user></user> <!-- The user who will run Ocsigen (not root!) -->
     <group></group> <!-- The group (not root!) -->
 
-    <charset>utf-8</charset> <!-- Default charset for pages -->
+    <charset>UTF-8</charset> <!-- Default charset for pages -->
 
     <!-- We need static files for icons and CSS -->
     <extension module="%_OCSIGEN_MODULES_%/staticmod.cmo" />
@@ -27,7 +27,7 @@
     <extension module="%_OCSIGEN_MODULES_%/redirectmod.cmo"/>
 
     <host>  
-      <site dir="" charset="utf-8">
+      <site dir="" charset="UTF-8">
         <redirect regexp="$" dest="/view?p=WikiStart"/>
         <eliom module="site.cma">
           <database name="%_DBNAME_%" user="%_DBUSER_%" port="%_DBPORT_%"
