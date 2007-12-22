@@ -3,7 +3,7 @@
 
 = Wiki page version history =
 
-This document lists a few implementation strategies for implementing a wiki page revision history.
+This document lists a few implementation strategies for implementing a wiki page revision history for a wiki that uses SQL as its storage mechanism.
 
 == Goals ==
  * Fast page views even if a single page has been edited hundreds of times
