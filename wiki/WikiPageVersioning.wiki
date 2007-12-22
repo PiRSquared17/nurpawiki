@@ -32,7 +32,7 @@ Bolded rows are additions to version 1.
 *Table* `pages`
 || *Column* || *Type* || *Modifiers* || 
 || id      || bigint ||  not null default nextval('pages_id_seq'::regclass) ||
-|| *revision*||*bigint*|| not null default 0 ||
+|| *head_revision*||*bigint*|| not null default 0 ||
 || page_descr || character varying(256) || ||
 
 
