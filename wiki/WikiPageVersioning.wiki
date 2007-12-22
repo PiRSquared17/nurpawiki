@@ -61,7 +61,7 @@ INSERT INTO wikitext (page_id,page_revision,page_text)
 
 Table `pages` needs to be updated to point to the latest revision when saving a wiki page.  Some row locking (at least) should happen when these writes are being made to protect against two concurrent saves.
 
-A combined `wikitext` + `pages` relation update might look something like this:
+Creating a new revision for an existing page that'd update both pages and wikitext relations might look something like this:
 
 {{{
 BEGIN;
