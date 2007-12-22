@@ -30,7 +30,7 @@ Page view: read most recent revision and display full text directly.
 
 Table: `pages`
 || *Column* || *Type* || *Modifiers* || 
-|| id      || bigint ||  || not null default nextval('pages_id_seq'::regclass) ||
+|| id      || bigint ||  not null default nextval('pages_id_seq'::regclass) ||
 || page_descr || character varying(256) || ||
 
 
