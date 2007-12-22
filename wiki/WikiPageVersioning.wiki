@@ -1,0 +1,31 @@
+#summary Design for wiki page version history.
+#labels Phase-Design
+
+= Wiki page version history =
+
+This document lists a few implementation strategies for implementing a wiki page revision history.
+
+== Goals ==
+ * Fast page views even if a single page has been edited hundreds of times
+ * Not wasting a lot of disk space or memory
+ * Conflict resolution has to work in a web-based environment
+
+== Requirements ==
+ * A web page save should always succeed, even in the case of conflicts on concurrent saves
+  * Conflicts are not easy to resolve in a web based environment 
+  * Conflict resolution is easy for programmer tools like SVN because users are programmers
+ * Text search should always find only the latest version of a wiki page
+ * Locking: two concurrent wiki page saves must produce a coherent DB result (i.e., saves may require table/row locking/txns/sth else)
+
+== Approaches ==
+
+=== A1: Store full text for each revision ===
+A revision is:
+ * Revision ID
+ * Full text of this version
+
+=== A2: Store diff against previously saved version ===
+A revision is:
+ * rev_id Revision ID for THIS revision
+ * rev_prev_id Previous revision ID that this revision is saved (diff'd) against
+ * Diff computed by diffing rev_id -> rev_prev_id full text
