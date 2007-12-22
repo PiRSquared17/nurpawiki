@@ -1,4 +1,5 @@
 #summary Test plan for testing a new release.
+#labels Phase-QA
 
 = How to test a new release =
 
