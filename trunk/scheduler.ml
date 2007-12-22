@@ -229,8 +229,7 @@ let rec render_todo_editor sp ~credentials (src_page_cont, todos_to_edit) =
                      [string_input ~a:[a_id ("calendar_"^(string_of_int todo.t_id))]
                         ~input_type:`Text ~name:tv_act_date 
                         ~value:todo.t_activation_date ();
-                      button ~a:[a_id ("button_"^(string_of_int todo.t_id)); 
-                                 a_name "cal_trigger"] 
+                      button ~a:[a_id ("cal_button_"^(string_of_int todo.t_id))]
                         ~button_type:`Button [pcdata "..."]];
                    td [owner_selection tv_owner_id todo;
                        int_input ~name:tv_id ~input_type:`Hidden ~value:todo.t_id ()]]])

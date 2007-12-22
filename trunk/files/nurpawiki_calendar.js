@@ -5,9 +5,9 @@
 // 'calendar_<n>' element that contains the date to be edited.
 function nwRegisterCalendar()
 {
-    cals = document.getElementsByName("cal_trigger");
+    cals = document.getElementsByTagName("button");
 
-    re = new RegExp("^button_([0-9]+)$");
+    re = new RegExp("^cal_button_([0-9]+)$");
 
     for (var i = 0; i < cals.length; i++)
     {
