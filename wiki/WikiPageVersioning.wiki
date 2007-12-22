@@ -40,6 +40,7 @@ Bolded rows are additions to version 1.
 || *Column*  || *Type* || *Modifiers* || 
 || page_id   || bigint   || ||
 || *page_revision* ||*bigint* || ||
+|| *page_created* ||*timestamp* || ||
 || page_text || text     || || 
 || page_searchv || tsvector || ||
 
