@@ -36,7 +36,7 @@ Page view: Take first revision and apply diffs against the base until we hit the
 
 Conflict resolution: last save operation becomes most recent revision.
 
-=== A3: A1 but page old revision to compressed storage ===
+=== A3: A1 but page old revisions to compressed storage ===
 Store revisions just as in A1 but use a cron job that pages out old revisions to compressed storage (could use delta packing or just gzip).
 
 A revision is same as A1.
