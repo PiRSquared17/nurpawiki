@@ -28,14 +28,13 @@ Page view: read most recent revision and display full text directly.
 
 ==== Current version 1 schema ====
 
-Table: `pages`
+Table: *pages*
 || *Column* || *Type* || *Modifiers* || 
 || id      || bigint ||  not null default nextval('pages_id_seq'::regclass) ||
 || page_descr || character varying(256) || ||
 
 
-table: `wikitext`
-
+Table: *wikitext*
 || *Column*  || *Type* || *Modifiers* || 
 || page_id   || bigint   || ||
 || page_text || text     || || 
