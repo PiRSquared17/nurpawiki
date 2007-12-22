@@ -1,5 +1,4 @@
 #summary Tutorial on how to get started with Nurpawiki
-#labels Featured
 
 = First page =
 
