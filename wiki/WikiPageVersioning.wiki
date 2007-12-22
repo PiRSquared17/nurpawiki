@@ -61,6 +61,29 @@ INSERT INTO wikitext (page_id,page_revision,page_text)
 
 Table `pages` needs to be updated to point to the latest revision when saving a wiki page.  Some row locking (at least) should happen when these writes are being made to protect against two concurrent saves.
 
+A combined `wikitext` + `pages` relation update might look something like this:
+
+{{{
+BEGIN;
+-- Ensure no one else can update the head revision while we're modifying it
+-- Selecting for UPDATE means no one else can SELECT FOR UPDATE this row.
+-- If value (head_revision+1) is only computed and used inside this row lock,
+-- we should be protected against two (or more) users creating the same 
+-- revision head.
+--
+-- Note that SELECT FOR SHARE would not work here.
+
+SELECT * from pages WHERE id = <page_id> FOR UPDATE;
+INSERT INTO wikitext (page_id,page_revision,page_text)
+     VALUES (<page_id>, (SELECT head_revision+1 FROM pages WHERE id = <page_id>),
+             'page text ...');
+
+-- Finally update new head_revision.  No one else should've been able to modify
+-- it outside of this transaction.
+UPDATE pages SET head_revision = pages.head_revision+1 WHERE id = <page_id>;
+COMMIT;
+}}}
+
 === A2: Store diff against previously saved version ===
 A revision is:
  * rev_id Revision ID for THIS revision
