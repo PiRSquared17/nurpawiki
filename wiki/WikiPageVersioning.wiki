@@ -21,27 +21,45 @@ This document lists a few implementation strategies for implementing a wiki page
 
 === A1: Store full text for each revision ===
 A revision is:
- * Revision ID
- * Full text of this version
+ * rev_id: Revision ID
+ * rev_text: Full text of this version
+
+Page view: read most recent revision and display full text directly.
 
 === A2: Store diff against previously saved version ===
 A revision is:
  * rev_id Revision ID for THIS revision
  * rev_prev_id Previous revision ID that this revision is saved (diff'd) against
- * Diff computed by diffing rev_id -> rev_prev_id full text
+ * rev_diff: Diff computed by diffing rev_id -> rev_prev_id full text
+
+Page view: Take first revision and apply diffs against the base until we hit the most recent version.
 
 Conflict resolution: last save operation becomes most recent revision.
+
+=== A3: A1 but page old revision to compressed storage ===
+Store revisions just as in A1 but use a cron job that pages out old revisions to compressed storage (could use delta packing or just gzip).
+
+A revision is same as A1.
+
+Page view: Same as A1 except old revisions need to be restored from compressed storage.
+
+Conflict resolution: A1.
+
+Open issues: 
+ * How can this be easily implemented inside the SQL server?
+ * Use cron to do this optimization every now and then?
 
 == Approach comparison ==
 A comparison of the strengths and weaknesses of the various approaches.
 
 Scoring: 1 - Good, 2 - Average, 3 - Below avg, bad
 
-|| *Characteristic*  || *A1* || *A2* || *Comments* ||
-|| Speed: Page view|| 1  || 3  || A2: assuming no last-revision-caching ||
-|| Speed: Page view of a page with 1000 revisions|| 1  || 3  || A2: assuming no last-revision-caching ||
-|| Speed: Page view of a page with 1 revision|| 1  || 1  || ||
-|| Speed: DB ops happen autonomously on SQL server|| 1  || 2  || A2: Depends on implementation, could be 1 or could be 3 ||
-|| Disk efficiency || 3  || 1  || A1 stores full text per revision.  A2 stores only changes ||
-|| Ease of implementation: Concurrency|| 1 || 3 || ||
-|| Ease of implementation: Text search|| 1 || 2 || ||
+|| *Characteristic*  || *A1* || *A2* || *A3* || *Comments* ||
+|| Speed: Page view|| 1  || 3 || 1 || A2: assuming no last-revision-caching ||
+|| Speed: Page view of a page with 1000 revisions|| 1  || 3 || 1 || Viewing most recent version.  A2: assuming no last-revision-caching ||
+|| Speed: Page view of a page with 1 revision|| 1  || 1 || 1 || ||
+|| Speed: Page view of an older revision || 1  || 3 || 1 || A2: pretty much same speed as most recent, depends on how many revisions there are ||
+|| Speed: DB ops happen autonomously on SQL server|| 1  || 2 || ? || A2: Depends on implementation, could be 1 or could be 3. ||
+|| Disk efficiency || 3  || 1 || 2 || A1 stores full text per revision.  A2 stores only changes. A1 and A2 becomes equivalent if all lines change and are further apart when only a very small subset of lines change.  A3 could be 1. ||
+|| Ease of implementation: Concurrency|| 1 || 3 || 1 || ||
+|| Ease of implementation: Text search|| 1 || 2 || 1 || ||
