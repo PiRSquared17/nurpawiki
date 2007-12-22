@@ -45,6 +45,8 @@ Page view: Same as A1 except old revisions need to be restored from compressed s
 
 Conflict resolution: A1.
 
+Performance characteristics: Make it fast to read latest revision, other revisions can be viewed at significantly slower speeds.
+
 Open issues: 
  * How can this be easily implemented inside the SQL server?
  * Use cron to do this optimization every now and then?
