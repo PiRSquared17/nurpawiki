@@ -26,6 +26,24 @@ A revision is:
 
 Page view: read most recent revision and display full text directly.
 
+==== Current version 1 schema ====
+
+Table: `pages`
+|| *Column* || *Type* || *Modifiers* || 
+|| id      || bigint ||  || not null default nextval('pages_id_seq'::regclass) ||
+|| page_descr || character varying(256) || ||
+
+
+table: `wikitext`
+
+|| *Column*  || *Type* || *Modifiers* || 
+|| page_id   || bigint   || ||
+|| page_text || text     || || 
+|| page_searchv || tsvector || ||
+
++ index (wikitext_index : gist (page_searchv)
++ wikitext_page_id_fkey : FOREIGN KEY (page_id) REFERENCES pages(id)
+
 === A2: Store diff against previously saved version ===
 A revision is:
  * rev_id Revision ID for THIS revision
