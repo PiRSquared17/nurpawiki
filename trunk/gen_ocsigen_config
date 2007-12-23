@@ -10,7 +10,7 @@ set -e   # Bail out on errors
 site_cma="nurpawiki.cma"
 static_root="."
 if [ -z $1 ]; then
-    echo No args
+    true
 else
     if [ "$1" = "--godi-install" ]; then
         site_cma=`ocamlfind query nurpawiki`/nurpawiki.cma
