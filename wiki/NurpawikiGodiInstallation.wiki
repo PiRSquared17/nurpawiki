@@ -25,7 +25,7 @@ After installation you should have the following two files in `godi/share/nurpaw
  * `schema.psql` is a Postgresql script that you need to load into your `nurpawiki` database.  See database installation instructions on how to do that.
 
 === example.conf ===
- * Edit the "database" element's "password" to match your postgres user's database password.  Search for `insert_password_here`
+ * Edit the `database` element's `password` attribute value to match your postgres user's database password.  Search for `insert_password_here`.
 
 === schema.psql ===
 Load godi/share/nurpawiki/schema.psql into your database:
