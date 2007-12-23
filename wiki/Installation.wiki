@@ -16,7 +16,10 @@ See [DatabaseInstallationDebian Debian DB instructions] for instructions on inst
 See [DatabaseInstallation DB from source] for installing everything from source (not recommended).
 
 == Get the source ==
-Get the source from SVN (see http://code.google.com/p/nurpawiki/source) or download the latest release (http://code.google.com/p/nurpawiki/downloads/list).
+Download the latest release from the [http://code.google.com/p/nurpawiki/downloads/list downloads page].
+
+You can also go for the latest and greatest by getting the soure from SVN
+(see [http://code.google.com/p/nurpawiki/source]).
 
 == Configure ==
 Run configure like so:
