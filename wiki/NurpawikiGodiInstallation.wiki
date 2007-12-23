@@ -1,0 +1,5 @@
+#summary Installing Nurpawiki from GODI.
+
+= Nurpawiki installation through GODI package manager =
+
+Nurpawiki is packaged as a GODI package and can be easily installed via GODI.
