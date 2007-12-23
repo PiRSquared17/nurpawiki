@@ -29,7 +29,7 @@ You can now test that your newly set password actually lets you access you datab
 
  * _As a normal user_ do: `psql -h localhost -W -U postgres nurpawiki` and type in the password you used above.  Note that the password for `postgres` Unix user and the DB password are not the same.
 
-When running Nurpawiki's `configure` script, specify the same password you used in the above ALTER statement.
+When creating Nurpawiki's configuration with `gen_ocsigen_config`script, be sure to specify the same password you used in the above ALTER statement.
 
 ==== 2) Hack postgres configuration to allow DB access without a password ====
 
