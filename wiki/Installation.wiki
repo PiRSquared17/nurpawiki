@@ -1,4 +1,4 @@
-#summary How to install Nurpawiki
+ #summary How to install Nurpawiki
 
 = Installation =
 
@@ -9,7 +9,7 @@ See [DatabaseInstallation DB from source] for installing everything from source 
 
 == Install Nurpawiki ==
 
- * NurpawikiGodiInstallation
+ * NurpawikiGodiInstallation (recommended) or
  * NurpawikiSourceInstallation
 
 == Start server ==
