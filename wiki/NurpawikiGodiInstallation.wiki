@@ -30,5 +30,5 @@ After installation you should have the following two files in `godi/share/nurpaw
 == Database ==
 Load godi/share/nurpawiki/schema.psql into your database:
 
- * As `postgres` user, run:
+ * As user `postgres`, run:
   * `psql nurpawiki < godi/share/nurpawiki/schema.psql`
