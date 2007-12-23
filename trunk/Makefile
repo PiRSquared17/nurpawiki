@@ -13,7 +13,7 @@ PP = -pp "camlp4o $(OCSIGENREP)/xhtmlsyntax.cma"
 
 OBJS = $(FILES:.ml=.cmo)
 
-CMA = site.cma
+CMA = nurpawiki.cma
 
 all: $(CMA) install
 
