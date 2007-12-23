@@ -122,13 +122,23 @@ let view_scheduler_page sp =
       [p [raw_input ~input_type:`Submit ~value:"Mass edit" ()];
        table
          (tr (th []) [th []; th []; th [pcdata "Activates on"]; th [pcdata "Todo"]])
-         (todo_section sp merged_todos)] in
-
+         ((todo_section sp merged_todos) @
+            [tr 
+               (td [button 
+                      ~a:[a_class ["scheduler_check_button"];
+                          a_id "button_select_all"]
+                      ~button_type:`Button [pcdata "Select All"]]) 
+               
+               [td [button 
+                      ~a:[a_class ["scheduler_check_button"];
+                          a_id "button_deselect_all"]
+                      ~button_type:`Button [pcdata "Unselect All"]]]])] in
+    
     let table' = 
       post_form edit_todo_page sp table (ET_scheduler, None) in
     
-    Html_util.html_stub sp
-      (Html_util.navbar_html sp ~credentials ~undo_task_id
+    Html_util.html_stub sp ~javascript:[["nurpawiki_scheduler.js"]]
+      (Html_util.navbar_html sp ~credentials ~undo_task_id 
          ([h1 [pcdata "Road ahead"]] @ [table'])) in
   Session.with_user_login sp
     (fun credentials sp -> 

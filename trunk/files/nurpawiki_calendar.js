@@ -27,7 +27,6 @@ function nwRegisterCalendar()
         }
 
     }
-
 }
 
 addLoadEvent(nwRegisterCalendar);
