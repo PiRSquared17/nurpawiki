@@ -27,8 +27,9 @@
       <site dir="" charset="UTF-8">
         <redirect regexp="$" dest="/view?p=WikiStart"/>
         <eliom module="nurpawiki.cma">
-          <database name="%_DBNAME_%" user="%_DBUSER_%" port="%_DBPORT_%"
-                    password="%_DBPASSWD_%" />
+          <!-- More attributes for data base: port - Postgresql port -->
+          <database name="%_DBNAME_%" user="%_DBUSER_%" password="%_DBPASSWD_%" />
+
         </eliom>
         <static dir="files" />
       </site>

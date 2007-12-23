@@ -15,24 +15,25 @@ OBJS = $(FILES:.ml=.cmo)
 
 CMA = nurpawiki.cma
 
-all: $(CMA) install
+all: $(CMA) META
 
 $(CMA): $(OBJS)
 	$(CAMLC) -a -o $(CMA) $(OBJS)
 
-install:
-	chmod a+r $(CMA)
-
 .SUFFIXES:
 .SUFFIXES: .ml .mli .cmo .cmi .cmx
 
-.PHONY: doc
+.PHONY: doc install
 
 NWIKI_VER=$(shell cat VERSION)
 config.ml:config.ml.in VERSION
 	echo $(NWIKI_VER)
 	cat config.ml.in | \
 	    sed -e "s|%_NURPAWIKI_VERSION_%|$(NWIKI_VER)|g" > config.ml
+
+META:META.in VERSION
+	cat META.in | \
+	    sed -e "s|%_NURPAWIKI_VERSION_%|$(NWIKI_VER)|g" > META
 
 .ml.cmo:
 	$(CAMLC) $(PP) -c $<
@@ -48,8 +49,9 @@ doc:
 clean:
 	-rm -f *.cm[ioxa] *~ $(NAME)
 
+install:
+	ocamlfind install nurpawiki META $(CMA)
+
 depend:
 	$(CAMLDEP) $(PP) $(LIB) $(FILES:.ml=.mli) $(FILES) > .depend
-
-
 

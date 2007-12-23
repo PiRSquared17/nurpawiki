@@ -25,7 +25,7 @@ type db_config =
     {
       db_name : string;
       db_user : string;
-      db_port : string;
+      db_port : string option;
       db_pass : string option;
     }
 
@@ -48,7 +48,7 @@ let dbcfg =
       [Element ("database", attrs, _)] ->
         let dbname = get_attr_with_err "name" attrs in
         let dbuser = get_attr_with_err "user" attrs in
-        let dbport = get_attr_with_err "port" attrs in
+        let dbport = get_attr_opt "port" attrs in
         let dbpass = get_attr_opt "password" attrs in
         (dbname,dbuser,dbport,dbpass)
     | _ -> 
@@ -63,10 +63,11 @@ let dbcfg =
 
 let db_conn =
   try
-    Messages.errlog (P.sprintf "connecting to DB '%s' as user '%s' on port '%s'" 
-                       dbcfg.db_name dbcfg.db_user dbcfg.db_port);
+    Messages.errlog (P.sprintf "connecting to DB '%s' as user '%s'" 
+                       dbcfg.db_name dbcfg.db_user);
     new Psql.connection ~host:"localhost"
-      ~dbname:dbcfg.db_name ~user:dbcfg.db_user ~port:dbcfg.db_port
+      ~dbname:dbcfg.db_name ~user:dbcfg.db_user 
+      ~port:(Option.default "" dbcfg.db_port)
       ~password:(Option.default "" dbcfg.db_pass)
       ()
   with
