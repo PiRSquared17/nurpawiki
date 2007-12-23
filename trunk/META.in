@@ -1,0 +1,3 @@
+requires = "unix,extlib,postgresql,calendar,pcre,str"
+version = "%_NURPAWIKI_VERSION_%"
+archive(byte) = "nurpawiki.cma"
