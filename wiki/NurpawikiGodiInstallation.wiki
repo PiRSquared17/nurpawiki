@@ -17,8 +17,7 @@ Then download [http://godi.ocaml-programming.de/ GODI bootstrap package] and fol
 Run `godi_console` and select `apps-nurpawiki` package and install it.  GODI will automatically install all required dependencies.
 
 == Configuration ==
-
-The package does not automatically configure everything to work and thus you need to do a bit of twiddling in order to run Nurpawiki.
+The package does not automatically configure everything to work and thus you need to do a bit of twiddling before you can run Nurpawiki.
 
 After installation you should have the following two files in `godi/share/nurpawiki`:
 
@@ -27,3 +26,9 @@ After installation you should have the following two files in `godi/share/nurpaw
 
 === example.conf ===
  * Edit the "database" element's "password" to match your postgres user's database password.  Search for `insert_password_here`
+
+== Database ==
+Load godi/share/nurpawiki/schema.psql into your database:
+
+ * As `postgres` user, run:
+  * `psql nurpawiki < godi/share/nurpawiki/schema.psql`
