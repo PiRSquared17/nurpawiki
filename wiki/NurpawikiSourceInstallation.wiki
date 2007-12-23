@@ -33,3 +33,12 @@ Output of `gen_ocsigen_config` is piped to a file and will later on be passed to
 == Build Nurpawiki ==
 
 Run `make`.
+
+
+== Start server ==
+
+Run 
+
+{{{
+ocsigen -c nurpawiki.conf.local
+}}}
