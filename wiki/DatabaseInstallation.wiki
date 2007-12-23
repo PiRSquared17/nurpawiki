@@ -1,4 +1,5 @@
 #summary Postgresql database setup for Nurpawiki
+#labels Deprecated
 
 = How to setup the Nurpawiki database with Postgresql =
 
