@@ -32,15 +32,15 @@ Bolded rows are additions to version 1.
 *Table* `pages`
 || *Column* || *Type* || *Modifiers* || 
 || id      || bigint ||  not null default nextval('pages_id_seq'::regclass) ||
-|| *head_revision*||*bigint*|| not null default 0 ||
+|| *head_revision*|| *bigint* || *not null default 0* ||
 || page_descr || character varying(256) || ||
 
 
 *Table* `wikitext`
 || *Column*  || *Type* || *Modifiers* || 
 || page_id   || bigint   || ||
-|| *page_revision* ||*bigint* || ||
-|| *page_created* ||*timestamp* || *not null default now()* ||
+|| *page_revision* || *bigint* || ||
+|| *page_created* || *timestamp* || *not null default now()* ||
 || page_text || text     || || 
 || page_searchv || tsvector || ||
 
