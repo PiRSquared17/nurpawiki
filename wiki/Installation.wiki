@@ -12,14 +12,6 @@ See [DatabaseInstallation DB from source] for installing everything from source 
  * NurpawikiGodiInstallation (recommended) or
  * NurpawikiSourceInstallation
 
-== Start server ==
-
-Run 
-
-{{{
-ocsigen -c nurpawiki.conf.local
-}}}
-
 == Test it! ==
 
 Point your browser to http://localhost:8080/view?p=WikiStart and login as "admin" (leave the password field empty).
