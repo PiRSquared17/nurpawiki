@@ -72,6 +72,10 @@ a.palette11 { color:rgb(51, 0, 153); }
 
 .act_date_input { text-align: center; background-color: #ccc; }
 
+.scheduler_check_button {
+  font-size: 0.75em;
+}
+
 .error {
     color : Red;
     font-weight:bold;
