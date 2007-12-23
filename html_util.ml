@@ -46,7 +46,7 @@ let html_stub sp ?(javascript=[]) body_html =
              [css_link ~a:[] ~uri:(make_uri ~service:(static_dir sp) ~sp 
                                      ["style.css"]) ();
               css_link ~a:[] ~uri:(make_uri ~service:(static_dir sp) ~sp 
-                                     ["jscalendar"; "calendar-win2k-1.css"]) ()]))
+                                     ["jscalendar"; "calendar-blue2.css"]) ()]))
        (body 
           body_html))
 
