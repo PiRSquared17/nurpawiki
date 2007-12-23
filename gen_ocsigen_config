@@ -7,6 +7,20 @@
 
 set -e   # Bail out on errors
 
+site_cma="nurpawiki.cma"
+static_root="."
+if [ -z $1 ]; then
+    echo No args
+else
+    if [ "$1" = "--godi-install" ]; then
+        site_cma=`ocamlfind query nurpawiki`/nurpawiki.cma
+        static_root="$LOCALBASE/share/nurpawiki"
+    else
+        echo Invalid args
+        exit 1
+    fi
+fi
+
 str_path=`ocamlfind query str`
 pcre_path=`ocamlfind query pcre`
 
@@ -26,7 +40,6 @@ if [ "$DEBUG" != "" ]; then
     echo $postgresql_path
     echo $sqlite3_path
     echo $ocsigen_libs
-
 fi
 
 mkdir -p var/log
@@ -69,6 +82,8 @@ cat ocsigen.conf.in | \
     sed -e "s|%_EXTLIB_CMA_%|${extlib_path}/extLib.cma|g" | \
     sed -e "s|%_POSTGRESQL_CMA_%|${postgresql_path}/postgresql.cma|g" | \
     sed -e "s|%_CRYPTOKIT_CMA_%|${cryptokit_path}/cryptokit.cma|g" | \
+    sed -e "s|%_STATIC_ROOT_%|${static_root}|g" | \
+    sed -e "s|%_NURPAWIKI_CMA_%|${site_cma}|g" | \
     sed -e "s|%_DBNAME_%|${DBNAME}|g" | \
     sed -e "s|%_DBPASSWD_%|${DBPASSWD}|g" | \
     sed -e "s|%_SQLITE3_CMA_%|${sqlite3_path}/sqlite3.cma|g" | \
