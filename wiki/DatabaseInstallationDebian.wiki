@@ -10,10 +10,6 @@ These installation instructions apply to both Debian and Ubuntu.  Package versio
 
 == Create DB & configure ==
 
-When creating databases, you must ensure that the database will be in `en_US.UTF-8` locale, otherwise tsearch2 will not work.  If your locale is en_US (run `locale` to find out), the databases should be automatically correctly configured.
-
-See [DatabaseInstallationHacks hacks] if you have reason to doubt this is not so.
-
 === Install DB and configure ===
 
  * Become postgres user by `su root; su postgres`
