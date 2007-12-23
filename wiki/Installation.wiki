@@ -32,7 +32,7 @@ env DBNAME=nurpawiki DBUSER=postgres DBPASSWD=<pass> ./gen_ocsigen_config > nurp
 
 The script will complain if some of the dependent libraries are not installed via ocamlfind.
 
-Pipe the output of `configure` to a file and pass it on to Ocsigen when you start the Ocsigen web server.
+Output of `gen_ocsigen_config` is piped to a file and will later on be passed to Ocsigen when you start the Ocsigen web server.
 
 == Build Nurpawiki ==
 
