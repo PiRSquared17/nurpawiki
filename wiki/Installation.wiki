@@ -21,16 +21,13 @@ Download the latest release from the [http://code.google.com/p/nurpawiki/downloa
 You can also go for the latest and greatest by getting the source from SVN
 (see [http://code.google.com/p/nurpawiki/source]).
 
-== Configure ==
-Run configure like so:
+== Configuration ==
+Run `gen_ocsigen_config` like so:
 
 {{{
-# NOTE: This depends on the way you configured your
-#       Postgresql.
-# NOTE 2: Make sure the DBPORT is correctly set!  It needs to match your
-#       Postgresql configuration variable (in pg_hba.conf)
+# NOTE: This depends on the way you configured your Postgresql.
 # NOTE 3: See DB installation page for info on postgres user password & authentication
-env DBNAME=nurpawiki DBUSER=postgres DBPORT=5432 DBPASSWD=<pass> ./configure > nurpawiki.conf.local
+env DBNAME=nurpawiki DBUSER=postgres DBPASSWD=<pass> ./gen_ocsigen_config > nurpawiki.conf.local
 }}}
 
 The script will complain if some of the dependent libraries are not installed via ocamlfind.
