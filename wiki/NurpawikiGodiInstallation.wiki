@@ -32,3 +32,17 @@ Load godi/share/nurpawiki/schema.psql into your database:
 
  * As user `postgres`, run:
   * `psql nurpawiki < godi/share/nurpawiki/schema.psql`
+
+== Start Nurpawiki! ==
+
+Provided everything installed the right way and you configured everything the right way, you can now start Nurpawiki:
+
+ * `ocsigen -v -c godi/share/nurpawiki/example.conf`
+
+=== Trouble shooting ===
+ * No database found?  Need to install database.  See DatabaseInstallationDebian.
+ * Cannot authenticate?  See above.
+ * Can't find `var/log` or `var/run` directories?  You need to have them in whichever directory you choose to start nurpawiki/ocsigen from.  Creating:
+  * `mkdir -p var/run`
+  * `mkdir -p var/log`
+  * Or you can edit `example.conf` to point these to an existing directory.
