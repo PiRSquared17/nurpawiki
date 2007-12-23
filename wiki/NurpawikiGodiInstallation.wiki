@@ -4,9 +4,9 @@
 
 Nurpawiki is packaged as a GODI package and can be easily installed via GODI.
 
-== Debian packages ==
+== Install Nurpawiki using GODI ==
 
-Install the following Debian packages:
+First install the following Debian packages:
  * `apt-get install libpcre3-dev`
  * `apt-get install libgdbm-dev`
  * `apt-get install libsqlite3-dev`
