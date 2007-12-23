@@ -3,3 +3,24 @@
 = Nurpawiki installation through GODI package manager =
 
 Nurpawiki is packaged as a GODI package and can be easily installed via GODI.
+
+== Debian packages ==
+
+Install the following Debian packages:
+ * `apt-get install libpcre3-dev`
+ * `apt-get install libgdbm-dev`
+ * `apt-get install libsqlite3-dev`
+ * `apt-get install libpq-dev`
+
+Then download [http://godi.ocaml-programming.de/ GODI bootstrap package] and follow GODI's installation instructions.
+
+Run `godi_console` and select `apps-nurpawiki` package and install it.  GODI will automatically install all required dependencies.
+
+== Configuration ==
+
+The package does not automatically configure everything to work and thus you need to do a bit of twiddling in order to run Nurpawiki.
+
+After installation you should have the following two files in `godi/share/nurpawiki`:
+
+ * `example.conf` is configuration file for Nurpawiki/Ocsigen that needs to match your platform
+ * `schema.psql` is a Postgresql script that you need to load into your `nurpawiki` database.  See database installation instructions on how to do that.
