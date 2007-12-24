@@ -1,0 +1,38 @@
+#summary How to release a new version of the GODI package.
+
+= Updating the GODI package =
+
+== Testing current head/trunk version locally ==
+
+Create a test package by running: 
+{{{
+export VERSION=1.0.3
+cd nurpawiki
+./utils/export_godi_distfiles.sh
+}}}
+
+A package `nurpawiki-$VERSION.gz` is created along with `distinfo`
+
+Copy the packages over to your *test* GODI installation (have a separate godi installation for testing!):
+
+{{{
+cp nurpawiki-$VERSION.tar.gz $GODIBASE/build/distfiles
+cp distinfo $GODIBASE/build/apps/apps-nurpawiki
+}}}
+
+Test it:
+
+{{{
+cd $GODIBASE/build/apps/apps-nurpawiki
+godi_delete apps-nurpawiki-$VERSION
+godi_make clean
+godi_make install
+}}}
+
+If you have a final release package uploaded to releases, you can test that it downloads successfully by deleting the `nurpawiki-$VERSION.tar.gz` package from distfiles and running `godi_make fetch`.
+
+== Releasing the GODI package ==
+
+ * Create a new `distinfo` file by running `utils/gen_godi_distinfo.sh` on your official release package (download from server to ensure you have the right one)
+ * Copy your local package files (distinfo, Makefile, DESCR, etc.) to your godi-build apps-nurpawiki directory and submit to SVN.
+ * Follow the standard GODI package release process
