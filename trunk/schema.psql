@@ -2238,5 +2238,5 @@ A [wiki:WikiStart link] to the WikiStart main page.
 
 Another [http://www.google.com link], this time to [http://www.google.com].
 
-And !WikiText that does not become a link.  Write these as `!WikiText` to make Nurpawiki not regard it as a !WikiLink.  I.e., prefix it with a bang (!).
+This !WikiText that does not become a link.  Write these as `!WikiText` to make Nurpawiki not regard it as a !WikiLink.  I.e., prefix it with a bang (!).
 ');
