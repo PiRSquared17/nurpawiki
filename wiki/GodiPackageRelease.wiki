@@ -31,6 +31,8 @@ godi_make install
 
 If you have a final release package uploaded to releases, you can test that it downloads successfully by deleting the `nurpawiki-$VERSION.tar.gz` package from distfiles and running `godi_make fetch`.
 
+The package should be tested on both 3.09 and 3.10 release lines.
+
 == Releasing the GODI package ==
 
  * Create a new `distinfo` file by running `utils/gen_godi_distinfo.sh` on your official release package (download from server to ensure you have the right one)
