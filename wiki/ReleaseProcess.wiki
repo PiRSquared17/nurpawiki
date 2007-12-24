@@ -15,4 +15,8 @@
   * `svn cp -r 158 https://nurpawiki.googlecode.com/svn/trunk https://nurpawiki.googlecode.com/svn/tags/x.y.z`
  # Upload release tarball to download page
  # Create & test a new GODI release (see GodiPackageRelease)
+ # *Eat your own dog food*: Upgrade personal installation to use the release version from GODI.  This is good for various reasons:
+  * New GODI releases of Nurpawiki don't start to lag behind, as the latest features are installed to my own personal installation via releases.
+  * GODI package gets tested on a real installation
+  * Setting up Nurpawiki from GODI gets tested and hopefully will become streamlined over time as I get reminded about the installation procedure on each release.
  # Announce
