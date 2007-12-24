@@ -2,7 +2,16 @@
 
 = Release notes =
 
-== Nurpawiki 1.0.1 ==
+== Nurpawiki 1.0.2 (r239) == 
+ * Implement "undo complete task" that allows users to undo if they accidentally closed a task.
+ * Check/uncheck button for (de)selecting all tasks for editing in scheduler.
+ * Created a GODI package.  A few changes went into configuration scripts to enable this.
+ * Rename `configure` to `gen_ocsigen_config`.
+ * Rename `site.cma` to `nurpawiki.cma` (Requires you to update your Ocsigen config).
+ * Strip down JSCalendar to make Nurpawiki release package smaller (113KB from 380KB).
+ * Work arounds for IE compatibility
+
+== Nurpawiki 1.0.1 (r177) ==
  * Automatically create !WikiStart and !WikiMarkup wiki pages on DB init so that the user is taken to a simple help screen after first install.
  * Implement bold, italic and code styles in wiki markup.
  * Fix a bug in bullet list whitespace handling.
