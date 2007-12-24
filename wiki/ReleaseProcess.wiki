@@ -14,5 +14,5 @@
   * NOTE: Add main revision into submit message so that it's easier to diff against it
   * `svn cp -r 158 https://nurpawiki.googlecode.com/svn/trunk https://nurpawiki.googlecode.com/svn/tags/x.y.z`
  # Upload release tarball to download page
- # Create & test a new GODI release
+ # Create & test a new GODI release (see GodiPackageRelease)
  # Announce
