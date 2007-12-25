@@ -428,14 +428,27 @@ let page_id_of_page_name descr =
 let wiki_page_exists page_descr =
   find_page_id page_descr <> None
 
+let is_legal_page_revision page_id_s rev_id =
+  let sql = "
+SELECT page_id FROM wikitext 
+ WHERE page_id="^page_id_s^" AND page_revision="^string_of_int rev_id in
+  let r = guarded_exec sql in
+  r#ntuples <> 0
+
+(* Load a certain revision of a wiki page.  If the given revision is
+   not known, default to head revision. *)
 let load_wiki_page ?(revision_id=None) page_id = 
   let page_id_s = string_of_int page_id in
+  let head_rev_select = 
+    "(SELECT head_revision FROM pages WHERE id = "^page_id_s^")" in
   let revision_s = 
     match revision_id with
-      None -> (* Use head-revision *)
-        "(SELECT head_revision FROM pages WHERE id = "^page_id_s^")"
+      None -> head_rev_select
     | Some r ->
-        string_of_int r in
+        if is_legal_page_revision page_id_s r then
+          string_of_int r
+        else
+          head_rev_select in
   let sql = "
 SELECT page_text FROM wikitext 
  WHERE page_id="^string_of_int page_id^" AND 
@@ -464,7 +477,7 @@ SELECT page_revision,users.id,users.login,date_trunc('second', page_created) FRO
              pr_created = List.nth r 3;
            })
         (r#get_all_lst)
-    
+        
 
 let query_past_activity () =
   let sql =
@@ -556,6 +569,10 @@ let update_user ~user_id ~passwd ~real_name ~email =
   ignore (guarded_exec sql)
 
 
+let logged_exec logmsg sql = 
+  Buffer.add_string logmsg ("  "^sql^"\n");
+  ignore (guarded_exec sql)
+
 (* Migrate all tables to version 1 from schema v0: *)
 let upgrade_schema_from_0 logmsg =
   Buffer.add_string logmsg "Upgrading schema to version 1\n";
@@ -563,7 +580,7 @@ let upgrade_schema_from_0 logmsg =
   let sql = 
     "CREATE TABLE version (schema_version integer NOT NULL);
      INSERT INTO version (schema_version) VALUES('1')" in
-  ignore (guarded_exec sql);
+  logged_exec logmsg sql;
 
   let empty_passwd = (Digest.to_hex (Digest.string "")) in
   let sql = 
@@ -573,43 +590,36 @@ let upgrade_schema_from_0 logmsg =
                          real_name text,
                          email varchar(64));
      INSERT INTO users (login,passwd) VALUES('admin', '"^empty_passwd^"')" in
-  Buffer.add_string logmsg "  Create users table\n";
-  ignore (guarded_exec sql);
+  logged_exec logmsg sql;
 
   (* Todos are now owned by user_id=0 *)
   let sql =
     "ALTER TABLE todos ADD COLUMN user_id integer" in
-  Buffer.add_string logmsg "  Add user_id column to todos table\n";
-  ignore (guarded_exec sql);
+  logged_exec logmsg sql;
 
   (* Add user_id field to activity log table *)
   let sql =
     "ALTER TABLE activity_log ADD COLUMN user_id integer" in
-  Buffer.add_string logmsg "  Add user_id column to activity_log table\n";
-  ignore (guarded_exec sql);
-  ()
+  logged_exec logmsg sql
+
 
 let upgrade_schema_from_1 logmsg =
-  let logged_exec sql = 
-    Buffer.add_string logmsg ("  "^sql^"\n");
-    ignore (guarded_exec sql) in
-
   Buffer.add_string logmsg "Upgrading schema to version 2\n";
   let sql = 
     "ALTER TABLE pages ADD COLUMN head_revision bigint not null default 0" in
-  logged_exec sql;
+  logged_exec logmsg sql;
 
   let sql = 
     "ALTER TABLE wikitext ADD COLUMN page_revision bigint not null default 0" in
-  logged_exec sql;
+  logged_exec logmsg sql;
 
   let sql =
     "ALTER TABLE wikitext
      ADD COLUMN page_created timestamp not null default now()" in  
-  logged_exec sql;
+  logged_exec logmsg sql;
 
   let sql = "ALTER TABLE wikitext ADD COLUMN page_created_by_user_id bigint" in
-  logged_exec sql;
+  logged_exec logmsg sql;
 
   (* Change various tsearch2 default behaviour: *)
   let sql = "
@@ -624,9 +634,9 @@ CREATE TRIGGER wikitext_searchv_update
     BEFORE INSERT ON wikitext
     FOR EACH ROW
     EXECUTE PROCEDURE tsearch2('page_searchv', 'page_text')" in
-  logged_exec sql;
+  logged_exec logmsg sql;
 
-  logged_exec "UPDATE version SET schema_version = 2"
+  logged_exec logmsg "UPDATE version SET schema_version = 2"
 
 (* Highest upgrade schema below must match this version *)
 let nurpawiki_schema_version = 2

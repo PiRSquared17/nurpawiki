@@ -445,7 +445,7 @@ let wiki_page_menu_html sp ~credentials ~undo_task_id page content =
        ~a:[a_accesskey 'p'; a_class ["ak"]] [pcdata "Print"]
        (page, (Some true,None))] in
   let revisions_link =
-    [a ~sp ~service:page_revisions_page [pcdata "View Old Revisions"] page; br (); br ()] in
+    [a ~sp ~service:page_revisions_page [pcdata "View past versions"] page; br (); br ()] in
   let current_user_id = Some credentials.user_id in
   let todo_list = 
     todo_list_table_html sp page 
