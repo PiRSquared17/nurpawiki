@@ -136,7 +136,7 @@ Full search with `tsearch2` works out of the box although it searches by default
 
 I don't know what would be an easy way to restrict `tsearch2`'s attention to only head revisions.  I guess one option would be to nuke the search indices for old revisions when saving a page.  This might be a good idea anyway, as it would reduce the DB disk size.
 
-*Update* full text search can be restricted to head by killing the previous version search vectors and only setting it up for the head:
+*Update:* full text search can be restricted to head by killing the previous version search vectors and only setting it up for the head:
 
 {{{
   let sql = "
