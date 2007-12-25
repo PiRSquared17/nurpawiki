@@ -599,6 +599,14 @@ let upgrade_schema_from_1 logmsg =
   let sql = "ALTER TABLE wikitext ADD COLUMN page_created_by_user_id bigint" in
   logged_exec sql;
 
+  (* Do this in case someone is migrating an old DB from a different
+     locale.  See schema.psql for further comments. *)
+  let sql = "
+UPDATE pg_ts_cfg SET locale = current_setting('lc_collate') 
+ WHERE ts_name = 'default'" in
+  logged_exec sql;
+  
+
   logged_exec "UPDATE version SET schema_version = 2"
 
 (* Highest upgrade schema below must match this version *)
