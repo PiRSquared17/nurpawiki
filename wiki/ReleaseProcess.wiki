@@ -3,7 +3,6 @@
 
 = Release Process =
 
- # Update ReleaseNotes
  # Update VERSION to the version number being released
  # Make a release candidate out of the current head (record the revision number)
   * `svn export -r 158 https://nurpawiki.googlecode.com/svn/trunk nurpawiki-x.y.z`
@@ -15,6 +14,7 @@
   * NOTE: Add main revision into submit message so that it's easier to diff against it
   * `svn cp -r 158 https://nurpawiki.googlecode.com/svn/trunk https://nurpawiki.googlecode.com/svn/tags/x.y.z`
  # Test the release candidate tarball with GODI (see GodiPackageRelease)
+ # Update ReleaseNotes
  # Upload release tarball to download page
  # Finally release the GODI package (see GodiPackageRelease)
  # *Eat your own dog food*: Upgrade personal installation to use the release version from GODI.  This is good for various reasons:
