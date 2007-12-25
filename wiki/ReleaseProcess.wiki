@@ -10,10 +10,10 @@
   * `cd nurpawiki-x.y.z`
   * Configure & build
  # QA the package according to [DevTestPlan]
+ # Test the release candidate tarball with GODI (see GodiPackageRelease)
  # Snapshot current svn version
   * NOTE: Add main revision into submit message so that it's easier to diff against it
   * `svn cp -r 158 https://nurpawiki.googlecode.com/svn/trunk https://nurpawiki.googlecode.com/svn/tags/x.y.z`
- # Test the release candidate tarball with GODI (see GodiPackageRelease)
  # Update ReleaseNotes
  # Upload release tarball to download page
  # Finally release the GODI package (see GodiPackageRelease)
