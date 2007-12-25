@@ -176,7 +176,7 @@ let () =
 let link_to_nurpawiki_main sp = 
   a ~sp ~service:wiki_view_page 
     [pcdata "Take me to Nurpawiki"]
-    ("WikiStart",None)
+    ("WikiStart",(None,None))
 
 (* /upgrade upgrades the database schema (if needed) *)
 let _ =

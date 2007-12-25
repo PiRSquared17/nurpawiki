@@ -149,7 +149,7 @@ let render_edit_todo_cont_page sp ~credentials = function
     ET_scheduler -> 
       view_scheduler_page sp
   | ET_view wiki_page ->
-      Nurpawiki.view_wiki_page sp ~credentials (wiki_page,None)
+      Nurpawiki.view_wiki_page sp ~credentials (wiki_page,(None,None))
 
 (* /scheduler *)
 let _ =
@@ -203,7 +203,7 @@ let rec render_todo_editor sp ~credentials (src_page_cont, todos_to_edit) =
     let cancel_page cont = 
       match cont with
         ET_scheduler -> Html_util.cancel_link scheduler_page sp ()
-      | ET_view wiki -> Html_util.cancel_link wiki_view_page sp (wiki,None) in
+      | ET_view wiki -> Html_util.cancel_link wiki_view_page sp (wiki,(None,None)) in
 
     let owner_selection chain todo =
 

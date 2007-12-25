@@ -50,11 +50,11 @@ let html_stub sp ?(javascript=[]) body_html =
        (body 
           body_html))
 
-let navbar_html sp ~credentials ~undo_task_id ?(wiki_page_links=[]) ?(todo_list_table=[]) content =
+let navbar_html sp ~credentials ~undo_task_id ?(wiki_revisions_link=[]) ?(wiki_page_links=[]) ?(todo_list_table=[]) content =
   let home_link link_text =
     a ~service:wiki_view_page 
       ~a:[a_accesskey 'h'; a_class ["ak"]] ~sp:sp link_text 
-      ("WikiStart", None) in
+      ("WikiStart", (None, None)) in
   let scheduler_link =
     a ~service:scheduler_page
       ~a:[a_accesskey 'r'; a_class ["ak"]] ~sp:sp 
@@ -111,7 +111,7 @@ let navbar_html sp ~credentials ~undo_task_id ?(wiki_page_links=[]) ?(todo_list_
               ~sp [pcdata "Undo Complete Task!"] id]])
   @
     [div ~a:[a_id "navbar"]
-       (user_greeting @ [br ()] @ search_input @ todo_list_table);
+       (user_greeting @ [br ()] @ search_input @ wiki_revisions_link @ todo_list_table);
      div ~a:[a_id "content"]
        content]
 
@@ -146,7 +146,7 @@ let todo_page_links_of_pages sp ?(colorize=false) ?(link_css_class=None) ?(inser
     | None -> [a_class color_css] in
   let link page = 
     a ~a:(attrs page) ~service:wiki_view_page ~sp:sp [pcdata page.p_descr]
-      (page.p_descr,None) in
+      (page.p_descr,(None,None)) in
   let rec insert_commas acc = function
       (x::_::xs) as lst ->
         insert_commas (pcdata ", "::x::acc) (List.tl lst)

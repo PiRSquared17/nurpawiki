@@ -368,14 +368,41 @@ let up_task_priority id =
 let down_task_priority id =
   offset_task_priority id 1
 
-let new_wiki_page page =
+let new_wiki_page ~user_id page =
   let sql = 
-    "INSERT INTO pages (page_descr) VALUES ('"^escape page^"');"^
-      "INSERT INTO wikitext (page_id,page_text) "^
-      "       VALUES ((SELECT CURRVAL('pages_id_seq')), ''); "^
+    "INSERT INTO pages (page_descr) VALUES ('"^escape page^"');
+     INSERT INTO wikitext (page_id,page_created_by_user_id,page_text)
+             VALUES ((SELECT CURRVAL('pages_id_seq')), 
+                      "^string_of_int user_id^", ''); "^
       "SELECT CURRVAL('pages_id_seq')" in
   let r = guarded_exec sql in
   int_of_string ((r#get_tuple 0).(0))
+
+(* See WikiPageVersioning on docs wiki for more details on the SQL
+   queries. *)
+let save_wiki_page page_id ~user_id lines =
+  let page_id_s = string_of_int page_id in
+  let user_id_s = string_of_int user_id in
+  let escaped = escape (String.concat "\n" lines) in
+  (* Ensure no one else can update the head revision while we're
+     modifying it Selecting for UPDATE means no one else can SELECT FOR
+     UPDATE this row.  If value (head_revision+1) is only computed and used
+     inside this row lock, we should be protected against two (or more)
+     users creating the same revision head. *)
+  let sql = "
+BEGIN;
+SELECT * from pages WHERE id = "^page_id_s^";
+
+UPDATE pages SET head_revision = pages.head_revision+1 
+  WHERE id = "^page_id_s^";
+
+INSERT INTO wikitext (page_id, page_created_by_user_id, page_revision, page_text)
+  VALUES ("^page_id_s^", "^user_id_s^",
+  (SELECT head_revision FROM pages where id = "^page_id_s^"),
+  E'"^escaped^"');
+
+COMMIT" in
+  ignore (guarded_exec sql)
 
 let find_page_id descr =
   let sql = 
@@ -389,18 +416,43 @@ let page_id_of_page_name descr =
 let wiki_page_exists page_descr =
   find_page_id page_descr <> None
 
-let load_wiki_page page_id = 
-  let sql = "SELECT page_text FROM wikitext WHERE page_id="^string_of_int page_id^" LIMIT 1" in
+let load_wiki_page ?(revision_id=None) page_id = 
+  let page_id_s = string_of_int page_id in
+  let revision_s = 
+    match revision_id with
+      None -> (* Use head-revision *)
+        "(SELECT head_revision FROM pages WHERE id = "^page_id_s^")"
+    | Some r ->
+        string_of_int r in
+  let sql = "
+SELECT page_text FROM wikitext 
+ WHERE page_id="^string_of_int page_id^" AND 
+       page_revision="^revision_s^" LIMIT 1" in
   let r = guarded_exec sql in
   (r#get_tuple 0).(0)
 
-let save_wiki_page page_id lines =
-  let escaped = escape (String.concat "\n" lines) in
-  (* E in query is escape string constant *)
-  let sql =
-    "UPDATE wikitext SET page_text = E'"^escaped^"' WHERE page_id = "
-    ^string_of_int page_id in
-  ignore (guarded_exec sql)
+let query_page_revisions page_descr =
+  match find_page_id page_descr with
+    None -> []
+  | Some page_id ->
+      let option_of_empty s f = 
+        if s = "" then None else Some (f s) in
+      let sql = "
+SELECT page_revision,users.id,users.login,date_trunc('second', page_created) FROM wikitext
+  LEFT OUTER JOIN users on page_created_by_user_id = users.id
+  WHERE page_id = "^string_of_int page_id^"
+  ORDER BY page_revision DESC" in
+      let r = guarded_exec sql in
+      List.map 
+        (fun r -> 
+           { 
+             pr_revision = int_of_string (List.nth r 0);
+             pr_owner_id = option_of_empty (List.nth r 1) int_of_string;
+             pr_owner_login = option_of_empty (List.nth r 2) Std.identity;
+             pr_created = List.nth r 3;
+           })
+        (r#get_all_lst)
+    
 
 let query_past_activity () =
   let sql =
@@ -492,8 +544,9 @@ let update_user ~user_id ~passwd ~real_name ~email =
   ignore (guarded_exec sql)
 
 
+(* Migrate all tables to version 1 from schema v0: *)
 let upgrade_schema_from_0 logmsg =
-  Buffer.add_string logmsg "Upgrading from schema version 0\n";
+  Buffer.add_string logmsg "Upgrading schema to version 1\n";
   (* Create version table and set version to 1: *)
   let sql = 
     "CREATE TABLE version (schema_version integer NOT NULL);
@@ -511,8 +564,6 @@ let upgrade_schema_from_0 logmsg =
   Buffer.add_string logmsg "  Create users table\n";
   ignore (guarded_exec sql);
 
-  (* Migrate all tables to version 1 from schema v0: *)
-
   (* Todos are now owned by user_id=0 *)
   let sql =
     "ALTER TABLE todos ADD COLUMN user_id integer" in
@@ -526,22 +577,32 @@ let upgrade_schema_from_0 logmsg =
   ignore (guarded_exec sql);
   ()
 
-(* Highest upgrade schema below must match this version *)
-let nurpawiki_schema_version = 1
+let upgrade_schema_from_1 logmsg =
+  let logged_exec sql = 
+    Buffer.add_string logmsg ("  "^sql^"\n");
+    ignore (guarded_exec sql) in
 
-let upgrade_schema () =
-  (* First find out schema version.. *)
-  let logmsg = Buffer.create 0 in
+  Buffer.add_string logmsg "Upgrading schema to version 2\n";
   let sql = 
-    "SELECT * from pg_tables WHERE schemaname = 'public' AND "^
-      "tablename = 'version'" in
-  let r = guarded_exec sql in
-  if r#ntuples = 0 then
-    begin
-      Buffer.add_string logmsg "Schema is at version 0 (no version found)\n";
-      upgrade_schema_from_0 logmsg
-    end;
-  Buffer.contents logmsg
+    "ALTER TABLE pages ADD COLUMN head_revision bigint not null default 0" in
+  logged_exec sql;
+
+  let sql = 
+    "ALTER TABLE wikitext ADD COLUMN page_revision bigint not null default 0" in
+  logged_exec sql;
+
+  let sql =
+    "ALTER TABLE wikitext
+     ADD COLUMN page_created timestamp not null default now()" in  
+  logged_exec sql;
+
+  let sql = "ALTER TABLE wikitext ADD COLUMN page_created_by_user_id bigint" in
+  logged_exec sql;
+
+  logged_exec "UPDATE version SET schema_version = 2"
+
+(* Highest upgrade schema below must match this version *)
+let nurpawiki_schema_version = 2
 
 let db_schema_version () =
   let sql = 
@@ -554,6 +615,22 @@ let db_schema_version () =
     let r = guarded_exec "SELECT (version.schema_version) FROM version" in
     int_of_string (r#get_tuple 0).(0)
 
+
+let upgrade_schema () =
+  (* First find out schema version.. *)
+  let logmsg = Buffer.create 0 in
+  if db_schema_version () = 0 then
+    begin
+      Buffer.add_string logmsg "Schema is at version 0\n";
+      upgrade_schema_from_0 logmsg
+    end;
+  if db_schema_version () = 1 then
+    begin
+      Buffer.add_string logmsg "Schema is at version 1\n";
+      upgrade_schema_from_1 logmsg
+    end;
+  assert (db_schema_version () == nurpawiki_schema_version);
+  Buffer.contents logmsg
 
 (** Check whether the nurpawiki schema is properly installed on Psql *)
 let is_schema_installed =
