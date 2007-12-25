@@ -10,6 +10,8 @@
 Patch revision releases should never add or modify the DB schema, so they're slightly easier to QA.
 
 == Minor revision releases ==
+ * Try installation on an empty database (dropdb, createdb)
+ * Try installation on an existing database (take personal db and install on it)
 
 == Major revision releases ==
  * TODO DB upgrades
