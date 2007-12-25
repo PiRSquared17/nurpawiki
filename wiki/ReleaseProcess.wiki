@@ -3,6 +3,7 @@
 
 = Release Process =
 
+ # Update ReleaseNotes
  # Update VERSION to the version number being released
  # Make a release candidate out of the current head (record the revision number)
   * `svn export -r 158 https://nurpawiki.googlecode.com/svn/trunk nurpawiki-x.y.z`
