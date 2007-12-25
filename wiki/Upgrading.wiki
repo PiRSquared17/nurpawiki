@@ -3,7 +3,7 @@
 = How to upgrade to a newer release =
 *NOTE: always take a database backup before upgrading!*
 
-If you have compiled Nurpawiki yourself from source, you need to get the new source and compile it.
+If you have compiled Nurpawiki from source, you need to get the new source and compile it.
 
 If you're using a packaged Nurpawiki, just install the latest package.
 
