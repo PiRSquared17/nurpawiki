@@ -2,6 +2,15 @@
 
 = Release notes =
 
+== Nurpawiki 1.1.0 (r282) ==
+ * Reason for minor version upgrade: database schema changes.
+ * Implement wiki page revision history:
+  * Users can now view old versions of wiki pages
+ * Several database schema improvements:
+  * Set current DB locale on upgrade (enables users to migrate an existing Nurpawiki DB to a Postgresql installation on a different locale)
+  * Start seq's from 1 (old schema.psql shouldn't have set their start values at all)
+ * Link to nurpawiki main page after a database upgrade
+
 == Nurpawiki 1.0.2 (r239) == 
  * Implement "undo complete task" that allows users to undo if they accidentally closed a task.
  * Check/uncheck button for (de)selecting all tasks for editing in scheduler.
