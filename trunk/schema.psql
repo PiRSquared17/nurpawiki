@@ -1751,12 +1751,6 @@ CREATE SEQUENCE activity_log_id_seq
 ALTER SEQUENCE activity_log_id_seq OWNED BY activity_log.id;
 
 
---
--- Name: activity_log_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
---
-
-SELECT pg_catalog.setval('activity_log_id_seq', 2706, true);
-
 
 --
 -- Name: pages; Type: TABLE; Schema: public; Owner: -; Tablespace: 
@@ -1785,12 +1779,6 @@ CREATE SEQUENCE pages_id_seq
 
 ALTER SEQUENCE pages_id_seq OWNED BY pages.id;
 
-
---
--- Name: pages_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
---
-
-SELECT pg_catalog.setval('pages_id_seq', 331, true);
 
 
 SET default_with_oids = true;
@@ -1879,12 +1867,6 @@ CREATE SEQUENCE todos_id_seq
 
 ALTER SEQUENCE todos_id_seq OWNED BY todos.id;
 
-
---
--- Name: todos_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
---
-
-SELECT pg_catalog.setval('todos_id_seq', 456, true);
 
 
 --
