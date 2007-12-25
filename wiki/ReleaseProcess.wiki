@@ -13,8 +13,9 @@
  # Snapshot current svn version
   * NOTE: Add main revision into submit message so that it's easier to diff against it
   * `svn cp -r 158 https://nurpawiki.googlecode.com/svn/trunk https://nurpawiki.googlecode.com/svn/tags/x.y.z`
+ # Test the release candidate tarball with GODI (see GodiPackageRelease)
  # Upload release tarball to download page
- # Create & test a new GODI release (see GodiPackageRelease)
+ # Finally release the GODI package (see GodiPackageRelease)
  # *Eat your own dog food*: Upgrade personal installation to use the release version from GODI.  This is good for various reasons:
   * New GODI releases of Nurpawiki don't start to lag behind, as the latest features are installed to my own personal installation via releases.
   * GODI package gets tested on a real installation
