@@ -129,6 +129,8 @@ Scoring: 1 - Good, 2 - Average, 3 - Below avg, bad
 
 == Implementation details ==
 
+Nurpawiki 1.1 implements approach A1.
+
 === Support for tsearch2 and revisions (A1) ===
 Full search with `tsearch2` works out of the box although it searches by default from all revisions of all pages rather than restricting the search to the head revision.
 
