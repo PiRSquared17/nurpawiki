@@ -173,6 +173,11 @@ let connect_action_handler sp () login_nfo =
 let () =
   Eliompredefmod.Actions.register ~service:connect_action connect_action_handler
 
+let link_to_nurpawiki_main sp = 
+  a ~sp ~service:wiki_view_page 
+    [pcdata "Take me to Nurpawiki"]
+    ("WikiStart",None)
+
 (* /upgrade upgrades the database schema (if needed) *)
 let _ =
   register upgrade_page
@@ -180,9 +185,9 @@ let _ =
        let msg = Database.upgrade_schema () in
        Html_util.html_stub sp
          [h1 [pcdata "Upgrade DB schema"];
-          (pre [pcdata msg])])
-
-
+          (pre [pcdata msg]);
+          p [br ();
+             link_to_nurpawiki_main sp]])
 
 let _ =
   register disconnect_page
@@ -190,5 +195,5 @@ let _ =
        (Eliomsessions.close_session  ~sp () >>= fun () ->
           Html_util.html_stub sp 
             [h1 [pcdata "Logged out!"];
-             p [a ~sp ~service:wiki_view_page [pcdata "Take me back in.."]
-                  ("WikiStart", None)]]))
+             p [br ();
+                link_to_nurpawiki_main sp]]))
