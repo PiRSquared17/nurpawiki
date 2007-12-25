@@ -41,11 +41,13 @@ Bolded rows are additions to version 1.
 || page_id   || bigint   || ||
 || *page_revision* || *bigint* || ||
 || *page_created* || *timestamp* || *not null default now()* ||
+|| *page_created_user_id* || *bigint* ||  ||
 || page_text || text     || || 
 || page_searchv || tsvector || ||
 
 + index (wikitext_index : gist (page_searchv)
 + wikitext_page_id_fkey : FOREIGN KEY (page_id) REFERENCES pages(id)
++ wikitext_page_created_by_fkey : FOREIGN KEY (page_created_user_id) REFERENCES users(id)
 
 Code to get the latest wiki page version:
 
