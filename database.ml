@@ -393,8 +393,20 @@ let save_wiki_page page_id ~user_id lines =
 BEGIN;
 SELECT * from pages WHERE id = "^page_id_s^";
 
+-- Set ID of next revision
 UPDATE pages SET head_revision = pages.head_revision+1 
   WHERE id = "^page_id_s^";
+
+-- Kill search vectors for previous version so that only
+-- the latest version of the wikitext can be found using
+-- full text search.
+--
+-- NOTE tsearch2 indexing trigger is set to run index updates
+-- only on INSERTs and not on UPDATEs.  I wanted to be 
+-- more future proof and set it trigger on UPDATE as well,
+-- but I don't know how to NOT have tsearch2 trigger 
+-- overwrite the below UPDATE with its own index.
+UPDATE wikitext SET page_searchv = NULL WHERE page_id = "^page_id_s^";
 
 INSERT INTO wikitext (page_id, page_created_by_user_id, page_revision, page_text)
   VALUES ("^page_id_s^", "^user_id_s^",
@@ -599,13 +611,20 @@ let upgrade_schema_from_1 logmsg =
   let sql = "ALTER TABLE wikitext ADD COLUMN page_created_by_user_id bigint" in
   logged_exec sql;
 
-  (* Do this in case someone is migrating an old DB from a different
-     locale.  See schema.psql for further comments. *)
+  (* Change various tsearch2 default behaviour: *)
   let sql = "
 UPDATE pg_ts_cfg SET locale = current_setting('lc_collate') 
- WHERE ts_name = 'default'" in
+ WHERE ts_name = 'default';
+
+-- Redefine wikitext tsearch2 update trigger to not trigger
+-- on UPDATEs
+DROP TRIGGER wikitext_searchv_update ON wikitext;
+
+CREATE TRIGGER wikitext_searchv_update
+    BEFORE INSERT ON wikitext
+    FOR EACH ROW
+    EXECUTE PROCEDURE tsearch2('page_searchv', 'page_text')" in
   logged_exec sql;
-  
 
   logged_exec "UPDATE version SET schema_version = 2"
 
