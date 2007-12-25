@@ -28,6 +28,8 @@ After installation you should have the following two files in `godi/share/nurpaw
  * Edit the `database` element's `password` attribute value to match your postgres user's database password.  Search for `insert_password_here`.
 
 === schema.psql ===
+*Note: Only needed for fresh installations.  NOT needed when upgrading!*
+
 Load godi/share/nurpawiki/schema.psql into your database:
 
  * As user `postgres`, run:
