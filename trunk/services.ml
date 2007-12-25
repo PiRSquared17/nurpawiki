@@ -26,7 +26,8 @@ open Lwt
 
 let wiki_view_page = 
   new_service ["view"] ((string "p")
-                        ** (opt (bool "printable"))) ()
+                        ** (opt (bool "printable"))
+                        ** (opt (int "r"))) ()
 
 let wiki_edit_page = new_service ["edit"] (string "p") ()
 
@@ -56,6 +57,8 @@ let edit_user_page = new_service ["edit_user"]
 let disconnect_page = new_service ["disconnect"] unit ()
 
 let about_page = new_service ["about"] unit ()
+
+let page_revisions_page = new_service ["page_revisions"] (string "p") ()
 
 let task_side_effect_complete_action =
   Eliomservices.new_coservice' ~get_params:(Eliomparameters.int "task_id") ()

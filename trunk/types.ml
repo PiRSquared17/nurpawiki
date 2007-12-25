@@ -50,6 +50,14 @@ type page =
       p_descr : string;
     }
 
+type page_revision =
+    {
+      pr_revision : int;
+      pr_created : string;
+      pr_owner_id : int option;
+      pr_owner_login : string option;
+    }
+
 type activity_type = 
     AT_create_todo
   | AT_complete_todo
