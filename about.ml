@@ -30,7 +30,13 @@ let about_page_html =
   [h1 [pcdata "About Nurpawiki"];
    p 
      [pcdata ("Nurpawiki v"^Version.version^
-                " Copyright (c) 2007 Janne Hellsten <jjhellst@gmail.com>")]]
+                " Copyright (c) 2007 Janne Hellsten <jjhellst@gmail.com>");
+      br ();
+      br ();
+      pcdata "See the ";
+      XHTML.M.a ~a:[a_href (uri_of_string "http://code.google.com/p/nurpawiki")]
+        [pcdata "project homepage"];
+      pcdata "."]]
 
 let _ =
   register about_page
