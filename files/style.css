@@ -158,8 +158,17 @@ table.login_box {
   border: 3px solid #99f;
 }
 
-a.undo_link { 
-  color:#559;
+.action_bar {
+  padding-left:10px;
+  padding-right:10px;
+  padding-top:3px;
+  padding-bottom:3px;
+  background-color:#ff9;
+  color:#000;
+}
+
+.undo_link { 
+  color:#338;
 }
 
 
@@ -179,7 +188,7 @@ a.undo_link {
   margin-bottom:5px;
   float:top;
   height:10px;;
-  background-color:#ccf;
+  background-color:#fff;
   padding:10px;
   text-align:center;
   font-weight:bold;
