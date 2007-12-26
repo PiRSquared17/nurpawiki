@@ -427,8 +427,7 @@ let todo_list_table_html sp cur_page todos =
               "todo_completed_row" 
             else 
               Html_util.priority_css_class todo.t_priority in
-          let row_class = 
-            (row_pri_style::(if completed then ["todo_table_completed"] else [])) in
+          let row_class = [row_pri_style] in
           (tr 
              (td ~a:[a_class row_class] [pcdata (string_of_int id)])
              [td ~a:[a_class row_class] (todo_page_link todo);
@@ -436,16 +435,21 @@ let todo_list_table_html sp cur_page todos =
        todos)
 
 let wiki_page_menu_html sp ~credentials page content =
+
   let edit_link = 
     [a ~service:wiki_edit_page ~sp:sp ~a:[a_accesskey '1'; a_class ["ak"]]
        [img ~alt:"Edit" ~src:(make_static_uri sp ["edit.png"]) ();
         pcdata "Edit page"] page] in
+
   let printable_link =
     [a ~service:wiki_view_page ~sp:sp
        ~a:[a_accesskey 'p'; a_class ["ak"]] [pcdata "Print"]
        (page, (Some true,None))] in
+
   let revisions_link =
-    [a ~sp ~service:page_revisions_page [pcdata "View past versions"] page; br (); br ()] in
+    [a ~sp ~service:page_revisions_page [pcdata "View past versions"] page; 
+     br (); br ()] in
+
   let current_user_id = Some credentials.user_id in
   let todo_list = 
     todo_list_table_html sp page 
