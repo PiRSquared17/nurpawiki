@@ -1,5 +1,5 @@
 
-FILES=config.ml types.ml util.ml database.ml services.ml privileges.ml html_util.ml session.ml user_editor.ml page_revisions.ml nurpawiki.ml scheduler.ml history.ml about.ml
+FILES=version.ml config.ml types.ml util.ml database.ml services.ml privileges.ml html_util.ml session.ml user_editor.ml page_revisions.ml nurpawiki.ml scheduler.ml history.ml about.ml
 
 CAMLC = ocamlfind ocamlc -g $(LIB)
 CAMLOPT = ocamlfind ocamlopt $(LIB)
@@ -26,10 +26,10 @@ $(CMA): $(OBJS)
 .PHONY: doc install
 
 NWIKI_VER=$(shell cat VERSION)
-config.ml:config.ml.in VERSION
+version.ml:version.ml.in VERSION
 	echo $(NWIKI_VER)
-	cat config.ml.in | \
-	    sed -e "s|%_NURPAWIKI_VERSION_%|$(NWIKI_VER)|g" > config.ml
+	cat version.ml.in | \
+	    sed -e "s|%_NURPAWIKI_VERSION_%|$(NWIKI_VER)|g" > version.ml
 
 META:META.in VERSION
 	cat META.in | \

@@ -1,4 +1,4 @@
-(* Copyright (c) 2006, 2007 Janne Hellsten <jjhellst@gmail.com> *)
+(* Copyright (c) 2007 Janne Hellsten <jjhellst@gmail.com> *)
 
 (* 
  * This program is free software: you can redistribute it and/or
@@ -13,29 +13,3 @@
  * a copy of the GNU General Public License along with this program.
  * If not, see <http://www.gnu.org/licenses/>. 
  *)
-
-open XHTML.M
-
-open Eliomsessions
-open Eliomparameters
-open Eliomservices
-open Eliompredefmod.Xhtml
-
-open Lwt
-
-open Services
-open Types
-
-let about_page_html =
-  [h1 [pcdata "About Nurpawiki"];
-   p 
-     [pcdata ("Nurpawiki v"^Version.version^
-                " Copyright (c) 2007 Janne Hellsten <jjhellst@gmail.com>")]]
-
-let _ =
-  register about_page
-    (fun sp () () ->
-       Session.with_user_login sp
-         (fun credentials sp ->
-            Html_util.html_stub sp
-              (Html_util.navbar_html sp ~credentials about_page_html)))
