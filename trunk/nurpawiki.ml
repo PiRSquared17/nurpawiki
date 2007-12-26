@@ -456,8 +456,11 @@ let wiki_page_menu_html sp ~credentials page content =
     match undo_task_id with
       None -> []
     | Some id ->
-        [a ~a:[a_class ["undo_link"]] ~service:task_side_effect_undo_complete_action 
-           ~sp [pcdata "Undo Complete Task!"] id] in
+        [span ~a:[a_class ["action_bar"]]
+           [pcdata ("Completed task "^string_of_int id^" ");
+            a ~a:[a_class ["undo_link"]] 
+              ~service:task_side_effect_undo_complete_action 
+              ~sp [pcdata "Undo"] id]] in
 
   Html_util.navbar_html sp ~credentials 
     ~wiki_page_links:(edit_link @ [pcdata " "] @  printable_link)
