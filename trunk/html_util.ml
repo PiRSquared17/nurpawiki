@@ -50,7 +50,7 @@ let html_stub sp ?(javascript=[]) body_html =
        (body 
           body_html))
 
-let navbar_html sp ~credentials ?(top_info_bar=[]) ?(wiki_revisions_link=[]) ?(wiki_page_links=[]) ?(todo_list_table=[]) content =
+let navbar_html sp ~cur_user ?(top_info_bar=[]) ?(wiki_revisions_link=[]) ?(wiki_page_links=[]) ?(todo_list_table=[]) content =
   let home_link link_text =
     a ~service:wiki_view_page 
       ~a:[a_accesskey 'h'; a_class ["ak"]] ~sp:sp link_text 
@@ -73,10 +73,10 @@ let navbar_html sp ~credentials ?(top_info_bar=[]) ?(wiki_revisions_link=[]) ?(w
               string_input ~input_type:`Text ~name:chain ()]])] in
 
   let user_greeting = 
-    [pcdata ("Howdy "^credentials.user_login^"!")] in
+    [pcdata ("Howdy "^cur_user.user_login^"!")] in
 
   let edit_users_link = 
-    if Privileges.can_view_users credentials then
+    if Privileges.can_view_users cur_user then
       [a ~service:user_admin_page ~sp [pcdata "Edit Users"] ()]
     else 
       [] in
@@ -97,7 +97,7 @@ let navbar_html sp ~credentials ?(top_info_bar=[]) ?(wiki_revisions_link=[]) ?(w
               ([a ~service:about_page ~sp [pcdata "About"] ()] @
                  [pcdata " "] @
                  [a ~service:edit_user_page ~sp [pcdata "My Preferences"]
-                    (None,credentials.user_login)] @
+                    (None,cur_user.user_login)] @
                  [pcdata " "] @
                  edit_users_link @
                  [pcdata " "] @

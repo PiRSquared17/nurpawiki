@@ -36,6 +36,6 @@ let _ =
   register about_page
     (fun sp () () ->
        Session.with_user_login sp
-         (fun credentials sp ->
+         (fun cur_user sp ->
             Html_util.html_stub sp
-              (Html_util.navbar_html sp ~credentials about_page_html)))
+              (Html_util.navbar_html sp ~cur_user about_page_html)))
