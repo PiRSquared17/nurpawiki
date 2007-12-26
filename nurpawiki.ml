@@ -202,10 +202,10 @@ module WikiML =
     let todo_editor_link sp todo_id page =
       Html_util.todo_edit_img_link sp (ET_view page) todo_id
         
-    let todo_modify_buttons sp page todo_id todo =
+    let todo_modify_buttons sp ~cur_user page todo_id todo =
       let completed = todo.t_completed in
       span ~a:[a_class ["no_break"]]
-        (if completed then
+        (if completed || not (Privileges.can_edit_task todo_id cur_user) then
            []
          else 
            (todo_editor_link sp todo_id page @
@@ -231,7 +231,7 @@ module WikiML =
       let list_items = loop items in
       ul (List.hd list_items) (List.tl list_items)
 
-    let parse_lines sp cur_page (todo_data : todo IMap.t) preprocessed_lines =
+    let parse_lines sp ~cur_user cur_page (todo_data : todo IMap.t) preprocessed_lines =
 
       let wikilink scheme page text = 
         let ext_img = 
@@ -269,7 +269,7 @@ module WikiML =
               else 
                 ["todo_descr"; Html_util.priority_css_class todo.t_priority] in
             span 
-              [todo_modify_buttons sp cur_page todo_id todo;
+              [todo_modify_buttons sp ~cur_user cur_page todo_id todo;
                span ~a:[a_class style] (Html_util.todo_descr_html todo.t_descr todo.t_owner)]
           with Not_found -> 
             (pcdata "UNKNOWN TODO ID!") in
@@ -399,11 +399,11 @@ module WikiML =
 let load_wiki_page ~revision_id page_id =
   Database.load_wiki_page ~revision_id page_id >> Pcre.split ~rex:newline_re >> WikiML.preprocess
 
-let wikiml_to_html sp (page_id:int) (page_name:string) ~revision_id todo_data =
+let wikiml_to_html sp ~cur_user (page_id:int) (page_name:string) ~revision_id todo_data =
   load_wiki_page page_id ~revision_id >> 
-    WikiML.parse_lines sp page_name todo_data
+    WikiML.parse_lines sp ~cur_user page_name todo_data
 
-let todo_list_table_html sp cur_page todos =
+let todo_list_table_html sp ~cur_user cur_page todos =
   (* Which pages contain TODOs, mapping from todo_id -> {pages} *)
   let todo_in_pages =
     Database.todos_in_pages (List.map (fun todo -> todo.t_id) todos) in
@@ -431,10 +431,10 @@ let todo_list_table_html sp cur_page todos =
           (tr 
              (td ~a:[a_class row_class] [pcdata (string_of_int id)])
              [td ~a:[a_class row_class] (todo_page_link todo);
-              td [(WikiML.todo_modify_buttons sp cur_page id todo)]]))
+              td [(WikiML.todo_modify_buttons sp ~cur_user cur_page id todo)]]))
        todos)
 
-let wiki_page_menu_html sp ~credentials page content =
+let wiki_page_menu_html sp ~cur_user page content =
 
   let edit_link = 
     [a ~service:wiki_edit_page ~sp:sp ~a:[a_accesskey '1'; a_class ["ak"]]
@@ -450,13 +450,13 @@ let wiki_page_menu_html sp ~credentials page content =
     [a ~sp ~service:page_revisions_page [pcdata "View past versions"] page; 
      br (); br ()] in
 
-  let current_user_id = Some credentials.user_id in
+  let current_user_id = Some cur_user.user_id in
   let todo_list = 
-    todo_list_table_html sp page 
+    todo_list_table_html sp ~cur_user page 
       (Database.query_all_active_todos ~current_user_id ()) in
 
   let undo_task_id = Session.any_complete_undos sp in
-  let topbar_undo_task = 
+  let top_info_bar  = 
     match undo_task_id with
       None -> []
     | Some id ->
@@ -466,27 +466,28 @@ let wiki_page_menu_html sp ~credentials page content =
               ~service:task_side_effect_undo_complete_action 
               ~sp [pcdata "Undo"] id]] in
 
-  Html_util.navbar_html sp ~credentials 
+  Html_util.navbar_html sp ~cur_user 
     ~wiki_page_links:(edit_link @ [pcdata " "] @  printable_link)
     ~wiki_revisions_link:revisions_link
-    ~top_info_bar:topbar_undo_task
+    ~top_info_bar
     ~todo_list_table:[todo_list] content
 
-let wiki_page_contents_html sp ~revision_id page_id page_name todo_data ?(content=[]) () =
-  wiki_page_menu_html sp page_name
+let wiki_page_contents_html sp ~cur_user ~revision_id page_id page_name todo_data ?(content=[]) () =
+  wiki_page_menu_html sp ~cur_user page_name
     (content @ 
-       wikiml_to_html sp ~revision_id page_id page_name todo_data)
+       wikiml_to_html sp ~cur_user ~revision_id page_id page_name todo_data)
 
-let view_page sp ~credentials ?(revision_id=None) page_id page_name ~printable =
+let view_page sp ~cur_user ?(revision_id=None) page_id page_name ~printable =
   let todos = Database.query_page_todos page_id in
   if printable <> None && Option.get printable = true then
-    let page_content = wikiml_to_html sp page_id page_name ~revision_id todos in
+    let page_content = 
+      wikiml_to_html sp ~cur_user page_id page_name ~revision_id todos in
     Html_util.html_stub sp page_content
   else 
     Html_util.html_stub sp
       (wiki_page_contents_html 
          sp 
-         ~credentials 
+         ~cur_user 
          page_id page_name ~revision_id todos ())
       
 let new_todo_re = 
@@ -565,8 +566,8 @@ let check_new_and_removed_todos ~cur_user page_id lines =
 
 (* Insert new TODOs from the wiki ML into DB and replace [todo descr]
    by [todo:ID] *)
-let convert_new_todo_items credentials page =
-  let owner_id = credentials.user_id in
+let convert_new_todo_items cur_user page =
+  let owner_id = cur_user.user_id in
   List.map
     (function
          `Wiki line -> 
@@ -584,22 +585,22 @@ let service_save_page_post =
     ~post_params:(string "value")
     (fun sp (page,_) value -> 
        Session.with_user_login sp
-         (fun credentials sp ->
+         (fun cur_user sp ->
             (* Check if there are any new or removed [todo:#id] tags and
                updated DB page mappings accordingly: *)
             let wikitext = Pcre.split ~rex:newline_re value >> WikiML.preprocess in
-            let user_id = credentials.user_id in
+            let user_id = cur_user.user_id in
             let page_id = Database.page_id_of_page_name page in
-            check_new_and_removed_todos ~cur_user:credentials page_id wikitext;
+            check_new_and_removed_todos ~cur_user page_id wikitext;
             (* Convert [todo Description] items into [todo:ID] format, save
                descriptions to database and save the wiki page contents. *)
             let wiki_plaintext = 
-              convert_new_todo_items credentials page_id wikitext >>
+              convert_new_todo_items cur_user page_id wikitext >>
                 WikiML.wikitext_of_preprocessed_lines in
             (* Log activity: *)
             Database.insert_save_page_activity user_id page_id;
             Database.save_wiki_page page_id ~user_id wiki_plaintext;
-            view_page sp ~credentials page_id page ~printable:(Some false)))
+            view_page sp ~cur_user page_id page ~printable:(Some false)))
 
 (* Convert [todo:ID] into [todo:ID 'Description'] before going into
    Wiki page edit textarea. *)
@@ -626,7 +627,7 @@ let _ =
   register wiki_edit_page
     (fun sp page_name () -> 
        Session.with_user_login sp
-         (fun credentials sp ->
+         (fun cur_user sp ->
             let (page_id,page_todos,preproc_wikitext) = 
               if Database.wiki_page_exists page_name then
                 let page_id = Database.page_id_of_page_name page_name in
@@ -637,7 +638,7 @@ let _ =
                    annotate_old_todo_items page_name current_page_todos)
               else
                 begin
-                  (Database.new_wiki_page credentials.user_id page_name, 
+                  (Database.new_wiki_page cur_user.user_id page_name, 
                    IMap.empty, [])
                 end in
             let wikitext = 
@@ -653,27 +654,28 @@ let _ =
                           ~value:(pcdata wikitext) ()])])
                 (page_name,(None,None)) in
             Html_util.html_stub sp
-              (wiki_page_contents_html sp ~credentials
+              (wiki_page_contents_html sp ~cur_user
                  ~revision_id:None
                  page_id page_name page_todos ~content:[f] ())))
 
-let view_wiki_page sp ~credentials (page_name,(printable, revision_id)) =
+
+let view_wiki_page sp ~cur_user (page_name,(printable, revision_id)) =
   match Database.find_page_id page_name with
     Some page_id ->
-      view_page sp ~credentials ~revision_id page_id page_name ~printable
+      view_page sp ~cur_user ~revision_id page_id page_name ~printable
   | None ->
       let f = 
         a wiki_edit_page sp [pcdata "Create new page"] page_name in
       Html_util.html_stub sp
-        (wiki_page_menu_html sp ~credentials page_name [f])
+        (wiki_page_menu_html sp ~cur_user page_name [f])
 
 (* /view?p=Page *)
 let _ = 
   register wiki_view_page
     (fun sp params () ->
        Session.with_user_login sp
-         (fun credentials sp -> 
-            view_wiki_page sp ~credentials params))
+         (fun cur_user sp -> 
+            view_wiki_page sp ~cur_user params))
 
 
 (* /benchmark?test=empty,one_db *)
@@ -730,15 +732,15 @@ let _ =
                 [p ([link (Option.get sr.sr_page_descr); br ()] @ 
                       html_of_headline sr.sr_headline)]
             | SR_todo -> assert false) search_results) in
-  let gen_search_page sp ~credentials search_str =
+  let gen_search_page sp ~cur_user search_str =
     let search_results = Database.search_wikipage search_str in
     Html_util.html_stub sp
-      (Html_util.navbar_html sp ~credentials
+      (Html_util.navbar_html sp ~cur_user
          ([h1 [pcdata "Search results"]] @ (render_results sp search_results))) in
     
   register search_page
     (fun sp search_str () ->
        Session.with_user_login sp
-         (fun credentials sp ->
-            gen_search_page sp credentials search_str))
+         (fun cur_user sp ->
+            gen_search_page sp cur_user search_str))
 

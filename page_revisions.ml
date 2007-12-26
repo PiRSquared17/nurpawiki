@@ -50,9 +50,9 @@ let revision_table sp page_descr =
 
 let view_page_revisions sp page_descr =
   Session.with_user_login sp
-    (fun credentials sp -> 
+    (fun cur_user sp -> 
        Html_util.html_stub sp
-         (Html_util.navbar_html sp ~credentials
+         (Html_util.navbar_html sp ~cur_user
             (h1 [pcdata (page_descr ^ " Revisions")] :: revision_table sp page_descr)))
 
 (* /page_revisions?page_id=<id> *)

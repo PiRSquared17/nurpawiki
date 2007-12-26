@@ -66,6 +66,8 @@ let user_owns_task_or_is_admin task_id cur_user =
          | None -> false)
     | None -> false
 
+let can_edit_task = user_owns_task_or_is_admin
+
 let can_complete_task = user_owns_task_or_is_admin
 
 let can_modify_task_priority = user_owns_task_or_is_admin

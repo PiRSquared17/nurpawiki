@@ -46,7 +46,7 @@ let wiki_page_links sp todo_in_pages todo =
   Html_util.todo_page_links sp todo_in_pages ~link_css_class:(Some c) id
 
 let view_scheduler_page sp =
-  let scheduler_page_internal sp ~credentials =
+  let scheduler_page_internal sp ~cur_user =
     let today = Date.today () in
     let prettify_activation_date d =
       let d = date_of_string d in
@@ -94,10 +94,10 @@ let view_scheduler_page sp =
       (todo_table_html sp todos) in
 
     let query_todos = 
-      if Privileges.can_schedule_all_tasks credentials then
+      if Privileges.can_schedule_all_tasks cur_user then
         Database.query_upcoming_todos ~current_user_id:None
       else (* Query this users's tasks only: *)
-        Database.query_upcoming_todos ~current_user_id:(Some credentials.user_id) in
+        Database.query_upcoming_todos ~current_user_id:(Some cur_user.user_id) in
 
     let upcoming_pending = query_todos (None,None) in
     let upcoming_tomorrow = query_todos (None,Some 1) in
@@ -136,18 +136,18 @@ let view_scheduler_page sp =
       post_form edit_todo_page sp table (ET_scheduler, None) in
     
     Html_util.html_stub sp ~javascript:[["nurpawiki_scheduler.js"]]
-      (Html_util.navbar_html sp ~credentials
+      (Html_util.navbar_html sp ~cur_user
          ([h1 [pcdata "Road ahead"]] @ [table'])) in
   Session.with_user_login sp
-    (fun credentials sp -> 
-       scheduler_page_internal sp credentials)
+    (fun cur_user sp -> 
+       scheduler_page_internal sp cur_user)
   
 
-let render_edit_todo_cont_page sp ~credentials = function
+let render_edit_todo_cont_page sp ~cur_user = function
     ET_scheduler -> 
       view_scheduler_page sp
   | ET_view wiki_page ->
-      Nurpawiki.view_wiki_page sp ~credentials (wiki_page,(None,None))
+      Nurpawiki.view_wiki_page sp ~cur_user (wiki_page,(None,None))
 
 (* /scheduler *)
 let _ =
@@ -162,8 +162,8 @@ let scheduler_page_discard_todo_id =
                    et_cont_of_string string_of_et_cont "src_service"))
     (fun sp (src_page_cont) () -> 
        Session.with_user_login sp
-         (fun credentials sp ->
-            render_edit_todo_cont_page sp ~credentials src_page_cont))
+         (fun cur_user sp ->
+            render_edit_todo_cont_page sp ~cur_user src_page_cont))
          
 (* Save page as a result of /edit_todo?todo_id=ID *)
 let service_save_todo_item =
@@ -176,7 +176,7 @@ let service_save_todo_item =
                        (string "owner_id")))
     (fun sp src_page_cont todos ->
      Session.with_user_login sp
-       (fun credentials sp ->
+       (fun cur_user sp ->
           (* TODO security hole: would need to check user privileges
              for these DB operations. *)
           List.iter
@@ -187,9 +187,9 @@ let service_save_todo_item =
                Database.update_todo_owner_id todo_id owner_id_opt;
                Database.update_todo_activation_date todo_id activation_date)
             todos;
-          render_edit_todo_cont_page sp ~credentials src_page_cont))
+          render_edit_todo_cont_page sp ~cur_user src_page_cont))
 
-let rec render_todo_editor sp ~credentials (src_page_cont, todos_to_edit) =
+let rec render_todo_editor sp ~cur_user (src_page_cont, todos_to_edit) =
   let users = Database.query_users () in
   let todos_str = String.concat "," (List.map string_of_int todos_to_edit) in
   let todos = Database.query_todos_by_ids todos_to_edit in
@@ -259,7 +259,7 @@ let rec render_todo_editor sp ~credentials (src_page_cont, todos_to_edit) =
 
 
   Html_util.html_stub sp ~javascript:calendar_js
-    (Html_util.navbar_html sp ~credentials
+    (Html_util.navbar_html sp ~cur_user
        ((h1 heading)::[help_str; br(); f]))
 
 let error_page sp msg =
@@ -279,8 +279,8 @@ let _ =
   register edit_todo_get_page
     (fun sp get_params () ->
        Session.with_user_login sp
-         (fun credentials sp ->
-            render_todo_get_page sp ~credentials get_params))
+         (fun cur_user sp ->
+            render_todo_get_page sp ~cur_user get_params))
 
 let todo_id_re = Pcre.regexp "^t-([0-9]+)$"
 
@@ -302,11 +302,11 @@ let _ =
   register edit_todo_page
     (fun sp (src_page_cont, single_tid) (todo_ids : (string * string) list) ->
        Session.with_user_login sp
-         (fun credentials sp ->
+         (fun cur_user sp ->
             if todo_ids = [] then
-              render_todo_get_page sp ~credentials 
+              render_todo_get_page sp ~cur_user 
                 (src_page_cont, single_tid)
             else 
-              render_todo_editor sp ~credentials
+              render_todo_editor sp ~cur_user
                 (src_page_cont, (parse_todo_ids todo_ids))))
 

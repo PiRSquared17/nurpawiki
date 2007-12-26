@@ -98,7 +98,7 @@ let remove_duplicates strs =
     List.fold_left (fun acc e -> PSet.add e acc) PSet.empty strs in
   PSet.fold (fun e acc -> e::acc) s []
 
-let view_history_page sp ~credentials =
+let view_history_page sp ~cur_user =
 
   let activity = Database.query_past_activity () in
   let activity_in_pages = Database.query_activity_in_pages () in
@@ -163,7 +163,7 @@ let view_history_page sp ~credentials =
                    prettified_date))
                activity_groups ([],"")))) in
   Html_util.html_stub sp
-    (Html_util.navbar_html sp ~credentials
+    (Html_util.navbar_html sp ~cur_user
        ([h1 [pcdata "Blast from the past"]] @ [act_table]))
 
 (* /history *)
@@ -171,5 +171,5 @@ let _ =
   register history_page
     (fun sp todo_id () ->
        Session.with_user_login sp
-         (fun credentials sp ->
-            view_history_page sp ~credentials))
+         (fun cur_user sp ->
+            view_history_page sp ~cur_user))
