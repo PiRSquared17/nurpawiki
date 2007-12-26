@@ -435,7 +435,7 @@ let todo_list_table_html sp cur_page todos =
               td [(WikiML.todo_modify_buttons sp cur_page id todo)]]))
        todos)
 
-let wiki_page_menu_html sp ~credentials ~undo_task_id page content =
+let wiki_page_menu_html sp ~credentials page content =
   let edit_link = 
     [a ~service:wiki_edit_page ~sp:sp ~a:[a_accesskey '1'; a_class ["ak"]]
        [img ~alt:"Edit" ~src:(make_static_uri sp ["edit.png"]) ();
@@ -450,18 +450,27 @@ let wiki_page_menu_html sp ~credentials ~undo_task_id page content =
   let todo_list = 
     todo_list_table_html sp page 
       (Database.query_all_active_todos ~current_user_id ()) in
+
+  let undo_task_id = Session.any_complete_undos sp in
+  let topbar_undo_task = 
+    match undo_task_id with
+      None -> []
+    | Some id ->
+        [a ~a:[a_class ["undo_link"]] ~service:task_side_effect_undo_complete_action 
+           ~sp [pcdata "Undo Complete Task!"] id] in
+
   Html_util.navbar_html sp ~credentials 
     ~wiki_page_links:(edit_link @ [pcdata " "] @  printable_link)
     ~wiki_revisions_link:revisions_link
-    ~undo_task_id
+    ~top_info_bar:topbar_undo_task
     ~todo_list_table:[todo_list] content
 
-let wiki_page_contents_html sp ~undo_task_id ~revision_id page_id page_name todo_data ?(content=[]) () =
-  wiki_page_menu_html sp ~undo_task_id page_name
-    (content @ wikiml_to_html sp ~revision_id page_id page_name todo_data)
+let wiki_page_contents_html sp ~revision_id page_id page_name todo_data ?(content=[]) () =
+  wiki_page_menu_html sp page_name
+    (content @ 
+       wikiml_to_html sp ~revision_id page_id page_name todo_data)
 
 let view_page sp ~credentials ?(revision_id=None) page_id page_name ~printable =
-  let undo_task_id = Session.any_complete_undos sp in
   let todos = Database.query_page_todos page_id in
   if printable <> None && Option.get printable = true then
     let page_content = wikiml_to_html sp page_id page_name ~revision_id todos in
@@ -471,7 +480,7 @@ let view_page sp ~credentials ?(revision_id=None) page_id page_name ~printable =
       (wiki_page_contents_html 
          sp 
          ~credentials 
-         ~undo_task_id page_id page_name ~revision_id todos ())
+         page_id page_name ~revision_id todos ())
       
 let new_todo_re = 
   Str.regexp ("\\[todo \\("^WikiML. accepted_chars^"\\)\\]")
@@ -637,7 +646,7 @@ let _ =
                           ~value:(pcdata wikitext) ()])])
                 (page_name,(None,None)) in
             Html_util.html_stub sp
-              (wiki_page_contents_html sp ~credentials ~undo_task_id:None
+              (wiki_page_contents_html sp ~credentials
                  ~revision_id:None
                  page_id page_name page_todos ~content:[f] ())))
 
@@ -649,7 +658,7 @@ let view_wiki_page sp ~credentials (page_name,(printable, revision_id)) =
       let f = 
         a wiki_edit_page sp [pcdata "Create new page"] page_name in
       Html_util.html_stub sp
-        (wiki_page_menu_html sp ~credentials ~undo_task_id:None page_name [f])
+        (wiki_page_menu_html sp ~credentials page_name [f])
 
 (* /view?p=Page *)
 let _ = 
@@ -717,7 +726,7 @@ let _ =
   let gen_search_page sp ~credentials search_str =
     let search_results = Database.search_wikipage search_str in
     Html_util.html_stub sp
-      (Html_util.navbar_html sp ~credentials ~undo_task_id:None
+      (Html_util.navbar_html sp ~credentials
          ([h1 [pcdata "Search results"]] @ (render_results sp search_results))) in
     
   register search_page

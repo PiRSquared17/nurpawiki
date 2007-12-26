@@ -50,7 +50,7 @@ let html_stub sp ?(javascript=[]) body_html =
        (body 
           body_html))
 
-let navbar_html sp ~credentials ~undo_task_id ?(wiki_revisions_link=[]) ?(wiki_page_links=[]) ?(todo_list_table=[]) content =
+let navbar_html sp ~credentials ?(top_info_bar=[]) ?(wiki_revisions_link=[]) ?(wiki_page_links=[]) ?(todo_list_table=[]) content =
   let home_link link_text =
     a ~service:wiki_view_page 
       ~a:[a_accesskey 'h'; a_class ["ak"]] ~sp:sp link_text 
@@ -101,14 +101,9 @@ let navbar_html sp ~credentials ~undo_task_id ?(wiki_revisions_link=[]) ?(wiki_p
                  [pcdata " "] @
                  edit_users_link @
                  [pcdata " "] @
-                 [disconnect_box sp "Logout"])]) []]] 
+                 [disconnect_box sp "Logout"])]) []]]
   @
-    (match undo_task_id with
-       None -> []
-     | Some id ->
-         [div ~a:[a_id "top_action_bar"]
-           [a ~a:[a_class ["undo_link"]] ~service:task_side_effect_undo_complete_action 
-              ~sp [pcdata "Undo Complete Task!"] id]])
+    (if top_info_bar = [] then [] else [div ~a:[a_id "top_action_bar"] top_info_bar])
   @
     [div ~a:[a_id "navbar"]
        (user_greeting @ [br ()] @ search_input @ wiki_revisions_link @ todo_list_table);
@@ -185,7 +180,8 @@ let todo_descr_html descr owner =
   match owner with
     None -> [pcdata descr]
   | Some o ->
-      [pcdata descr; span ~a:[a_class ["todo_owner"]] [pcdata (" ["^o.owner_login^"] ")]]
+      [pcdata descr; 
+       span ~a:[a_class ["todo_owner"]] [pcdata (" ["^o.owner_login^"] ")]]
 
 
 (* Use to create a "cancel" button for user submits *)

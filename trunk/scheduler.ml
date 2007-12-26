@@ -46,8 +46,6 @@ let wiki_page_links sp todo_in_pages todo =
   Html_util.todo_page_links sp todo_in_pages ~link_css_class:(Some c) id
 
 let view_scheduler_page sp =
-  let undo_task_id = Session.any_complete_undos sp in
-
   let scheduler_page_internal sp ~credentials =
     let today = Date.today () in
     let prettify_activation_date d =
@@ -138,7 +136,7 @@ let view_scheduler_page sp =
       post_form edit_todo_page sp table (ET_scheduler, None) in
     
     Html_util.html_stub sp ~javascript:[["nurpawiki_scheduler.js"]]
-      (Html_util.navbar_html sp ~credentials ~undo_task_id 
+      (Html_util.navbar_html sp ~credentials
          ([h1 [pcdata "Road ahead"]] @ [table'])) in
   Session.with_user_login sp
     (fun credentials sp -> 
@@ -261,7 +259,7 @@ let rec render_todo_editor sp ~credentials (src_page_cont, todos_to_edit) =
 
 
   Html_util.html_stub sp ~javascript:calendar_js
-    (Html_util.navbar_html sp ~credentials ~undo_task_id:None
+    (Html_util.navbar_html sp ~credentials
        ((h1 heading)::[help_str; br(); f]))
 
 let error_page sp msg =
