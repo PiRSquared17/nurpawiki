@@ -37,6 +37,5 @@ let _ =
     (fun sp () () ->
        Session.with_user_login sp
          (fun credentials sp ->
-            Html_util.html_stub sp ~javascript:[]
-              (Html_util.navbar_html sp ~credentials ~undo_task_id:None
-                 about_page_html)))
+            Html_util.html_stub sp
+              (Html_util.navbar_html sp ~credentials about_page_html)))

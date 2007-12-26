@@ -65,7 +65,7 @@ let rec view_user_admin_page sp ~err ~cur_user =
          users) in
 
   Html_util.html_stub sp
-    (Html_util.navbar_html sp ~credentials:cur_user ~undo_task_id:None
+    (Html_util.navbar_html sp ~credentials:cur_user
        ([h1 [pcdata "Edit users"];
          users_table] @
           err @
@@ -183,7 +183,7 @@ let _ =
 
 let rec view_edit_user_page sp caller ~err ~cur_user user_to_edit =
   Html_util.html_stub sp
-    (Html_util.navbar_html sp ~credentials:cur_user ~undo_task_id:None
+    (Html_util.navbar_html sp ~credentials:cur_user
        ([h1 [pcdata "Edit User"]] @
           err @
           [post_form ~service:service_save_user_edit ~sp
