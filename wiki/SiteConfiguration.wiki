@@ -1,5 +1,5 @@
 #summary Configuration options for controlling Nurpawiki and Ocsigen
-#labels Phase-Deploy
+#labels Phase-Deploy,Docs-ReviewedFor-1.1
 
 = Configuration =
 This page details Nurpawiki's configuration options.  The configuration file is passed to the Ocsigen when you start its web server (`ocsigen -c <path_to_your_conf>`).
