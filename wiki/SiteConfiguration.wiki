@@ -24,7 +24,7 @@ The Nurpawiki-specific configuration options can be found from the Ocsigen confi
 }}}
 
 == Using an example configuration ==
-If you installed Nurpawiki from an installation package (e.g., GODI package), you may wish to review the contents of `<path_to_config>/example.conf.  On GODI this is at `$GODIBASE/share/nurpawiki/example.conf`. 
+If you installed Nurpawiki from an installation package (e.g., GODI package), you may wish to review the contents of `<path_to_config>/example.conf`.  On GODI this is at `$GODIBASE/share/nurpawiki/example.conf`. 
 
 At the bare minimum, you need to configure the default settings of your database.  
 
