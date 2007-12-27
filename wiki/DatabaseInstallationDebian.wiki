@@ -1,4 +1,5 @@
 #summary How to install Postgresql and the nurpawiki DB on Debian.
+#labels Phase-Deploy,Docs-ReviewedFor-1.1
 
 = Configuring Postgresql for Nurpawiki =
 These installation instructions apply to both Debian and Ubuntu.  Package versions may change depending on your distribution.
