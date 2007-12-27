@@ -1,4 +1,5 @@
 #summary Upgrading to a newer release.
+#labels Phase-Deploy,Docs-ReviewedFor-1.1
 
 = How to upgrade to a newer release =
 *NOTE: always take a database backup before upgrading!*
@@ -7,7 +8,7 @@ If you have compiled Nurpawiki from source, you need to get the new source and c
 
 If you're using a packaged Nurpawiki, just install the latest package.
 
-Configuration files may require changes from time to time.  See e.g., NurpawikiGodiInstallation for notes.
+Configuration files may require changes from time to time.  See e.g., NurpawikiGodiInstallation and SiteConfiguration for notes.
 
 The nurpawiki database will be automatically upgraded when you try to access any of your Nurpawiki pages with your browser.  You're strongly recommended to backup your database before attempting an upgrade.
 
