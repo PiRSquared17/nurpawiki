@@ -1,4 +1,5 @@
 #summary Notes on Ocsigen installation for Debian
+#labels Phase-Deploy,Docs-ReviewedFor-1.1
 
 = How to install everything required by Ocsigen on Debian =
 
