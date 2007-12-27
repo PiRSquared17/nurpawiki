@@ -1,4 +1,5 @@
 #summary Nurpawiki installation by compiling Nurpawiki from source.
+#labels Phase-Deploy,Docs-ReviewedFor-1.1
 
 = Install Nurpawiki from source ==
 Note: this approach is harder than other methods, but is provided as a reference for developers or in case something goes wrong with packaged Nurpawiki.
