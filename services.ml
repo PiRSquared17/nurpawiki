@@ -27,7 +27,8 @@ open Lwt
 let wiki_view_page = 
   new_service ["view"] ((string "p")
                         ** (opt (bool "printable"))
-                        ** (opt (int "r"))) ()
+                        ** (opt (int "r"))
+                        ** (opt (bool "force_login"))) ()
 
 let wiki_edit_page = new_service ["edit"] (string "p") ()
 

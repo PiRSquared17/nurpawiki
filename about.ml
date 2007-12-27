@@ -41,7 +41,7 @@ let about_page_html =
 let _ =
   register about_page
     (fun sp () () ->
-       Session.with_user_login sp
+       Session.with_guest_login sp
          (fun cur_user sp ->
             Html_util.html_stub sp
               (Html_util.navbar_html sp ~cur_user about_page_html)))

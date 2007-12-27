@@ -158,6 +158,11 @@ table.login_box {
   border: 3px solid #99f;
 }
 
+.login_link_big {
+  font-size:1.2em;
+  font-weight:bold;
+}
+
 .action_bar {
   padding-left:10px;
   padding-right:10px;

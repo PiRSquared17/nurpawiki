@@ -94,7 +94,8 @@ let view_scheduler_page sp =
       (todo_table_html sp todos) in
 
     let query_todos = 
-      if Privileges.can_schedule_all_tasks cur_user then
+      if Privileges.can_schedule_all_tasks cur_user || 
+        cur_user.user_login = "guest" then
         Database.query_upcoming_todos ~current_user_id:None
       else (* Query this users's tasks only: *)
         Database.query_upcoming_todos ~current_user_id:(Some cur_user.user_id) in
@@ -120,17 +121,19 @@ let view_scheduler_page sp =
       [p [raw_input ~input_type:`Submit ~value:"Mass edit" ()];
        table
          (tr (th []) [th []; th []; th [pcdata "Activates on"]; th [pcdata "Todo"]])
-         ((todo_section sp merged_todos) @
-            [tr 
-               (td [button 
-                      ~a:[a_class ["scheduler_check_button"];
-                          a_id "button_select_all"]
-                      ~button_type:`Button [pcdata "Select All"]]) 
-               
-               [td [button 
-                      ~a:[a_class ["scheduler_check_button"];
-                          a_id "button_deselect_all"]
-                      ~button_type:`Button [pcdata "Unselect All"]]]])] in
+         (todo_section sp merged_todos);
+       table
+         (tr 
+            (td [button 
+                   ~a:[a_class ["scheduler_check_button"];
+                       a_id "button_select_all"]
+                   ~button_type:`Button [pcdata "Select All"]])
+            
+            [td [button 
+                   ~a:[a_class ["scheduler_check_button"];
+                       a_id "button_deselect_all"]
+                   ~button_type:`Button [pcdata "Unselect All"]]])
+         []] in
     
     let table' = 
       post_form edit_todo_page sp table (ET_scheduler, None) in
@@ -138,7 +141,7 @@ let view_scheduler_page sp =
     Html_util.html_stub sp ~javascript:[["nurpawiki_scheduler.js"]]
       (Html_util.navbar_html sp ~cur_user
          ([h1 [pcdata "Road ahead"]] @ [table'])) in
-  Session.with_user_login sp
+  Session.with_guest_login sp
     (fun cur_user sp -> 
        scheduler_page_internal sp cur_user)
   
@@ -147,7 +150,7 @@ let render_edit_todo_cont_page sp ~cur_user = function
     ET_scheduler -> 
       view_scheduler_page sp
   | ET_view wiki_page ->
-      Nurpawiki.view_wiki_page sp ~cur_user (wiki_page,(None,None))
+      Nurpawiki.view_wiki_page sp ~cur_user (wiki_page,(None,(None,None)))
 
 (* /scheduler *)
 let _ =
@@ -200,8 +203,10 @@ let rec render_todo_editor sp ~cur_user (src_page_cont, todos_to_edit) =
 
     let cancel_page cont = 
       match cont with
-        ET_scheduler -> Html_util.cancel_link scheduler_page sp ()
-      | ET_view wiki -> Html_util.cancel_link wiki_view_page sp (wiki,(None,None)) in
+        ET_scheduler -> 
+          Html_util.cancel_link scheduler_page sp ()
+      | ET_view wiki -> 
+          Html_util.cancel_link wiki_view_page sp (wiki,(None,(None,None))) in
 
     let owner_selection chain todo =
 

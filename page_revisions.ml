@@ -33,7 +33,7 @@ let revision_table sp page_descr =
 
   let page_link descr (rev:int) = 
     a ~sp ~service:wiki_view_page [pcdata ("Revision "^(string_of_int rev))]
-      (descr, (None, Some rev)) in
+      (descr, (None, (Some rev, None))) in
 
   let rows =
     List.map 
@@ -49,7 +49,7 @@ let revision_table sp page_descr =
 
 
 let view_page_revisions sp page_descr =
-  Session.with_user_login sp
+  Session.with_guest_login sp
     (fun cur_user sp -> 
        Html_util.html_stub sp
          (Html_util.navbar_html sp ~cur_user

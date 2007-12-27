@@ -24,6 +24,8 @@ open Eliompredefmod.Xhtml
 open Services
 open Types
 
+open Config
+
 let upgrade_page = new_service ["upgrade"] unit ()
 
 let login_table = Eliomsessions.create_volatile_table ()
@@ -87,17 +89,20 @@ let login_html sp ~err =
                  p err]) ()]]]
 
 
-(** Wrap page service calls inside with_user_login to have them
-    automatically check for user login and redirect to login screen if
-    not logged in. *)
-let with_user_login sp f =
+let with_db_installed sp f =
   (* Check if the DB is installed.  If so, check that it doesn't need
      an upgrade. *)
   if Database.is_schema_installed then
     Html_util.html_stub sp (db_installation_error sp)
   else if Database.db_schema_version () < Database.nurpawiki_schema_version then
     Html_util.html_stub sp (db_upgrade_warning sp)
-  else
+  else f ()
+      
+(** Wrap page service calls inside with_user_login to have them
+    automatically check for user login and redirect to login screen if
+    not logged in. *)
+let with_user_login ?(allow_read_only=false) sp f =
+  let login () =
     get_login_user sp >>= fun maybe_user ->
       match maybe_user with
         Some (login,passwd) ->
@@ -116,8 +121,27 @@ let with_user_login sp f =
                   [Html_util.error ("Unknown user '"^login^"'")]
           end
       | None ->
-          login_html sp []
+          if allow_read_only && Config.site.cfg_allow_ro_guests then
+            let guest_user = 
+              {
+                user_id = 0;
+                user_login = "guest";
+                user_passwd = "";
+                user_real_name = "Guest";
+                user_email = "";
+              } in
+            f guest_user sp
+          else 
+            login_html sp [] in
+  with_db_installed sp login
 
+(* Either pretend to be logged in as 'guest' (if allowed by config
+   options) or require a proper login.
+   
+   If logging in as 'guest', we setup a dummy user 'guest' that is not
+   a real user.  It won't have access to write to any tables. *)
+let with_guest_login sp f =
+ with_user_login ~allow_read_only:true sp f
 
 (* Same as with_user_login except that we can't generate HTML for any
    errors here.  Neither can we present the user with a login box.  If
@@ -134,9 +158,7 @@ let action_with_user_login sp f =
                  let passwd_md5 = Digest.to_hex (Digest.string passwd) in
                  (* Autheticate user against his password *)
                  if passwd_md5 = user.user_passwd then
-                   begin
-                     return (f user)
-                   end
+                   return (f user)
                  else 
                    return []
              | None ->
@@ -175,8 +197,8 @@ let () =
 
 let link_to_nurpawiki_main sp = 
   a ~sp ~service:wiki_view_page 
-    [pcdata "Take me to Nurpawiki"]
-    ("WikiStart",(None,None))
+    [pcdata "Take me to Nurpawiki"] 
+    ("WikiStart",(None,(None,None)))
 
 (* /upgrade upgrades the database schema (if needed) *)
 let _ =
