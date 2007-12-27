@@ -1,5 +1,5 @@
 #summary Release process
-#labels Phase-QA,Phase-Deploy
+#labels Phase-QA
 
 = Release Process =
 
