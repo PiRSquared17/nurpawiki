@@ -1,4 +1,5 @@
 #summary Installing Nurpawiki from GODI.
+#labels Phase-Deploy,Docs-ReviewedFor-1.1
 
 = Nurpawiki installation through GODI package manager =
 
