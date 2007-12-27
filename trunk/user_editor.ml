@@ -111,6 +111,8 @@ let save_user ~update_user ~login ~passwd ~passwd2 ~real_name ~email =
         Database.query_user login in
       if not update_user && old_user <> None then
         [Html_util.error ("User '"^login^"' already exists!")]
+      else if login = "guest" then
+        [Html_util.error ("Cannot create '"^login^"' user.  The login name 'guest' is reserved for internal use!")]
       else if passwd <> passwd2 then
         [Html_util.error "Re-typed password doesn't match your password!"]
       else 

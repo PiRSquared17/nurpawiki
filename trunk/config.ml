@@ -29,7 +29,7 @@ type db_config =
 
 type site_config =
     {
-      sitecfg_allow_ro_guests : bool;
+      cfg_allow_ro_guests : bool;
     }
 
 let get_attr_opt attr attrs = 
@@ -62,7 +62,7 @@ let dbcfg =
     db_pass = dbpass;
   }
 
-let site_config =
+let site =
   let rec find_site_cfg = function
       (Element ("nurpawiki", attrs, _))::_ ->
         let allow_ro_guests = 
@@ -77,6 +77,6 @@ let site_config =
   let allow_ro_guests = find_site_cfg (get_config ()) in
   Messages.warning (P.sprintf "read-only guests allowed %b" allow_ro_guests);
   {
-    sitecfg_allow_ro_guests = allow_ro_guests;
+    cfg_allow_ro_guests = allow_ro_guests;
   }
 

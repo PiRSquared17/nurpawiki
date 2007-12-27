@@ -70,7 +70,6 @@ let task_side_effect_mod_priority sp (task_id, dir) () =
        [])
              
 
-
 let () =
   Eliompredefmod.Actions.register 
     ~service:task_side_effect_complete_action task_side_effect_complete;
@@ -240,11 +239,11 @@ module WikiML =
         if scheme = "wiki" || scheme = "" then
           let t = if text = "" then page else text in
           if Database.wiki_page_exists page then
-            a wiki_view_page sp [pcdata t] (page,(None,None))
+            a wiki_view_page sp [pcdata t] (page,(None,(None,None)))
           else 
             a ~a:[a_class ["missing_page"]] 
               ~service:wiki_view_page ~sp:sp [pcdata t] 
-              (page,(None,None))
+              (page,(None,(None,None)))
         else (* External link *)
           let url = scheme^":"^page in
           let t = if text = "" then url else text in
@@ -444,7 +443,7 @@ let wiki_page_menu_html sp ~cur_user page content =
   let printable_link =
     [a ~service:wiki_view_page ~sp:sp
        ~a:[a_accesskey 'p'; a_class ["ak"]] [pcdata "Print"]
-       (page, (Some true,None))] in
+       (page, (Some true,(None,None)))] in
 
   let revisions_link =
     [a ~sp ~service:page_revisions_page [pcdata "View past versions"] page; 
@@ -648,18 +647,18 @@ let _ =
                 (fun chain -> 
                    [(p [string_input ~input_type:`Submit ~value:"Save" (); 
                         Html_util.cancel_link wiki_view_page sp
-                          (page_name,(None,None));
+                          (page_name,(None,(None,None)));
                         br ();
                         textarea ~name:chain ~rows:30 ~cols:80 
                           ~value:(pcdata wikitext) ()])])
-                (page_name,(None,None)) in
+                (page_name,(None,(None,None))) in
             Html_util.html_stub sp
               (wiki_page_contents_html sp ~cur_user
                  ~revision_id:None
                  page_id page_name page_todos ~content:[f] ())))
 
 
-let view_wiki_page sp ~cur_user (page_name,(printable, revision_id)) =
+let view_wiki_page sp ~cur_user (page_name,(printable,(revision_id,_))) =
   match Database.find_page_id page_name with
     Some page_id ->
       view_page sp ~cur_user ~revision_id page_id page_name ~printable
@@ -672,8 +671,16 @@ let view_wiki_page sp ~cur_user (page_name,(printable, revision_id)) =
 (* /view?p=Page *)
 let _ = 
   register wiki_view_page
-    (fun sp params () ->
-       Session.with_user_login sp
+    (fun sp ((_,(_,(_,force_login))) as params) () ->
+       (* If forced login is not requested, we'll let read-only guests
+          in (if current configuration allows it) *)
+       let login = 
+         match force_login with
+           Some true ->
+             Session.with_user_login sp
+         | Some _ | None ->
+             Session.with_guest_login sp in
+       login
          (fun cur_user sp -> 
             view_wiki_page sp ~cur_user params))
 
@@ -728,7 +735,7 @@ let _ =
                 let link descr = 
                   a ~a:[a_class ["sr_link"]] ~service:wiki_view_page ~sp:sp 
                     [pcdata descr]
-                    (descr,(None,None)) in
+                    (descr,(None,(None,None))) in
                 [p ([link (Option.get sr.sr_page_descr); br ()] @ 
                       html_of_headline sr.sr_headline)]
             | SR_todo -> assert false) search_results) in
@@ -740,7 +747,7 @@ let _ =
     
   register search_page
     (fun sp search_str () ->
-       Session.with_user_login sp
+       Session.with_guest_login sp
          (fun cur_user sp ->
             gen_search_page sp cur_user search_str))
 

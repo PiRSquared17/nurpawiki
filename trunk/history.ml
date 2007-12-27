@@ -185,6 +185,6 @@ let view_history_page sp ~cur_user =
 let _ =
   register history_page
     (fun sp todo_id () ->
-       Session.with_user_login sp
+       Session.with_guest_login sp
          (fun cur_user sp ->
             view_history_page sp ~cur_user))

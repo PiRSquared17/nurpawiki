@@ -54,7 +54,7 @@ let navbar_html sp ~cur_user ?(top_info_bar=[]) ?(wiki_revisions_link=[]) ?(wiki
   let home_link link_text =
     a ~service:wiki_view_page 
       ~a:[a_accesskey 'h'; a_class ["ak"]] ~sp:sp link_text 
-      ("WikiStart", (None, None)) in
+      ("WikiStart", (None, (None, None))) in
   let scheduler_link =
     a ~service:scheduler_page
       ~a:[a_accesskey 'r'; a_class ["ak"]] ~sp:sp 
@@ -72,8 +72,20 @@ let navbar_html sp ~cur_user ?(top_info_bar=[]) ?(wiki_revisions_link=[]) ?(wiki
           [p [string_input ~input_type:`Submit ~value:"Search" ();
               string_input ~input_type:`Text ~name:chain ()]])] in
 
+  (* Greet user and offer Login link if guest *)
   let user_greeting = 
-    [pcdata ("Howdy "^cur_user.user_login^"!")] in
+    pcdata ("Howdy "^cur_user.user_login^"!  ") ::
+      if cur_user.user_login = "guest" then
+        [br(); br ();
+         pcdata "To login as an existing user, click ";
+         a ~a:[a_class ["login_link_big"]]~sp ~service:wiki_view_page 
+           [pcdata "here"]
+           ("WikiStart",(None,(None, Some true)));
+         pcdata ".";
+         br (); br ();
+         pcdata "Guests cannot modify the site.  Ask the site admin for an account to be able to edit content."]
+      else 
+        [] in
 
   let edit_users_link = 
     if Privileges.can_view_users cur_user then
@@ -141,7 +153,7 @@ let todo_page_links_of_pages sp ?(colorize=false) ?(link_css_class=None) ?(inser
     | None -> [a_class color_css] in
   let link page = 
     a ~a:(attrs page) ~service:wiki_view_page ~sp:sp [pcdata page.p_descr]
-      (page.p_descr,(None,None)) in
+      (page.p_descr,(None,(None,None))) in
   let rec insert_commas acc = function
       (x::_::xs) as lst ->
         insert_commas (pcdata ", "::x::acc) (List.tl lst)
