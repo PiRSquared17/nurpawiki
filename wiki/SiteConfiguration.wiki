@@ -36,7 +36,8 @@ The configuration elements inside the Nurpawiki `<eliom>` element are:
 
 === Element: nurpawiki ===
 _Attribute list_:
-|| _allow_read_only_guests_ ||If "yes", allow read-only access to the full wiki.  Guests can read all wiki pages, inspect todos, but are not allowed to modify any of the data. ||
+|| Attribute || Optional/Required || Description ||
+|| _allow_read_only_guests_ || Optional || If "yes", allow read-only access to the full wiki.  Guests can read all wiki pages, inspect todos, but are not allowed to modify any of the data. Default is to disallow read-only guests. ||
 
 Example:
 {{{
@@ -45,10 +46,11 @@ Example:
 
 === Element: database ===
 _Attribute list_:
-|| _name_ || Name of the Nurpawiki database.  Example: "nurpawiki". ||
-|| _user_ || Database user for accessing the Nurpawiki database.  Example: "postgres". ||
-|| _password_ || Password used to let database _user_ access the database. ||
-|| _port_ || Database is running on this port. ||
+|| Attribute || Optional/Required || Description ||
+|| _name_ || Required || Name of the Nurpawiki database.  Example: "nurpawiki". ||
+|| _user_ || Required || Database user for accessing the Nurpawiki database.  Example: "postgres". ||
+|| _password_ || Required || Password used to let database _user_ access the database. ||
+|| _port_ || Optional || Database is running on this port. ||
 
 Example:
 {{{
