@@ -1,0 +1,56 @@
+#summary Configuration options for controlling Nurpawiki and Ocsigen
+#labels Phase-Deploy
+
+= Configuration =
+This page details Nurpawiki's configuration options.  The configuration file is passed to the Ocsigen when you start its web server (`ocsigen -c <path_to_your_conf>`).
+
+If you want to go beyond configuring the basic capabilities of Nurpawiki, for example, if you want to configure the web server ports or users, you need to refer to Ocsigen web server's configuration manual.  Read [http://www.ocsigen.org/config here] for more info.
+
+The Nurpawiki-specific configuration options can be found from the Ocsigen configuration file under the XML element `<eliom module=".../nurpawiki.cma">`.  Here's an example of a Nurpawiki site configuration:
+
+{{{
+    <host>  
+      <site dir="" charset="UTF-8">
+        <redirect regexp="$" dest="/view?p=WikiStart"/>
+
+        <eliom module="nurpawiki.cma">
+          <nurpawiki allow_read_only_guests="yes" />
+          <database name="nurpawiki" user="postgres" password="default_passwd" />
+        </eliom>
+
+        <static dir="./files" />
+      </site>
+    </host>
+}}}
+
+== Using an example configuration ==
+If you installed Nurpawiki from an installation package (e.g., GODI package), you may wish to review the contents of `<path_to_config>/example.conf.  On GODI this is at `$GODIBASE/share/nurpawiki/example.conf`. 
+
+At the bare minimum, you need to configure the default settings of your database.  
+
+== Generating a new configuration file ==
+If you've installed Nurpawiki from source, you can generate your own base configuration file by running `nurpawiki/gen_ocsigen_config` script.  The created configuration should work well as a default configuration.  You may want to edit it to better suit your needs.
+
+== Configuration options ==
+The configuration elements inside the Nurpawiki `<eliom>` element are:
+
+=== Element: nurpawiki ===
+_Attribute list_:
+ * _allow_read_only_guests_: If "yes", allow read-only access to the full wiki.  Guests can read all wiki pages, inspect todos, but are not allowed to modify any of the data.
+
+Example:
+{{{
+<nurpawiki allow_read_only_guests="yes" />
+}}}
+
+=== Element: database ===
+_Attribute list_:
+ * _name_: Name of the Nurpawiki database.  Example: "nurpawiki".
+ * _user_: Database user for accessing the Nurpawiki database.  Example: "postgres".
+ * _password_: Password used to let database _user_ access the database.
+ * _port_: Database is running on this port.
+
+Example:
+{{{
+<database name="nurpawiki" user="postgres" password="default_password" />
+}}}
