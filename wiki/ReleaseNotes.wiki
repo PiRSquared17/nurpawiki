@@ -3,6 +3,9 @@
 
 = Release notes =
 
+== Nurpawiki 1.1.1 (not yet released SVN head) ==
+* Read-only access that lets in non-logged in users who are allowed to view the site content but not to modify it.
+
 == Nurpawiki 1.1.0 (r282) ==
  * *Warning* Take a database backup before upgrading -- this release alters your DB schema.  Once upgraded, you can't go back to the previous version.
  * Reason for minor version upgrade: database schema changes.
