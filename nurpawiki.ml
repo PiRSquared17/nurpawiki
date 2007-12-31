@@ -141,7 +141,7 @@ module WikiML =
       Pcre.regexp ("^(\\[(wiki|file|http):("^accepted_chars_sans_ws^")\\])")
 
     let todo_re = 
-      Str.regexp ("\\[todo:\\([0-9]+\\)\\( "^accepted_chars^"\\)?\\]")
+      Pcre.regexp ("\\[todo:([0-9]+)( "^accepted_chars^")?\\]")
 
     let open_pre_re = Pcre.regexp "^(<pre>|8<)\\s*$"
     let close_pre_re = Pcre.regexp "^(</pre>|8<)\\s*$"
@@ -307,13 +307,13 @@ module WikiML =
               loop (add_html acc (pcdata m)) (charpos+1)
             else if s.[charpos] = '\r' || s.[charpos] = '\n' then
               acc
-            else if Str.string_partial_match todo_re s charpos then
-              let fm_len = String.length (Str.matched_group 0 s) in
-              let todo_id = Str.matched_group 1 s in
-              loop (add_todo acc todo_id) (charpos+fm_len)
             else 
               seqmatch s charpos ~default:(fun () -> wiki_error s charpos)
-                [(wikilink_re, 
+                [(todo_re,
+                  (fun fmlen r ->
+                     let todo_id = r.(1) in
+                     loop (add_todo acc todo_id) (charpos+fmlen)));
+                 (wikilink_re, 
                   (fun fmlen r ->
                      let m = r.(1) in
                      (* If the WikiLink starts with a bang (!), don't create
@@ -501,9 +501,6 @@ let view_page sp ~cur_user ?(revision_id=None) page_id page_name ~printable =
          ~cur_user 
          page_id page_name ~revision_id todos ())
       
-let new_todo_re = 
-  Str.regexp ("\\[todo \\("^WikiML. accepted_chars^"\\)\\]")
-
 (* Parse existing todo's from the current to-be-saved wiki page and
    update the DB relation on what todos are on the page. 
 
@@ -511,6 +508,11 @@ let new_todo_re =
    them in the DB.  It's also possible to resurrect completed tasks
    here by removing the '(x)' part from a task description. *)
 let check_new_and_removed_todos ~cur_user page_id lines =
+
+  let search_forward ?groups pat s pos =
+    let result = Pcre.exec ~rex:pat ~pos s in
+    (fst (Pcre.get_substring_ofs result 0), result) in
+
   (* Figure out which TODOs are mentioned on the wiki page: *)
   let page_todos = 
     List.fold_left
@@ -518,14 +520,14 @@ let check_new_and_removed_todos ~cur_user page_id lines =
            `Wiki line ->
              let rec loop acc n =
                try 
-                 let beg = Str.search_forward WikiML.todo_re line n in
+                 let (offs,res) = search_forward WikiML.todo_re line n in
                  let m = 
                    try 
-                     Some (Str.matched_group 2 line) 
+                     Some (Pcre.get_substring res 2)
                    with 
                      Not_found -> None in
-                 loop ((Str.matched_group 1 line, m)::acc)
-                   (beg+(String.length (Str.matched_group 0 line)))
+                 loop ((Pcre.get_substring res 1, m)::acc)
+                   (offs+(String.length (Pcre.get_substring res 0)))
                with 
                  Not_found -> acc in
              loop acc 0
@@ -575,16 +577,23 @@ let check_new_and_removed_todos ~cur_user page_id lines =
     (List.map (fun e -> (int_of_string (fst e))) page_todos)
 
 
+let global_substitute ?groups pat subst s =
+  Pcre.substitute_substrings ~rex:pat ~subst:(fun r -> subst r) s
+
+let new_todo_re = 
+  Pcre.regexp ("\\[todo ("^WikiML.accepted_chars^")\\]")
+
 (* Insert new TODOs from the wiki ML into DB and replace [todo descr]
    by [todo:ID] *)
 let convert_new_todo_items cur_user page =
+
   let owner_id = cur_user.user_id in
   List.map
     (function
          `Wiki line -> 
-           `Wiki (Str.global_substitute new_todo_re
-                    (fun str -> 
-                       let descr = Str.matched_group 1 str in
+           `Wiki (global_substitute new_todo_re
+                    (fun r -> 
+                       let descr = Pcre.get_substring r 1 in
                        let id = Database.new_todo page owner_id descr in
                        "[todo:"^id^" "^descr^"]") line)
        | (`NoWiki _) as x -> x)
@@ -620,9 +629,9 @@ let annotate_old_todo_items page page_todos (lines : WikiML.preproc_line list) =
     (function
          `Wiki line ->
            `Wiki 
-             (Str.global_substitute WikiML.todo_re
-                (fun str -> 
-                   let id = Str.matched_group 1 str in
+             (global_substitute WikiML.todo_re
+                (fun r -> 
+                   let id = Pcre.get_substring r 1 in
                    let (descr,completed) = 
                      try 
                        let todo = IMap.find (int_of_string id) page_todos in
