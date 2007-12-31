@@ -14,8 +14,12 @@
  * If not, see <http://www.gnu.org/licenses/>. 
  *)
 
-let match_pcre_option rex s =
-  try Some (Pcre.extract ~rex s) with Not_found -> None
+let match_pcre_option ?(charpos=0) rex s =
+  (* Pcre's ~pos seems to work quite differently from Str's begin
+     character.  The below sub string hack is to make Pcre extract
+     behave the same way as Str's match *)
+  let s = String.sub s charpos ((String.length s) - charpos) in
+  try Some (Pcre.extract (* ~pos:charpos *) ~rex s) with Not_found -> None
 
 let iso_date_re = Pcre.regexp "([0-9]+)-([0-9]+)-([0-9]+)"
 
