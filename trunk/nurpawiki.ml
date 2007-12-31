@@ -122,26 +122,26 @@ module WikiML =
     let accepted_chars = "["^accepted_chars_^" -]+"
 
     let italic_re = 
-      Str.regexp ("\\(_\\("^(del_substring accepted_chars "_")^"\\)_\\)")
+      Pcre.regexp ("^(_("^(del_substring accepted_chars "_")^")_)")
 
     let bold_re = 
-      Str.regexp ("\\(\\*\\("^del_substring accepted_chars "\\*" ^"\\)\\*\\)")
+      Pcre.regexp ("^(\\*("^del_substring accepted_chars "\\*" ^")\\*)")
 
     let code_re = 
-      Str.regexp ("\\(`\\("^del_substring accepted_chars "`" ^"\\)`\\)")
+      Pcre.regexp ("^(`("^del_substring accepted_chars "`" ^")`)")
 
-    let text_re = Str.regexp ("\\("^accepted_chars_sans_ws^"\\)")
-    let wikilink_re = Str.regexp "\\([!]?[A-Z][a-z]+\\([A-Z][a-z]+\\)+\\)"
+    let text_re = Pcre.regexp ("^("^accepted_chars_sans_ws^")")
+    let wikilink_re = Pcre.regexp "^([!]?[A-Z][a-z]+([A-Z][a-z]+)+)"
       
-    let todo_re = 
-      Str.regexp ("\\[todo:\\([0-9]+\\)\\( "^accepted_chars^"\\)?\\]")
-
     let wikilinkanum_re = 
-      Str.regexp ("\\(\\[\\(wiki\\|file\\|http\\):\\("^accepted_chars_sans_ws^
-                    "\\)[ ]+\\("^accepted_chars^"\\)\\]\\)")
+      Pcre.regexp ("^(\\[(wiki|file|http):("^accepted_chars_sans_ws^
+                    ")[ ]+("^accepted_chars^")\\])")
 
     let wikilinkanum_no_text_re = 
-      Str.regexp ("\\(\\[\\(wiki\\|file\\|http\\):\\("^accepted_chars_sans_ws^"\\)\\]\\)")
+      Pcre.regexp ("^(\\[(wiki|file|http):("^accepted_chars_sans_ws^")\\])")
+
+    let todo_re = 
+      Str.regexp ("\\[todo:\\([0-9]+\\)\\( "^accepted_chars^"\\)?\\]")
 
     let open_pre_re = Pcre.regexp "^(<pre>|8<)\\s*$"
     let close_pre_re = Pcre.regexp "^(</pre>|8<)\\s*$"
@@ -274,7 +274,26 @@ module WikiML =
             (pcdata "UNKNOWN TODO ID!") in
         add_html acc html in
 
+      let seqmatch s charpos ~default = 
+        let rec loop = function
+            (x,f)::xs ->
+              (match match_pcre_option ~charpos x s with
+                 Some m -> 
+                   let fmlen = String.length m.(0) in
+                   f fmlen m
+               | None -> loop xs)
+          | [] -> 
+              default () in
+        loop in
+
       let rec parse_text acc s =
+
+        let wiki_error s charpos = 
+          let s = (String.sub s charpos ((String.length s)-charpos)) in
+          add_html acc 
+            (Html_util.error 
+               ("WIKI SYNTAX ERROR on line: '"^s^"'")) in
+
         let len = String.length s in
         let rec loop acc charpos =
           if charpos >= len then
@@ -292,52 +311,45 @@ module WikiML =
               let fm_len = String.length (Str.matched_group 0 s) in
               let todo_id = Str.matched_group 1 s in
               loop (add_todo acc todo_id) (charpos+fm_len)
-            else if Str.string_match wikilink_re s charpos then
-              let m = Str.matched_group 1 s in
-              (* If the WikiLink starts with a bang (!), don't create
-                 a link but leave it as text. *)
-              if m.[0] = '!' then
-                let s = String.sub m 1 (String.length m - 1) in
-                loop (add_html acc (pcdata s)) (charpos+(String.length m))
-              else
-                loop (add_html acc (wikilink "" m m)) (charpos+(String.length m))
-            else if Str.string_match wikilinkanum_re s charpos then
-              let scheme = Str.matched_group 2 s in
-              let page = Str.matched_group 3 s in
-              let text = Str.matched_group 4 s in
-              let fm_len = String.length (Str.matched_group 1 s) in
-              loop (add_html acc (wikilink scheme page text)) (charpos+fm_len)
-            else if Str.string_match wikilinkanum_no_text_re s charpos then
-              let scheme = Str.matched_group 2 s in
-              let page = Str.matched_group 3 s in
-              let text = "" in
-              let fm_len = String.length (Str.matched_group 1 s) in
-              loop (add_html acc (wikilink scheme page text)) (charpos+fm_len)
-            else if Str.string_match italic_re s charpos then
-              let m = Str.matched_group 1 s in
-              let inner_m = Str.matched_group 2 s in
-              let h = em [pcdata inner_m] in
-              loop (add_html acc h) (charpos+(String.length m))
-            else if Str.string_match bold_re s charpos then
-              let m = Str.matched_group 1 s in
-              let inner_m = Str.matched_group 2 s in
-              let h = strong [pcdata inner_m] in
-              loop (add_html acc h) (charpos+(String.length m))
-            else if Str.string_match code_re s charpos then
-              let m = Str.matched_group 1 s in
-              let inner_m = Str.matched_group 2 s in
-              let h = code [pcdata inner_m] in
-              loop (add_html acc h) (charpos+(String.length m))
-            else if Str.string_match text_re s charpos then
-              let m = Str.matched_group 1 s in
-              loop (add_html acc (pcdata m)) (charpos+(String.length m))
-            else
-              begin
-                let s = (String.sub s charpos ((String.length s)-charpos)) in
-                add_html acc 
-                  (Html_util.error 
-                     ("WIKI SYNTAX ERROR on line: '"^s^"'"))
-              end
+            else 
+              seqmatch s charpos ~default:(fun () -> wiki_error s charpos)
+                [(wikilink_re, 
+                  (fun fmlen r ->
+                     let m = r.(1) in
+                     (* If the WikiLink starts with a bang (!), don't create
+                        a link but leave it as text. *)
+                     if m.[0] = '!' then
+                       let s = String.sub m 1 (String.length m - 1) in
+                       loop (add_html acc (pcdata s)) (charpos+(String.length m))
+                     else
+                       loop (add_html acc (wikilink "" m m)) (charpos+fmlen)));
+                 (wikilinkanum_re, 
+                  (fun fmlen r ->
+                     let scheme = r.(2) in
+                     let page = r.(3) in
+                     let text = r.(4) in
+                     loop (add_html acc (wikilink scheme page text)) (charpos+fmlen)));
+                 (wikilinkanum_no_text_re,
+                  (fun fmlen r ->
+                     let scheme = r.(2) in
+                     let page = r.(3) in
+                     let text = "" in
+                     loop (add_html acc (wikilink scheme page text)) (charpos+fmlen)));
+                 (italic_re,
+                  (fun fmlen r ->
+                     let h = em [pcdata r.(2)] in
+                     loop (add_html acc h) (charpos+fmlen)));
+                 (bold_re,
+                  (fun fmlen r ->
+                     let h = strong [pcdata r.(2)] in
+                     loop (add_html acc h) (charpos+fmlen)));
+                 (code_re,
+                  (fun fmlen r ->
+                     let h = code [pcdata r.(2)] in
+                     loop (add_html acc h) (charpos+fmlen)));
+                 (text_re,
+                  (fun fmlen r ->
+                     loop (add_html acc (pcdata r.(1))) (charpos+fmlen)))]
         in
         List.rev (loop acc 0) in
       
