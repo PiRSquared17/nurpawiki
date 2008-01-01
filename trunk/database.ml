@@ -36,33 +36,24 @@ module ConnectionPool =
     let connection_mutex = Mutex.create ()
     let connection : Postgresql.connection option ref = ref None
 
-    let cnt = ref 0
-
-    (* TODO debug "with_mutex" function.  Real implementation needs
-       thread locks, but the rest of our code doesn't cope with that
-       yet (more than one connections are required and the current
-       state of affairs deadlocks with a second concurrent DB
-       connection request) *)
     let with_mutex m f =
-      incr cnt;
-      Messages.errlog (P.sprintf "nesting count %i" !cnt);
-      let r = f () in
-      decr cnt;
-      r 
-        
-    (*      Mutex.lock m;
-            try 
-            let r = f () in
-            Mutex.unlock m;
-            r
-            with 
-            x -> 
-            Mutex.unlock m;
-            raise x
-    *)
+      Mutex.lock m;
+      try 
+        let r = f () in
+        Mutex.unlock m;
+        r
+      with 
+        x -> 
+          Mutex.unlock m;
+          raise x
 
-    (* TODO the error handling here is not still very robust. *)
+    (* NOTE we may get a deadlock here if someone uses nested
+       with_conn calls.  This should not happen unless there's a
+       programming error somewhere.  This case should go away if there
+       are more than one DB connections available for with_conn.
+       Currently there's only one connection though. *)
     let with_conn (f : (Psql.connection -> 'a)) =
+      (* TODO the error handling here is not still very robust. *)
       with_mutex connection_mutex
         (fun () ->
            match !connection with
