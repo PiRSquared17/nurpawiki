@@ -23,6 +23,10 @@ open Eliompredefmod.Xhtml
 open Services
 open Types
 
+module Db = Database
+
+let query_user login = Db.with_conn (fun conn -> Db.query_user ~conn login)
+
 let service_create_new_user = 
   new_post_service
     ~fallback:user_admin_page
@@ -44,7 +48,7 @@ let service_save_user_edit =
 
 
 let rec view_user_admin_page sp ~err ~cur_user =
-  let users = Database.query_users () in
+  let users = Db.with_conn (fun conn -> Db.query_users ~conn) in
   let users_table = 
     table 
       (tr 
@@ -107,8 +111,7 @@ let save_user ~update_user ~login ~passwd ~passwd2 ~real_name ~email =
     None -> 
       [Html_util.error ("Only alphanumeric chars are allowed in login name!  Got '"^login^"'")]
   | Some login ->
-      let old_user = 
-        Database.query_user login in
+      let old_user = query_user login in
       if not update_user && old_user <> None then
         [Html_util.error ("User '"^login^"' already exists!")]
       else if login = "guest" then
@@ -125,13 +128,17 @@ let save_user ~update_user ~login ~passwd ~passwd2 ~real_name ~email =
                   (* If no password was entered, set it to old value: *)
                   let new_passwd_md5 = 
                     if passwd = "" then None else Some passwd_md5 in
-                  Database.update_user 
-                    ~user_id:u.user_id ~passwd:new_passwd_md5 ~real_name ~email;
+                  Db.with_conn
+                    (fun conn ->
+                       Db.update_user ~conn
+                         ~user_id:u.user_id ~passwd:new_passwd_md5 ~real_name ~email);
               | None ->
                   assert false 
             end
           else
-            Database.add_user ~login ~passwd:passwd_md5 ~real_name ~email;
+            Db.with_conn 
+              (fun conn ->
+                 Db.add_user ~conn ~login ~passwd:passwd_md5 ~real_name ~email);
           []
         end
 
@@ -202,7 +209,7 @@ let _ =
     (fun sp (caller,login) (passwd,(passwd2,(real_name, email)))  ->
        Session.with_user_login sp
          (fun cur_user sp ->
-            match Database.query_user login with
+            match query_user login with
               Some user_to_edit ->
                 Privileges.with_can_edit_user cur_user user_to_edit
                   (fun () ->
@@ -223,7 +230,7 @@ let _ =
                           | Some _ -> 
                               Html_util.error_page sp ("Invalid caller service!")
                           | None ->
-                              match Database.query_user login with
+                              match query_user login with
                                 Some user ->
                                   view_edit_user_page sp caller ~err ~cur_user user
                               | None ->
@@ -238,7 +245,7 @@ let _ =
     (fun sp (caller,editing_login) () -> 
        Session.with_user_login sp
          (fun cur_user sp ->
-            match Database.query_user editing_login with
+            match query_user editing_login with
               Some user_to_edit ->
                 Privileges.with_can_edit_user cur_user user_to_edit
                   (fun () ->

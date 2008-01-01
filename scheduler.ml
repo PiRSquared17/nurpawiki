@@ -30,6 +30,8 @@ open Types
 
 open Util
 
+module Db = Database
+
 let clamp_date_to_today date =
   let today = Date.today () in
   let d = date_of_string date in
@@ -45,8 +47,8 @@ let wiki_page_links sp todo_in_pages todo =
   let c = "wiki_pri_"^Html_util.string_of_priority todo.t_priority in
   Html_util.todo_page_links sp todo_in_pages ~link_css_class:(Some c) id
 
-let view_scheduler_page sp =
-  let scheduler_page_internal sp ~cur_user =
+let view_scheduler_page sp ~conn ~cur_user =
+  let scheduler_page_internal sp ~conn ~cur_user =
     let today = Date.today () in
     let prettify_activation_date d =
       let d = date_of_string d in
@@ -58,10 +60,7 @@ let view_scheduler_page sp =
         | _ -> assert false
       end in
     
-    let todo_table_html sp todos =
-      let todo_in_pages =
-        Database.todos_in_pages (List.map (fun (_,todo) -> todo.t_id) todos) in
-
+    let todo_table_html sp todos todos_in_pages =
       let prev_heading = ref "" in
       let todo_rows = 
         List.map
@@ -86,19 +85,19 @@ let view_scheduler_page sp =
                      [pcdata (prettify_activation_date todo.t_activation_date)]);
                   td ~a:[a_class [pri_style]] 
                     (Html_util.todo_descr_html 
-                       todo.t_descr todo.t_owner @ wiki_page_links sp todo_in_pages todo)] in
+                       todo.t_descr todo.t_owner @ wiki_page_links sp todos_in_pages todo)] in
              heading_row @ [todo_row]) todos in
       List.flatten todo_rows in
 
-    let todo_section sp todos =
-      (todo_table_html sp todos) in
+    let todo_section sp todos todos_in_pages =
+      (todo_table_html sp todos todos_in_pages) in
 
     let query_todos = 
       if Privileges.can_schedule_all_tasks cur_user || 
         cur_user.user_login = "guest" then
-        Database.query_upcoming_todos ~current_user_id:None
+        Database.query_upcoming_todos ~conn ~current_user_id:None
       else (* Query this users's tasks only: *)
-        Database.query_upcoming_todos ~current_user_id:(Some cur_user.user_id) in
+        Database.query_upcoming_todos ~conn ~current_user_id:(Some cur_user.user_id) in
 
     let upcoming_pending = query_todos (None,None) in
     let upcoming_tomorrow = query_todos (None,Some 1) in
@@ -114,6 +113,9 @@ let view_scheduler_page sp =
         (mark_todo_hdr "Next 2 weeks" upcoming_todos_14_days) @
         (mark_todo_hdr "Everything else" upcoming_all) in
 
+    let todos_in_pages =
+      Database.todos_in_pages ~conn (List.map (fun (_,todo) -> todo.t_id) merged_todos) in
+
     (* TODO merge this HTML generation with other pages.  PROBLEM:
        don't know how to easily do that without duplicating the
        parameter passing of pages. *)
@@ -121,7 +123,7 @@ let view_scheduler_page sp =
       [p [raw_input ~input_type:`Submit ~value:"Mass edit" ()];
        table
          (tr (th []) [th []; th []; th [pcdata "Activates on"]; th [pcdata "Todo"]])
-         (todo_section sp merged_todos);
+         (todo_section sp merged_todos todos_in_pages);
        table
          (tr 
             (td [button 
@@ -141,22 +143,23 @@ let view_scheduler_page sp =
     Html_util.html_stub sp ~javascript:[["nurpawiki_scheduler.js"]]
       (Html_util.navbar_html sp ~cur_user
          ([h1 [pcdata "Road ahead"]] @ [table'])) in
-  Session.with_guest_login sp
-    (fun cur_user sp -> 
-       scheduler_page_internal sp cur_user)
+
+  scheduler_page_internal sp ~conn ~cur_user
   
 
-let render_edit_todo_cont_page sp ~cur_user = function
+let render_edit_todo_cont_page sp ~conn ~cur_user = function
     ET_scheduler -> 
-      view_scheduler_page sp
+      view_scheduler_page sp ~conn ~cur_user
   | ET_view wiki_page ->
-      Nurpawiki.view_wiki_page sp ~cur_user (wiki_page,(None,(None,None)))
+      Nurpawiki.view_wiki_page sp ~conn ~cur_user (wiki_page,(None,(None,None)))
 
 (* /scheduler *)
 let _ =
   register scheduler_page
     (fun sp todo_id () ->
-       view_scheduler_page sp)
+       Session.with_guest_login sp
+         (fun cur_user sp -> 
+            Db.with_conn (fun conn -> view_scheduler_page sp ~conn ~cur_user)))
 
 let scheduler_page_discard_todo_id = 
   register_new_service
@@ -166,7 +169,8 @@ let scheduler_page_discard_todo_id =
     (fun sp (src_page_cont) () -> 
        Session.with_user_login sp
          (fun cur_user sp ->
-            render_edit_todo_cont_page sp ~cur_user src_page_cont))
+            Db.with_conn
+              (fun conn -> render_edit_todo_cont_page sp ~conn ~cur_user src_page_cont)))
          
 (* Save page as a result of /edit_todo?todo_id=ID *)
 let service_save_todo_item =
@@ -180,26 +184,28 @@ let service_save_todo_item =
     (fun sp src_page_cont todos ->
      Session.with_user_login sp
        (fun cur_user sp ->
-          (* TODO security hole: would need to check user privileges
-             for these DB operations. *)
-          List.iter
-            (fun (todo_id,(activation_date,(descr,owner_id))) ->
-               Database.update_todo_descr todo_id descr;
-               let owner_id_opt = 
-                 if owner_id = "" then None else Some (int_of_string owner_id) in
-               Database.update_todo_owner_id todo_id owner_id_opt;
-               Database.update_todo_activation_date todo_id activation_date)
-            todos;
-          render_edit_todo_cont_page sp ~cur_user src_page_cont))
+          Db.with_conn
+            (fun conn ->
+               (* TODO security hole: would need to check user privileges
+                  for these DB operations. *)
+               List.iter
+                 (fun (todo_id,(activation_date,(descr,owner_id))) ->
+                    Database.update_todo_descr ~conn todo_id descr;
+                    let owner_id_opt = 
+                      if owner_id = "" then None else Some (int_of_string owner_id) in
+                    Database.update_todo_owner_id ~conn todo_id owner_id_opt;
+                    Database.update_todo_activation_date ~conn todo_id activation_date)
+                 todos;
+               render_edit_todo_cont_page sp ~conn ~cur_user src_page_cont)))
 
-let rec render_todo_editor sp ~cur_user (src_page_cont, todos_to_edit) =
-  let users = Database.query_users () in
+let rec render_todo_editor sp ~conn ~cur_user (src_page_cont, todos_to_edit) =
+  let users = Database.query_users ~conn in
   let todos_str = String.concat "," (List.map string_of_int todos_to_edit) in
-  let todos = Database.query_todos_by_ids todos_to_edit in
+  let todos = Database.query_todos_by_ids ~conn todos_to_edit in
   
   let f =
     let todo_in_pages =
-      Database.todos_in_pages (List.map (fun todo -> todo.t_id) todos) in
+      Database.todos_in_pages ~conn (List.map (fun todo -> todo.t_id) todos) in
 
     let cancel_page cont = 
       match cont with
@@ -270,22 +276,22 @@ let rec render_todo_editor sp ~cur_user (src_page_cont, todos_to_edit) =
 let error_page sp msg =
   Html_util.html_stub sp [h1 [pcdata ("ERROR: "^msg)]]
 
-let render_todo_get_page sp (src_page_cont, todo) = 
+let render_todo_get_page sp ~conn ~cur_user (src_page_cont, todo) = 
   match todo with
     Some todo_id ->
-      render_todo_editor sp (src_page_cont, [todo_id])
+      render_todo_editor sp ~conn ~cur_user (src_page_cont, [todo_id])
   | None ->
       (* Bogus input as we didn't get any todos to edit..  But let's
          just take the user back to where he came from rather than
          issueing an error message. *)
-      render_edit_todo_cont_page sp src_page_cont
+      render_edit_todo_cont_page sp ~conn ~cur_user src_page_cont
         
 let _ =
   register edit_todo_get_page
     (fun sp get_params () ->
        Session.with_user_login sp
          (fun cur_user sp ->
-            render_todo_get_page sp ~cur_user get_params))
+            Db.with_conn (fun conn -> render_todo_get_page sp ~conn ~cur_user get_params)))
 
 let todo_id_re = Pcre.regexp "^t-([0-9]+)$"
 
@@ -308,10 +314,11 @@ let _ =
     (fun sp (src_page_cont, single_tid) (todo_ids : (string * string) list) ->
        Session.with_user_login sp
          (fun cur_user sp ->
-            if todo_ids = [] then
-              render_todo_get_page sp ~cur_user 
-                (src_page_cont, single_tid)
-            else 
-              render_todo_editor sp ~cur_user
-                (src_page_cont, (parse_todo_ids todo_ids))))
+            Db.with_conn
+              (fun conn ->
+                 if todo_ids = [] then
+                   render_todo_get_page sp ~conn ~cur_user (src_page_cont, single_tid)
+                 else 
+                   render_todo_editor sp ~conn ~cur_user
+                     (src_page_cont, (parse_todo_ids todo_ids)))))
 

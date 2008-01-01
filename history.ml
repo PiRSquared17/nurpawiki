@@ -30,6 +30,8 @@ open Services
 open Types
 open Util
 
+module Db = Database
+
 let descr_of_activity_type = function
     AT_create_todo -> "Created"
   | AT_complete_todo -> "Completed"
@@ -113,10 +115,10 @@ let remove_duplicates strs =
     List.fold_left (fun acc e -> PSet.add e acc) PSet.empty strs in
   PSet.fold (fun e acc -> e::acc) s []
 
-let view_history_page sp ~cur_user =
+let view_history_page sp ~conn ~cur_user =
 
-  let activity = Database.query_past_activity () in
-  let activity_in_pages = Database.query_activity_in_pages () in
+  let activity = Database.query_past_activity ~conn in
+  let activity_in_pages = Database.query_activity_in_pages ~conn in
 
   let prettify_date d =
     let d = date_of_date_time_string d in
@@ -187,4 +189,4 @@ let _ =
     (fun sp todo_id () ->
        Session.with_guest_login sp
          (fun cur_user sp ->
-            view_history_page sp ~cur_user))
+            Db.with_conn (fun conn -> view_history_page sp ~conn ~cur_user)))
