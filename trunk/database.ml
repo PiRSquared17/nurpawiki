@@ -30,8 +30,8 @@ module ConnectionPool =
     open Psql
 
     (* We have only one connection to pool from for now.  This will
-       likely be extended for more connetions in the future.  There's no
-       need for it yet though. *)
+       likely be extended for more connetcions in the future.  There's
+       no need for it yet though. *)
 
     let connection_mutex = Mutex.create ()
     let connection : Postgresql.connection option ref = ref None

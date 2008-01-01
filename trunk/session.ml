@@ -37,6 +37,12 @@ let connect_action =
     ~post_params:((string "login") ** (string "passwd"))
     ()
     
+
+let link_to_nurpawiki_main sp = 
+  a ~sp ~service:wiki_view_page 
+    [pcdata "Take me to Nurpawiki"] 
+    ("WikiStart",(None,(None,None)))
+
 (* Get logged in user as an option *)
 let get_login_user sp =
   Lwt.return (Eliomsessions.get_volatile_session_data login_table sp ()) >>=
@@ -49,8 +55,7 @@ let get_login_user sp =
 let db_upgrade_warning sp = 
   [h1 [pcdata "Database Upgrade Warning!"];
    p
-     [pcdata "Your database appears to be older than your current Nurpawiki server.";
-      br ();
+     [pcdata "An error occured when Nurpawiki was trying to access database.";
       br ();
       strong [
         pcdata "You might be seeing this for a couple of reasons:";
@@ -65,10 +70,19 @@ let db_upgrade_warning sp =
       br ();
       a ~service:upgrade_page ~sp [pcdata "Upgrade now!"] ()]]
 
-let db_installation_error  sp = 
-  [h1 [pcdata "Database Not Properly Installed!"];
-   p
-     [pcdata "Your database does not seem to be installed as per installation instructions.  Please see database installation instructions in the documentation."]]
+let db_installation_error sp = 
+  [div
+     [h1 [pcdata "Database not configured or database connection down!"];
+      br ();
+      p [pcdata "When trying to access the Nurpawiki database an error occurred.";
+         br (); br ();
+         pcdata "The two most probable reasons for this are:"];
+      ul (li [pcdata "The Nurpawiki schema has not been installed on the database or the database settings are misconfigured.  Please see Nurpawiki documentation on database installation."])
+        [li [pcdata "The database connection was somehow disconnected.  This may happen due to network failures, SQL server restarts, etc."]];
+      p [pcdata "Try going back to the wiki: "; link_to_nurpawiki_main sp;
+         br (); br ();
+         pcdata "If the problem persists, talk to the site administrator."]]]
+     
 
 let login_html sp ~err =
   Html_util.html_stub sp 
@@ -207,11 +221,6 @@ let connect_action_handler sp () login_nfo =
 
 let () =
   Eliompredefmod.Actions.register ~service:connect_action connect_action_handler
-
-let link_to_nurpawiki_main sp = 
-  a ~sp ~service:wiki_view_page 
-    [pcdata "Take me to Nurpawiki"] 
-    ("WikiStart",(None,(None,None)))
 
 (* /upgrade upgrades the database schema (if needed) *)
 let _ =
