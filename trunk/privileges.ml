@@ -55,19 +55,27 @@ let with_can_edit_user cur_user target f ~on_fail =
 let can_schedule_all_tasks cur_user =
   cur_user.user_login = "admin"
 
-let user_owns_task_or_is_admin ~conn task_id cur_user =
+let user_owns_task_or_is_admin todo cur_user =
   if cur_user.user_login = "admin" then
     true
   else 
-    match Database.query_todo ~conn task_id with
-      Some t ->
-        (match t.t_owner with
-           Some o -> o.owner_id = cur_user.user_id
-         | None -> false)
+    match todo.t_owner with
+      Some o -> o.owner_id = cur_user.user_id
     | None -> false
+        
+let can_edit_task todo cur_user =
+  user_owns_task_or_is_admin todo cur_user
 
-let can_edit_task = user_owns_task_or_is_admin
+let can_complete_task ~conn task_id cur_user =
+  let todo = Database.query_todo ~conn task_id in
+  match todo with
+    Some t -> 
+      user_owns_task_or_is_admin t cur_user
+  | None -> false
 
-let can_complete_task = user_owns_task_or_is_admin
-
-let can_modify_task_priority = user_owns_task_or_is_admin
+let can_modify_task_priority ~conn task_id cur_user =
+  let todo = Database.query_todo ~conn task_id in
+  match todo with
+    Some t -> 
+      user_owns_task_or_is_admin t cur_user
+  | None -> false
