@@ -188,7 +188,7 @@ module WikiML =
     let complete_todo sp id =
       [Html_util.complete_task_img_link sp id]
           
-    let priority_arrow sp id up_or_down =
+    let priority_arrow sp ~conn id up_or_down =
       let (title,arrow_img,dir) = 
         if up_or_down then 
           ("Raise priority!", "arrow_up.png", true)
@@ -201,23 +201,21 @@ module WikiML =
         ~sp [arrow_img] (id,dir)
 
 
-    let mod_priorities sp pri id =
-      [priority_arrow sp id true; 
-       priority_arrow sp id false]
+    let mod_priorities sp ~conn pri id =
+      [priority_arrow sp ~conn id true; 
+       priority_arrow sp ~conn id false]
 
     let todo_editor_link sp todo_id page =
       Html_util.todo_edit_img_link sp (ET_view page) todo_id
         
-    let todo_modify_buttons sp ~cur_user page todo_id todo =
-      let can_edit_task = 
-        Db.with_conn (fun conn -> Privileges.can_edit_task ~conn todo_id cur_user) in
+    let todo_modify_buttons sp ~conn ~cur_user page todo_id todo =
       let completed = todo.t_completed in
       span ~a:[a_class ["no_break"]]
-        (if completed || not can_edit_task then
+        (if completed || not (Privileges.can_edit_task todo cur_user) then
            []
          else 
            (todo_editor_link sp todo_id page @
-              mod_priorities sp todo.t_priority todo_id @
+              mod_priorities sp ~conn todo.t_priority todo_id @
               complete_todo sp todo_id))
 
     let translate_list items =
@@ -277,7 +275,7 @@ module WikiML =
               else 
                 ["todo_descr"; Html_util.priority_css_class todo.t_priority] in
             span 
-              [todo_modify_buttons sp ~cur_user cur_page todo_id todo;
+              [todo_modify_buttons sp ~conn ~cur_user cur_page todo_id todo;
                span ~a:[a_class style] (Html_util.todo_descr_html todo.t_descr todo.t_owner)]
           with Not_found -> 
             (pcdata "UNKNOWN TODO ID!") in
@@ -452,7 +450,7 @@ let todo_list_table_html sp ~conn ~cur_user cur_page todos =
           (tr 
              (td ~a:[a_class row_class] [pcdata (string_of_int id)])
              [td ~a:[a_class row_class] (todo_page_link todo);
-              td [(WikiML.todo_modify_buttons sp ~cur_user cur_page id todo)]]))
+              td [(WikiML.todo_modify_buttons sp ~conn ~cur_user cur_page id todo)]]))
        todos)
 
 let wiki_page_menu_html sp ~conn ~cur_user page content =
