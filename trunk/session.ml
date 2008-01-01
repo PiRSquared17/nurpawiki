@@ -26,6 +26,8 @@ open Types
 
 open Config
 
+module Db = Database
+
 let upgrade_page = new_service ["upgrade"] unit ()
 
 let login_table = Eliomsessions.create_volatile_table ()
@@ -92,11 +94,17 @@ let login_html sp ~err =
 let with_db_installed sp f =
   (* Check if the DB is installed.  If so, check that it doesn't need
      an upgrade. *)
-  if Database.is_schema_installed then
-    Html_util.html_stub sp (db_installation_error sp)
-  else if Database.db_schema_version () < Database.nurpawiki_schema_version then
-    Html_util.html_stub sp (db_upgrade_warning sp)
-  else f ()
+  let r = 
+    Db.with_conn
+      (fun conn ->
+         if Db.is_schema_installed ~conn then
+           Some (Html_util.html_stub sp (db_installation_error sp))
+         else if Db.db_schema_version ~conn < Db.nurpawiki_schema_version then
+           Some (Html_util.html_stub sp (db_upgrade_warning sp))
+         else None) in
+  match r with
+    Some x -> x
+  | None -> f ()
       
 (** Wrap page service calls inside with_user_login to have them
     automatically check for user login and redirect to login screen if
@@ -107,7 +115,10 @@ let with_user_login ?(allow_read_only=false) sp f =
       match maybe_user with
         Some (login,passwd) ->
           begin
-            match (Database.query_user login) with
+            let u = 
+              Db.with_conn
+                (fun conn -> Db.query_user ~conn login) in
+            match u with
               Some user ->
                 let passwd_md5 = Digest.to_hex (Digest.string passwd) in
                 (* Autheticate user against his password *)
@@ -148,12 +159,14 @@ let with_guest_login sp f =
    there are any errors, just bail out without doing anything
    harmful. *)
 let action_with_user_login sp f =
-  if Database.db_schema_version () = Database.nurpawiki_schema_version then
+  let db_version = 
+    Db.with_conn (fun conn -> Db.db_schema_version conn) in
+  if db_version = Db.nurpawiki_schema_version then
     get_login_user sp >>= fun maybe_user ->
       (match maybe_user with
          Some (login,passwd) ->
            begin
-             match (Database.query_user login) with
+             match (Db.with_conn (fun conn -> Db.query_user ~conn login)) with
                Some user ->
                  let passwd_md5 = Digest.to_hex (Digest.string passwd) in
                  (* Autheticate user against his password *)
@@ -204,7 +217,7 @@ let link_to_nurpawiki_main sp =
 let _ =
   register upgrade_page
     (fun sp () () ->
-       let msg = Database.upgrade_schema () in
+       let msg = Db.with_conn (fun conn -> Db.upgrade_schema ~conn) in
        Html_util.html_stub sp
          [h1 [pcdata "Upgrade DB schema"];
           (pre [pcdata msg]);

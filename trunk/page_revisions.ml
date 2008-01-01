@@ -28,8 +28,11 @@ open ExtString
 open Services
 open Types
 
+module Db = Database
+
 let revision_table sp page_descr =
-  let revisions = Database.query_page_revisions page_descr in
+  let revisions = 
+    Db.with_conn (fun conn -> Db.query_page_revisions ~conn page_descr) in
 
   let page_link descr (rev:int) = 
     a ~sp ~service:wiki_view_page [pcdata ("Revision "^(string_of_int rev))]

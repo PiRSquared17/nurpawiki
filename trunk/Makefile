@@ -1,14 +1,14 @@
 
 FILES=version.ml config.ml types.ml util.ml database.ml services.ml privileges.ml html_util.ml session.ml user_editor.ml page_revisions.ml nurpawiki.ml scheduler.ml history.ml about.ml
 
-CAMLC = ocamlfind ocamlc -g $(LIB)
-CAMLOPT = ocamlfind ocamlopt $(LIB)
+CAMLC = ocamlfind ocamlc -thread -g $(LIB)
+CAMLOPT = ocamlfind ocamlopt -thread  $(LIB)
 CAMLDOC = ocamlfind ocamldoc $(LIB)
 CAMLDEP = ocamlfind ocamldep
 OCSIGENREP = `ocamlfind query ocsigen`
 #OCSIGENREP = ../ocsigen/lib
  # ^ pour l'instant
-LIB = -package netstring,str,calendar,extlib,postgresql,lwt -I $(OCSIGENREP)
+LIB = -package threads,netstring,str,calendar,extlib,postgresql,lwt -I $(OCSIGENREP)
 PP = -pp "camlp4o $(OCSIGENREP)/xhtmlsyntax.cma"
 
 OBJS = $(FILES:.ml=.cmo)
