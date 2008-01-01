@@ -184,7 +184,7 @@ let any_complete_undos sp =
     (fun acc e -> 
        match e with 
          Action_completed_task tid -> Some tid
-       | _ -> assert false)
+       | _ -> acc)
     None (Eliomsessions.get_exn sp)
 
 let connect_action_handler sp () login_nfo =
