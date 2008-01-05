@@ -214,6 +214,16 @@ let any_complete_undos sp =
        | _ -> acc)
     None (Eliomsessions.get_exn sp)
 
+(* Same as any_complete_undos except we check for changed task
+   priorities. *)
+let any_task_priority_changes sp =
+  List.fold_left
+    (fun acc e -> 
+       match e with 
+         Action_task_priority_changed tid -> tid::acc
+       | _ -> acc)
+    [] (Eliomsessions.get_exn sp)
+
 let connect_action_handler sp () login_nfo =
   Eliomsessions.close_session  ~sp () >>= fun () -> 
     Eliomsessions.set_volatile_session_data ~table:login_table ~sp login_nfo;

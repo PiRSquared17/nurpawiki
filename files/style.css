@@ -60,6 +60,8 @@ a.palette11 { color:rgb(51, 0, 153); }
 .todo_table_completed { text-decoration : line-through; color:#555; }
 .todo_table { font-size : smaller; }
 
+.todo_priority_changed { font-weight: bold; }
+
 .todo_completed_row { background-color:#ddd; }
 
 .rm_odd_row  { background-color:#ddf; }

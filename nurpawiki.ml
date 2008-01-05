@@ -70,11 +70,15 @@ let task_side_effect_mod_priority sp (task_id, dir) () =
        Db.with_conn
          (fun conn ->
             if Privileges.can_modify_task_priority ~conn task_id user then
-              if dir = false then 
-                Db.down_task_priority ~conn task_id
-              else 
-                Db.up_task_priority ~conn task_id;
-            []))
+              begin
+                if dir = false then 
+                  Db.down_task_priority ~conn task_id
+                else 
+                  Db.up_task_priority ~conn task_id;
+                [Action_task_priority_changed task_id]
+              end
+            else
+              []))
              
 
 let () =
@@ -434,6 +438,8 @@ let todo_list_table_html sp ~conn ~cur_user cur_page todos =
         ~link_css_class:(Some c) (todo.t_id) in
     Html_util.todo_descr_html descr todo.t_owner @ page_links in
 
+  let priority_changes = Session.any_task_priority_changes sp in
+
   table ~a:[a_class ["todo_table"]]
     (tr 
        (th [pcdata "Id"]) [th [pcdata "Description"]])
@@ -446,7 +452,12 @@ let todo_list_table_html sp ~conn ~cur_user cur_page todos =
               "todo_completed_row" 
             else 
               Html_util.priority_css_class todo.t_priority in
-          let row_class = [row_pri_style] in
+          let row_class =
+            row_pri_style::
+              (if List.mem id priority_changes then 
+                 ["todo_priority_changed"]
+               else 
+                 []) in
           (tr 
              (td ~a:[a_class row_class] [pcdata (string_of_int id)])
              [td ~a:[a_class row_class] (todo_page_link todo);
