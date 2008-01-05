@@ -8,7 +8,7 @@ CAMLDEP = ocamlfind ocamldep
 OCSIGENREP = `ocamlfind query ocsigen`
 #OCSIGENREP = ../ocsigen/lib
  # ^ pour l'instant
-LIB = -package threads,netstring,str,calendar,extlib,postgresql,lwt -I $(OCSIGENREP)
+LIB = -package threads,netstring,calendar,extlib,postgresql,lwt -I $(OCSIGENREP)
 PP = -pp "camlp4o $(OCSIGENREP)/xhtmlsyntax.cma"
 
 OBJS = $(FILES:.ml=.cmo)
