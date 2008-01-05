@@ -10,6 +10,7 @@
     <extension module="%_OCSIGEN_MODULES_%/staticmod.cmo" />
 
     <library module="%_STR_CMA_%"/>
+    <library module="%_NUMS_CMA_%"/>
     <library module="%_PCRE_CMA_%"/>
     <library module="%_CALENDAR_CMA_%"/>
     <library module="%_EXTLIB_CMA_%"/>
