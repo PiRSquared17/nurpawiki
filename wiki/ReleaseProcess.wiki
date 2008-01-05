@@ -5,18 +5,20 @@
 
  # Review wiki documentation to ensure that the docs are up-to-date for the version to be released.  An easy way to do this is to read all wiki pages that are labeled with Docs-!ReviewedFor-x.y where x.y is the prevous released major.minor version.  After approving a wiki page for the new version, label it with Docs-!ReviewedFor-z.w where z.w is the upcoming release major.minor version.
  # Update VERSION to the version number being released
- # Make a release candidate out of the current head (record the revision number)
+ # Make a release candidate out of the current head (record the revision number you use in the export!)
 {{{
-export VERSION=1.0.3
-cd nurpawiki
-./utils/export_godi_distfiles.sh
+svn export -r ABC https://nurpawiki.googlecode.com/svn/trunk nurpawiki-x.y.z
+tar cf nurpawiki-x.y.z.tar nurpawiki-x.y.z
+gzip nurpawiki-x.y.z.tar
+./utils/gen_godi_distinfo.sh
+cd nurpawiki-x.y.z
 }}}
   * Untar the release candidate, configure and build it
  # QA the package according to [DevTestPlan]
  # Test the release candidate tarball with GODI (see GodiPackageRelease)
  # Snapshot current svn version
   * NOTE: Add main revision into submit message so that it's easier to diff against it
-  * `svn cp -r 158 https://nurpawiki.googlecode.com/svn/trunk https://nurpawiki.googlecode.com/svn/tags/x.y.z`
+  * `svn cp -r ABC https://nurpawiki.googlecode.com/svn/trunk https://nurpawiki.googlecode.com/svn/tags/x.y.z`
  # Update ReleaseNotes
  # Upload release tarball to download page
  # Finally release the GODI package (see GodiPackageRelease)
