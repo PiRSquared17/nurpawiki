@@ -5,11 +5,7 @@ CAMLC = ocamlfind ocamlc -thread -g $(LIB)
 CAMLOPT = ocamlfind ocamlopt -thread  $(LIB)
 CAMLDOC = ocamlfind ocamldoc $(LIB)
 CAMLDEP = ocamlfind ocamldep
-OCSIGENREP = `ocamlfind query ocsigen`
-#OCSIGENREP = ../ocsigen/lib
- # ^ pour l'instant
-LIB = -package threads,netstring,calendar,extlib,postgresql,lwt -I $(OCSIGENREP)
-PP = -pp "camlp4o $(OCSIGENREP)/xhtmlsyntax.cma"
+LIB = -package threads,netstring,calendar,extlib,postgresql,ocsigen
 
 OBJS = $(FILES:.ml=.cmo)
 
@@ -36,7 +32,7 @@ META:META.in VERSION
 	    sed -e "s|%_NURPAWIKI_VERSION_%|$(NWIKI_VER)|g" > META
 
 .ml.cmo:
-	$(CAMLC) $(PP) -c $<
+	$(CAMLC) -c $<
 
 .mli.cmi:
 	$(CAMLC) -c $<
