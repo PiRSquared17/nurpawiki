@@ -3,7 +3,7 @@
 
 = Release notes =
 
-== Nurpawiki 1.1.1 (not yet released SVN head) ==
+== Nurpawiki 1.1.1 (r330) ==
  * Read-only access that lets in non-logged in users who are allowed to view the site content but not to modify it (issue 33)
  * Highlight a moved task in the to-do list if it's been moved up or down in priorities (issue 8)
  * Connection pooling (although restricted to only one concurreent connection)
