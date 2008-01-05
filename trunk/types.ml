@@ -19,6 +19,7 @@ module IMap = Map.Make (OrdInt)
 
 (* Exceptions returned by Eliom actions *)
 exception Action_completed_task of int
+exception Action_task_priority_changed of int
 
 type user = 
     {
