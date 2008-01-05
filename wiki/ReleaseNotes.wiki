@@ -4,7 +4,13 @@
 = Release notes =
 
 == Nurpawiki 1.1.1 (not yet released SVN head) ==
- * Read-only access that lets in non-logged in users who are allowed to view the site content but not to modify it.
+ * Read-only access that lets in non-logged in users who are allowed to view the site content but not to modify it (issue 33)
+ * Highlight a moved task in the to-do list if it's been moved up or down in priorities (issue 8)
+ * Connection pooling (although restricted to only one concurreent connection)
+ * Attempt to re-try database connections if the database server has been restarted while Nurpawiki has been running.
+ * Less database queries during page loads with many to-dos
+ * Login screen problems in issue 40 will be automatically fixed by Ocsigen 0.9.5 (release to be expected in Jan 2008).
+ * A few smaller bugfixes & code improvements.
 
 == Nurpawiki 1.1.0 (r282) ==
  * *Warning* Take a database backup before upgrading -- this release alters your DB schema.  Once upgraded, you can't go back to the previous version.
