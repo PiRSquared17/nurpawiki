@@ -2,7 +2,7 @@
 
 = Updating the GODI package =
 
-== Testing current head/trunk version locally ==
+== Testing the release candidate locally ==
 
 Take the release candidate and distinfo from the previous steps of the ReleaseProcess.
 
