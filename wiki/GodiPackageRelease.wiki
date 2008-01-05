@@ -4,16 +4,9 @@
 
 == Testing current head/trunk version locally ==
 
-Create a test package by running: 
-{{{
-export VERSION=1.0.3
-cd nurpawiki
-./utils/export_godi_distfiles.sh
-}}}
+Take the release candidate and distinfo from the previous steps of the ReleaseProcess.
 
-A package `nurpawiki-$VERSION.gz` is created along with `distinfo`
-
-Copy the packages over to your *test* GODI installation (have a separate godi installation for testing!):
+Copy the packages over to your *test* GODI installation (have a separate installation for testing!):
 
 {{{
 cp nurpawiki-$VERSION.tar.gz $GODIBASE/build/distfiles
