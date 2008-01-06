@@ -12,5 +12,5 @@ All tests must pass for each new release.
  * Make sure you have the Selenium IDE installed in Firefox.
 
 === Running the tests ===
- * Make sure you have Nurpawiki running on `localhost`
- * Point your browser to `chrome://selenium-ide/content/selenium/TestRunner.html?baseURL=http://localhost&test=file:///home/janne/dev/nurpawiki/trunk/test/functional/TestSuite.html`
+ * Make sure you have Nurpawiki running on `localhost` at port 8080.
+ * Point your browser to `chrome://selenium-ide/content/selenium/TestRunner.html?baseURL=http://localhost:8080&test=file:///home/janne/dev/nurpawiki/trunk/test/functional/TestSuite.html`
