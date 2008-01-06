@@ -296,8 +296,13 @@ let todos_in_pages ~conn todo_ids =
 
 (* TODO must not query ALL activities.  Later we only want to
    currently visible activities => pages available. *)
-let query_activity_in_pages ~conn =
-  let sql = "SELECT activity_log_id,page_id,page_descr FROM activity_in_pages,pages WHERE page_id = pages.id" in
+let query_activity_in_pages ~conn ~min_id ~max_id =
+  let sql = 
+    "SELECT activity_log_id,page_id,page_descr 
+       FROM activity_in_pages,pages 
+      WHERE page_id = pages.id
+        AND (activity_log_id > "^string_of_int min_id^" 
+             AND activity_log_id <= "^string_of_int max_id^")" in
   let r = guarded_exec ~conn sql in
   List.fold_left
     (fun acc row ->

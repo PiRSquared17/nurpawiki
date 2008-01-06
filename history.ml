@@ -138,7 +138,8 @@ let view_history_page sp ~conn ~cur_user ~nth_page =
   let n_total_pages = highest_log_id / n_log_items_per_page in
   let activity = 
     Database.query_past_activity ~conn ~min_id ~max_id in
-  let activity_in_pages = Database.query_activity_in_pages ~conn in
+  let activity_in_pages =
+    Database.query_activity_in_pages ~conn ~min_id ~max_id in
 
   let prettify_date d =
     let d = date_of_date_time_string d in
