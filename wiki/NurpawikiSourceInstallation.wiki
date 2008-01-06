@@ -31,6 +31,7 @@ The script will complain if some of the dependent libraries are not installed vi
 
 Output of `gen_ocsigen_config` is piped to a file and will later on be passed to Ocsigen when you start the Ocsigen web server.
 
+See SiteConfiguration for more info on configuring Nurpawiki.
 == Build Nurpawiki ==
 
 Run `make`.
