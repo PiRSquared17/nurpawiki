@@ -1,0 +1,15 @@
+#summary Description of functional tests and how to run them
+
+= Selenium-based functional tests =
+
+Nurpawiki contains a series of functional test cases that tests various simple interactions.  The tests are executed using [http://http://www.openqa.org/selenium-ide/ Selenium IDE].
+
+All tests must pass for each new release.
+
+== Running tests ==
+
+=== Preparations ===
+ * Make sure you have the Selenium IDE installed in Firefox.
+
+=== Running the tests ===
+ * Point your browser to `chrome://selenium-ide/content/selenium/TestRunner.html?baseURL=http://localhost&test=file:///home/janne/dev/nurpawiki/trunk/test/functional/TestSuite.html`
