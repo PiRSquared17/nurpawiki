@@ -44,7 +44,7 @@ let edit_todo_page =
     ~fallback:edit_todo_get_page 
     ~post_params:any ()
 
-let history_page = new_service ["history"] unit ()
+let history_page = new_service ["history"] (opt (int "nth_p")) ()
 
 let search_page = new_service ["search"] (string "q") ()
 

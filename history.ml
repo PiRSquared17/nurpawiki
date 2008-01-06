@@ -32,6 +32,8 @@ open Util
 
 module Db = Database
 
+let n_log_items_per_page = 300
+
 let descr_of_activity_type = function
     AT_create_todo -> "Created"
   | AT_complete_todo -> "Completed"
@@ -115,9 +117,27 @@ let remove_duplicates strs =
     List.fold_left (fun acc e -> PSet.add e acc) PSet.empty strs in
   PSet.fold (fun e acc -> e::acc) s []
 
-let view_history_page sp ~conn ~cur_user =
+let page_links sp cur_page max_pages =
+  let links = ref [] in
+  for i = 0 to max_pages do
+    let p = string_of_int i in
+    let link = 
+      if cur_page = i then
+        strong [pcdata p]
+      else 
+        a ~sp ~service:history_page [pcdata p] (Some i) in
+    links := link :: pcdata " " :: !links 
+  done;
+  pcdata "More pages: " :: List.rev !links
 
-  let activity = Database.query_past_activity ~conn in
+let view_history_page sp ~conn ~cur_user ~nth_page =
+  let highest_log_id = Database.query_highest_activity_id ~conn in
+  (* max_id is inclusive, min_id exclusive, hence 1 and 0 *)
+  let max_id = max 1 (highest_log_id - nth_page * n_log_items_per_page) in
+  let min_id = max 0 (max_id - n_log_items_per_page) in
+  let n_total_pages = highest_log_id / n_log_items_per_page in
+  let activity = 
+    Database.query_past_activity ~conn ~min_id ~max_id in
   let activity_in_pages = Database.query_activity_in_pages ~conn in
 
   let prettify_date d =
@@ -181,12 +201,17 @@ let view_history_page sp ~conn ~cur_user =
                activity_groups ([],"")))) in
   Html_util.html_stub sp
     (Html_util.navbar_html sp ~cur_user
-       ([h1 [pcdata "Blast from the past"]] @ [act_table]))
+       ([h1 [pcdata "Blast from the past"]] @ 
+          (page_links sp nth_page n_total_pages) @ [br (); br ()] @
+          [act_table]))
 
 (* /history *)
 let _ =
   register history_page
-    (fun sp todo_id () ->
+    (fun sp nth_page () ->
        Session.with_guest_login sp
          (fun cur_user sp ->
-            Db.with_conn (fun conn -> view_history_page sp ~conn ~cur_user)))
+            let page = Option.default 0 nth_page in
+            Db.with_conn 
+              (fun conn -> 
+                 view_history_page sp ~conn ~cur_user ~nth_page:page)))
