@@ -307,7 +307,18 @@ let query_activity_in_pages ~conn =
        let lst = try IMap.find act_id acc with Not_found -> [] in
        IMap.add act_id ({ p_id = page_id; p_descr = page_descr }::lst) acc) 
     IMap.empty (r#get_all_lst)
-    
+
+(* Note: This function should only be used in contexts where there
+   will be no concurrency issues.  Automated sessions should be used for
+   real ID inserts.  In its current form, this function is used to get
+   the highest activity log item ID in order to display history separated
+   into multiple web pages. *)
+let query_highest_activity_id ~conn =
+  let sql = "SELECT last_value FROM activity_log_id_seq" in
+  let r = guarded_exec ~conn sql in
+  int_of_string (r#get_tuple 0).(0)
+
+
 (* Collect todos in the current page *)
 let query_page_todos ~conn page_id =
   let sql = "SELECT "^todo_tuple_format^" "^todos_user_login_join^" WHERE todos.id in "^
@@ -486,13 +497,16 @@ SELECT page_revision,users.id,users.login,date_trunc('second', page_created) FRO
         (r#get_all_lst)
         
 
-let query_past_activity ~conn =
+let query_past_activity ~conn ~min_id ~max_id =
   let sql =
-    "SELECT activity_log.id,activity_id,activity_timestamp,todos.descr,users.login "^
-      "FROM activity_log
+    "SELECT activity_log.id,activity_id,activity_timestamp,todos.descr,users.login
+      FROM activity_log
        LEFT OUTER JOIN todos ON activity_log.todo_id = todos.id
        LEFT OUTER JOIN users ON activity_log.user_id = users.id
-       AND activity_log.activity_timestamp < now()
+      WHERE
+       activity_log.activity_timestamp < now()
+       AND (activity_log.id > "^string_of_int min_id^" 
+            AND activity_log.id <= "^string_of_int max_id^")
        ORDER BY activity_timestamp DESC" in
   let r = guarded_exec ~conn sql in
   r#get_all_lst >>

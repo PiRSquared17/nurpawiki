@@ -64,7 +64,7 @@ let navbar_html sp ~cur_user ?(top_info_bar=[]) ?(wiki_revisions_link=[]) ?(wiki
     a ~service:history_page
       ~a:[a_accesskey 'r'; a_class ["ak"]] ~sp:sp 
       [img ~alt:"History" ~src:(make_static_uri sp ["home.png"]) ();
-       pcdata "History"] () in
+       pcdata "History"] None in
 
   let search_input =
     [get_form search_page sp
