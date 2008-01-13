@@ -30,6 +30,7 @@ type db_config =
 type site_config =
     {
       cfg_allow_ro_guests : bool;
+      cfg_homepage : string;
     }
 
 let get_attr_opt attr attrs = 
@@ -69,14 +70,22 @@ let site =
           (match get_attr_opt "allow_read_only_guests" attrs with
              Some s -> s = "yes"
            | None -> false) in
-        allow_ro_guests
+        let homepage =
+          (match get_attr_opt "homepage" attrs with
+             Some s -> s
+           | None -> "WikiStart") in
+        {
+          cfg_allow_ro_guests = allow_ro_guests;
+          cfg_homepage = homepage;
+        }
     | (Element (x,_,_))::xs -> 
         Messages.errlog x;
         find_site_cfg xs 
-    | _ -> false in
-  let allow_ro_guests = find_site_cfg (get_config ()) in
-  Messages.warning (P.sprintf "read-only guests allowed %b" allow_ro_guests);
-  {
-    cfg_allow_ro_guests = allow_ro_guests;
-  }
-
+    | _ ->
+        {
+          cfg_allow_ro_guests = false;
+          cfg_homepage = "WikiStart";
+        } in
+  let cfg = find_site_cfg (get_config ()) in
+  Messages.warning (P.sprintf "read-only guests allowed %b" cfg.cfg_allow_ro_guests);
+  cfg
