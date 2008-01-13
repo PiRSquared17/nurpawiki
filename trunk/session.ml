@@ -41,7 +41,7 @@ let connect_action =
 let link_to_nurpawiki_main sp = 
   a ~sp ~service:wiki_view_page 
     [pcdata "Take me to Nurpawiki"] 
-    ("WikiStart",(None,(None,None)))
+    (Config.site.cfg_homepage,(None,(None,None)))
 
 (* Get logged in user as an option *)
 let get_login_user sp =

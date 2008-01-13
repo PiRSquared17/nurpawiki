@@ -23,6 +23,7 @@ open Eliompredefmod.Xhtml
 
 open Lwt
 
+open Config
 open Types
 open Services
 
@@ -54,7 +55,7 @@ let navbar_html sp ~cur_user ?(top_info_bar=[]) ?(wiki_revisions_link=[]) ?(wiki
   let home_link link_text =
     a ~service:wiki_view_page 
       ~a:[a_accesskey 'h'; a_class ["ak"]] ~sp:sp link_text 
-      ("WikiStart", (None, (None, None))) in
+      (Config.site.cfg_homepage, (None, (None, None))) in
   let scheduler_link =
     a ~service:scheduler_page
       ~a:[a_accesskey 'r'; a_class ["ak"]] ~sp:sp 
@@ -80,7 +81,7 @@ let navbar_html sp ~cur_user ?(top_info_bar=[]) ?(wiki_revisions_link=[]) ?(wiki
          pcdata "To login as an existing user, click ";
          a ~a:[a_class ["login_link_big"]]~sp ~service:wiki_view_page 
            [pcdata "here"]
-           ("WikiStart",(None,(None, Some true)));
+           (Config.site.cfg_homepage,(None,(None, Some true)));
          pcdata ".";
          br (); br ();
          pcdata "Guests cannot modify the site.  Ask the site admin for an account to be able to edit content."]
