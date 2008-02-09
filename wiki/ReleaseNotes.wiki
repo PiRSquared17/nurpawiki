@@ -3,7 +3,7 @@
 
 = Release notes =
 
-== Nurpawiki 1.1.2 (xxx) ==
+== Nurpawiki 1.1.2 (r358) ==
  * Split /history view into multiple pages so that viewing recent changes is always snappy
  * Give the user ability to configure his preferred homepage (thanks Stephane Glondu!)
  * Performance optimizations in /history view
