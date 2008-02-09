@@ -1,0 +1,89 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>test4_create_FooBar_wiki_page</title>
+</head>
+<body>
+<table cellpadding="1" cellspacing="1" border="1">
+<thead>
+<tr><td rowspan="1" colspan="3">test4_create_FooBar_wiki_page</td></tr>
+</thead><tbody>
+<tr>
+	<td>open</td>
+	<td>/view?p=WikiStart</td>
+	<td></td>
+</tr>
+<tr>
+	<td>clickAndWait</td>
+	<td>link=Logout</td>
+	<td></td>
+</tr>
+<tr>
+	<td>clickAndWait</td>
+	<td>link=Take me to Nurpawiki</td>
+	<td></td>
+</tr>
+<tr>
+	<td>clickAndWait</td>
+	<td>link=here</td>
+	<td></td>
+</tr>
+<tr>
+	<td>type</td>
+	<td>login</td>
+	<td>admin</td>
+</tr>
+<tr>
+	<td>type</td>
+	<td>passwd</td>
+	<td></td>
+</tr>
+<tr>
+	<td>clickAndWait</td>
+	<td>//input[@value='Login']</td>
+	<td></td>
+</tr>
+<tr>
+	<td>clickAndWait</td>
+	<td>link=Edit page</td>
+	<td></td>
+</tr>
+<tr>
+	<td>type</td>
+	<td>value</td>
+	<td>= Nurpawiki =<br /><br />See WikiMarkup for help on getting started.<br /><br />Wiki page FooBar<br /></td>
+</tr>
+<tr>
+	<td>clickAndWait</td>
+	<td>//input[@value='Save']</td>
+	<td></td>
+</tr>
+<tr>
+	<td>clickAndWait</td>
+	<td>link=FooBar</td>
+	<td></td>
+</tr>
+<tr>
+	<td>clickAndWait</td>
+	<td>link=Create new page</td>
+	<td></td>
+</tr>
+<tr>
+	<td>type</td>
+	<td>value</td>
+	<td>= New Page =<br /><br />Foo bar page.<br /></td>
+</tr>
+<tr>
+	<td>clickAndWait</td>
+	<td>//input[@value='Save']</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyTextPresent</td>
+	<td>Foo bar page</td>
+	<td></td>
+</tr>
+
+</tbody></table>
+</body>
+</html>

@@ -1,0 +1,46 @@
+<ocsigen>
+  <server>
+    <port>8080</port> <!-- The port for the server -->
+    <logdir>./var/log</logdir> <!-- Where log files are to be written -->
+    <datadir>./var/lib</datadir>
+
+    <charset>UTF-8</charset> <!-- Default charset for pages -->
+
+    <!-- We need static files for icons and CSS -->
+    <extension module="%_OCSIGEN_MODULES_%/staticmod.cmo" />
+
+    <library module="%_STR_CMA_%"/>
+    <library module="%_NUMS_CMA_%"/>
+    <library module="%_PCRE_CMA_%"/>
+    <library module="%_CALENDAR_CMA_%"/>
+    <library module="%_EXTLIB_CMA_%"/>
+    <library module="%_POSTGRESQL_CMA_%"/>
+    <library module="%_CRYPTOKIT_CMA_%"/>
+
+    <!-- Sqlite is needed by ocsipersist, which is used by Eliom: -->
+    <extension module="%_SQLITE3_CMA_%"/>
+
+    <extension module="%_OCSIGEN_MODULES_%/ocsipersist-sqlite.cma"/>
+    <extension module="%_OCSIGEN_MODULES_%/eliom.cma"/>
+
+    <host>  
+      <site dir="" charset="UTF-8">
+        <eliom module="%_NURPAWIKI_CMA_%">
+
+          <nurpawiki allow_read_only_guests="yes" />
+
+          <!-- More attributes for database: port - Postgresql port -->
+          <database name="%_DBNAME_%" user="%_DBUSER_%" password="%_DBPASSWD_%" />
+
+        </eliom>
+        <static dir="%_STATIC_ROOT_%/files" />
+      </site>
+
+
+    </host>
+
+    <commandpipe>./var/run/ocsigen_command</commandpipe>
+
+  </server>
+  
+</ocsigen>
