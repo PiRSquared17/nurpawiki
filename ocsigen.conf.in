@@ -29,7 +29,7 @@
 
           <nurpawiki allow_read_only_guests="yes" />
 
-          <!-- More attributes for data base: port - Postgresql port -->
+          <!-- More attributes for database: port - Postgresql port -->
           <database name="%_DBNAME_%" user="%_DBUSER_%" password="%_DBPASSWD_%" />
 
         </eliom>
