@@ -3,6 +3,12 @@
 
 = Release notes =
 
+== Nurpawiki 1.1.2 (xxx) ==
+ * Split /history view into multiple pages so that viewing recent changes is always snappy
+ * Give the user ability to configure his preferred homepage (thanks Stephane Glondu!)
+ * Performance optimizations in /history view
+ * Added a Selenium IDE based functional test suite.
+
 == Nurpawiki 1.1.1 (r330) ==
  * Read-only access that lets in non-logged in users who are allowed to view the site content but not to modify it (issue 33)
  * Highlight a moved task in the to-do list if it's been moved up or down in priorities (issue 8)
