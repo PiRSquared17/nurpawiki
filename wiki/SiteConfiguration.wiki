@@ -11,10 +11,8 @@ The Nurpawiki-specific configuration options can be found from the Ocsigen confi
 {{{
     <host>  
       <site dir="" charset="UTF-8">
-        <redirect regexp="$" dest="/view?p=WikiStart"/>
-
         <eliom module="nurpawiki.cma">
-          <nurpawiki allow_read_only_guests="yes" />
+          <nurpawiki homepage="WikiStart" allow_read_only_guests="yes" />
           <database name="nurpawiki" user="postgres" password="default_passwd" />
         </eliom>
 
