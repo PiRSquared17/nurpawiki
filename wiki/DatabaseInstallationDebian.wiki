@@ -19,7 +19,9 @@ These installation instructions apply to both Debian and Ubuntu.  Package versio
 
 Note: we will load the `nurpawiki` schema later when we have its source code.
 
-==== 1) Setup postgres user authentication to the database ====
+Do either (1) or (2), not both.
+
+==== Method #1: Setup postgres user authentication to the database ====
 This is the preferred method on making the DB connection authenticate property.  If you're having problems, you can try the (2) option as well, but that's not recommended.
 
  * Become postgres user by `su root; su postgres`
@@ -33,7 +35,7 @@ You can now test that your newly set password actually lets you access you datab
 
 When creating Nurpawiki's configuration with `gen_ocsigen_config`script, be sure to specify the same password you used in the above ALTER statement.
 
-==== 2) Hack postgres configuration to allow DB access without a password ====
+==== Method #2: Hack postgres configuration to allow DB access without a password ====
 
 Edit `/etc/postgresql/8.2/main/pg_hba.conf` like so:
 
