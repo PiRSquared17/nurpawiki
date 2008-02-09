@@ -5,7 +5,7 @@
 
 == Nurpawiki 1.1.2 (xxx) ==
  * Split /history view into multiple pages so that viewing recent changes is always snappy
- * Give the user ability to configure his preferred homepage (thanks Stéphane Glondu!)
+ * Give the user ability to configure his preferred homepage (thanks Stephane Glondu!)
  * Performance optimizations in /history view
  * Added a Selenium IDE based functional test suite.
 
