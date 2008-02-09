@@ -28,6 +28,17 @@ open Config
 
 module Db = Database
 
+(* Init sessions to timeout after 24 hours of inactivity.  This could
+   be further extended for cookies so that their expiration time would
+   also be set to some way into the future.  This would make the user
+   retain his logged in state even if he's closed the browser window.
+   The function for controlling that would be
+   Eliomsessions.set_volatile_data_session_cookie_exp_date. *)
+let _ =
+  let day = 60.0 *. 60.0 *. 24.0 in
+  ignore (set_global_volatile_session_timeout (Some day));
+  set_global_service_session_timeout (Some day)
+
 let upgrade_page = new_service ["upgrade"] unit ()
 
 let login_table = Eliomsessions.create_volatile_table ()
