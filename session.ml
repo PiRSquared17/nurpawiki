@@ -28,20 +28,25 @@ open Config
 
 module Db = Database
 
-(* Init sessions to timeout after 24 hours of inactivity.  This could
-   be further extended for cookies so that their expiration time would
-   also be set to some way into the future.  This would make the user
-   retain his logged in state even if he's closed the browser window.
-   The function for controlling that would be
-   Eliomsessions.set_volatile_data_session_cookie_exp_date. *)
-let _ =
-  let day = 60.0 *. 60.0 *. 24.0 in
-  ignore (set_global_volatile_session_timeout (Some day));
-  set_global_service_session_timeout (Some day)
-
-let upgrade_page = new_service ["upgrade"] unit ()
+let seconds_in_day = 60.0 *. 60.0 *. 24.0
 
 let login_table = Eliomsessions.create_volatile_table ()
+
+(* Init sessions to timeout after 24 hours of inactivity. *)
+let _ =
+  ignore (set_global_volatile_session_timeout (Some seconds_in_day));
+  set_global_service_session_timeout (Some seconds_in_day)
+
+(* Set password & login into session.  We set the cookie expiration
+   into 24h from now so that the user can even close his browser
+   window, re-open it and still retain his logged in status. *)
+let set_password_in_session sp login_info =
+  set_volatile_data_session_cookie_exp_date ~sp 
+    (Some (seconds_in_day +. (Unix.time ())));
+  set_volatile_session_data ~table:login_table ~sp login_info
+
+
+let upgrade_page = new_service ["upgrade"] unit ()
 
 let connect_action = 
   Eliomservices.new_post_coservice'
@@ -210,7 +215,7 @@ let action_with_user_login sp f =
 let update_session_password sp login new_password =
   ignore
     (Eliomsessions.close_session  ~sp () >>= fun () -> 
-       Eliomsessions.set_volatile_session_data ~table:login_table ~sp (login,new_password);
+       set_password_in_session sp (login,new_password);
        return [])
   
 
@@ -237,7 +242,7 @@ let any_task_priority_changes sp =
 
 let connect_action_handler sp () login_nfo =
   Eliomsessions.close_session  ~sp () >>= fun () -> 
-    Eliomsessions.set_volatile_session_data ~table:login_table ~sp login_nfo;
+    set_password_in_session sp login_nfo;
     return []
 
 let () =
