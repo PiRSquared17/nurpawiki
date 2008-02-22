@@ -80,6 +80,7 @@ module ConnectionPool =
                    ~password:(Option.default "" dbcfg.db_pass) 
                    () in
                connection := Some c;
+               (* Search tables from nurpawiki schema first: *)
                f c)
         
   end
@@ -97,11 +98,11 @@ let escape s =
        | c -> Buffer.add_char b c) s;
   Buffer.contents b
     
-let todos_user_login_join = "FROM todos LEFT OUTER JOIN users ON todos.user_id = users.id"
+let todos_user_login_join = "FROM nw.todos LEFT OUTER JOIN nw.users ON nw.todos.user_id = nw.users.id"
 
 (* Use this tuple format when querying TODOs to be parsed by
    parse_todo_result *)
-let todo_tuple_format = "todos.id,descr,completed,priority,activation_date,user_id,users.login"
+let todo_tuple_format = "nw.todos.id,descr,completed,priority,activation_date,user_id,nw.users.login"
 
 let todo_of_row row = 
   let id = int_of_string (List.nth row 0) in
@@ -151,29 +152,29 @@ let insert_todo_activity ~user_id todo_id ?(page_ids=None) activity =
   let user_id_s = string_of_int user_id in
   match page_ids with
     None ->
-      "INSERT INTO activity_log(activity_id,user_id,todo_id) VALUES ("^
+      "INSERT INTO nw.activity_log(activity_id,user_id,todo_id) VALUES ("^
         (string_of_int (int_of_activity_type activity))^", "^user_id_s^
         ", "^todo_id^")"
   | Some pages ->
       let insert_pages = 
         List.map
           (fun page_id -> 
-             "INSERT INTO activity_in_pages(activity_log_id,page_id) "^
+             "INSERT INTO nw.activity_in_pages(activity_log_id,page_id) "^
                "VALUES (CURRVAL('activity_log_id_seq'), "^string_of_int page_id^")")
           pages in
       let page_act_insert = String.concat "; " insert_pages in
-      "INSERT INTO activity_log(activity_id,user_id,todo_id) VALUES ("^
+      "INSERT INTO nw.activity_log(activity_id,user_id,todo_id) VALUES ("^
         (string_of_int (int_of_activity_type activity))^", "^
         user_id_s^", "^todo_id^"); "^
         page_act_insert
 
 let insert_save_page_activity ~conn ~user_id (page_id : int) =
   let sql = "BEGIN;
-INSERT INTO activity_log(activity_id, user_id) 
+INSERT INTO nw.activity_log(activity_id, user_id) 
        VALUES ("^(string_of_int (int_of_activity_type AT_edit_page))^
     " ,"^(string_of_int user_id)^");
-INSERT INTO activity_in_pages(activity_log_id,page_id) 
-       VALUES (CURRVAL('activity_log_id_seq'), "^string_of_int page_id^");
+INSERT INTO nw.activity_in_pages(activity_log_id,page_id) 
+       VALUES (CURRVAL('nw.activity_log_id_seq'), "^string_of_int page_id^");
 COMMIT" in
   ignore (guarded_exec ~conn sql)
 
@@ -182,7 +183,7 @@ let query_todos_by_ids ~conn todo_ids =
     let ids = String.concat "," (List.map string_of_int todo_ids) in
     let r = 
       guarded_exec ~conn 
-      ("SELECT "^todo_tuple_format^" "^todos_user_login_join^" WHERE todos.id IN ("^ids^")") in
+      ("SELECT "^todo_tuple_format^" "^todos_user_login_join^" WHERE nw.todos.id IN ("^ids^")") in
     List.map todo_of_row (r#get_all_lst)
   else
     []
@@ -195,14 +196,14 @@ let query_todo ~conn id =
 
 let update_todo_activation_date ~conn todo_id new_date =
   let sql = 
-    "UPDATE todos SET activation_date = '"^new_date^"' WHERE id = "^
+    "UPDATE nw.todos SET activation_date = '"^new_date^"' WHERE id = "^
       (string_of_int todo_id) in
   ignore (guarded_exec ~conn sql)
 
 
 let update_todo_descr ~conn todo_id new_descr =
   let sql = 
-    "UPDATE todos SET descr = '"^escape new_descr^"' WHERE id = "^
+    "UPDATE nw.todos SET descr = '"^escape new_descr^"' WHERE id = "^
       (string_of_int todo_id) in
   ignore (guarded_exec ~conn sql)
 
@@ -213,7 +214,7 @@ let update_todo_owner_id ~conn todo_id owner_id =
       Some id -> string_of_int id 
     | None -> "NULL" in
   let sql = 
-    "UPDATE todos SET user_id = "^owner_id_s^" WHERE id = "^
+    "UPDATE nw.todos SET user_id = "^owner_id_s^" WHERE id = "^
       (string_of_int todo_id) in
   ignore (guarded_exec ~conn sql)
 
@@ -262,13 +263,13 @@ let new_todo ~conn page_id user_id descr =
   (* TODO: could wrap this into BEGIN .. COMMIT if I knew how to
      return the data from the query! *)
   let sql = 
-    "INSERT INTO todos(user_id,descr) values('"^(string_of_int user_id)^"','"^escape descr^"'); 
- INSERT INTO todos_in_pages(todo_id,page_id) values(CURRVAL('todos_id_seq'), "
+    "INSERT INTO nw.todos(user_id,descr) values('"^(string_of_int user_id)^"','"^escape descr^"'); 
+ INSERT INTO nw.todos_in_pages(todo_id,page_id) values(CURRVAL('nw.todos_id_seq'), "
     ^string_of_int page_id^");"^
       (insert_todo_activity ~user_id
-         "(SELECT CURRVAL('todos_id_seq'))" ~page_ids:(Some [page_id]) 
+         "(SELECT CURRVAL('nw.todos_id_seq'))" ~page_ids:(Some [page_id]) 
          AT_create_todo)^";
- SELECT CURRVAL('todos_id_seq')" in
+ SELECT CURRVAL('nw.todos_id_seq')" in
   let r = guarded_exec ~conn sql in
   (* Get ID of the inserted item: *)
   (r#get_tuple 0).(0)
@@ -282,7 +283,7 @@ let todos_in_pages ~conn todo_ids =
     let ids = String.concat "," (List.map string_of_int todo_ids) in
     let sql = 
       "SELECT todo_id,page_id,page_descr "^
-        "FROM todos_in_pages,pages WHERE todo_id IN ("^ids^") AND page_id = pages.id" in
+        "FROM nw.todos_in_pages,nw.pages WHERE todo_id IN ("^ids^") AND page_id = nw.pages.id" in
     let r = guarded_exec ~conn sql in
     let rows = r#get_all_lst in
     List.fold_left
@@ -299,7 +300,7 @@ let todos_in_pages ~conn todo_ids =
 let query_activity_in_pages ~conn ~min_id ~max_id =
   let sql = 
     "SELECT activity_log_id,page_id,page_descr 
-       FROM activity_in_pages,pages 
+       FROM nw.activity_in_pages,nw.pages 
       WHERE page_id = pages.id
         AND (activity_log_id > "^string_of_int min_id^" 
              AND activity_log_id <= "^string_of_int max_id^")" in
@@ -319,15 +320,15 @@ let query_activity_in_pages ~conn ~min_id ~max_id =
    the highest activity log item ID in order to display history separated
    into multiple web pages. *)
 let query_highest_activity_id ~conn =
-  let sql = "SELECT last_value FROM activity_log_id_seq" in
+  let sql = "SELECT last_value FROM nw.activity_log_id_seq" in
   let r = guarded_exec ~conn sql in
   int_of_string (r#get_tuple 0).(0)
 
 
 (* Collect todos in the current page *)
 let query_page_todos ~conn page_id =
-  let sql = "SELECT "^todo_tuple_format^" "^todos_user_login_join^" WHERE todos.id in "^
-    "(SELECT todo_id FROM todos_in_pages WHERE page_id = "^string_of_int page_id^")" in
+  let sql = "SELECT "^todo_tuple_format^" "^todos_user_login_join^" WHERE nw.todos.id in "^
+    "(SELECT todo_id FROM nw.todos_in_pages WHERE page_id = "^string_of_int page_id^")" in
   let r = guarded_exec ~conn sql in
   parse_todo_result r
 
@@ -337,11 +338,11 @@ let update_page_todos ~conn page_id todos =
   let page_id' = string_of_int page_id in
   let sql = 
     "BEGIN;
- DELETE FROM todos_in_pages WHERE page_id = "^page_id'^";"^
+ DELETE FROM nw.todos_in_pages WHERE page_id = "^page_id'^";"^
       (String.concat "" 
          (List.map 
             (fun todo_id ->
-               "INSERT INTO todos_in_pages(todo_id,page_id)"^
+               "INSERT INTO nw.todos_in_pages(todo_id,page_id)"^
                  " values("^(string_of_int todo_id)^", "^page_id'^");")
             todos)) ^
       "COMMIT" in
@@ -359,7 +360,7 @@ let complete_task_generic ~conn ~user_id id op =
     with Not_found -> None in
   let ids = string_of_int id in
   let sql = "BEGIN;
-UPDATE todos SET completed = '"^task_complete_flag^"' where id="^ids^";"^
+UPDATE nw.todos SET completed = '"^task_complete_flag^"' where id="^ids^";"^
     (insert_todo_activity ~user_id ids ~page_ids activity)^"; COMMIT" in
   ignore (guarded_exec ~conn sql)
 
@@ -371,7 +372,7 @@ let uncomplete_task ~conn ~user_id id =
   complete_task_generic ~conn ~user_id id `Resurrect_task
 
 let query_task_priority ~conn id = 
-  let sql = "SELECT priority FROM todos WHERE id = "^string_of_int id in
+  let sql = "SELECT priority FROM nw.todos WHERE id = "^string_of_int id in
   let r = guarded_exec ~conn sql in
   int_of_string (r#get_tuple 0).(0)
 
@@ -381,7 +382,7 @@ let query_task_priority ~conn id =
 let offset_task_priority ~conn id incr =
   let pri = min (max (query_task_priority ~conn id + incr) 1) 3 in
   let sql = 
-    "UPDATE todos SET priority = '"^(string_of_int pri)^
+    "UPDATE nw.todos SET priority = '"^(string_of_int pri)^
       "' where id="^string_of_int id in
   ignore (guarded_exec ~conn sql)
 
@@ -393,11 +394,11 @@ let down_task_priority id =
 
 let new_wiki_page ~conn ~user_id page =
   let sql = 
-    "INSERT INTO pages (page_descr) VALUES ('"^escape page^"');
-     INSERT INTO wikitext (page_id,page_created_by_user_id,page_text)
-             VALUES ((SELECT CURRVAL('pages_id_seq')), 
+    "INSERT INTO nw.pages (page_descr) VALUES ('"^escape page^"');
+     INSERT INTO nw.wikitext (page_id,page_created_by_user_id,page_text)
+             VALUES ((SELECT CURRVAL('nw.pages_id_seq')), 
                       "^string_of_int user_id^", ''); "^
-      "SELECT CURRVAL('pages_id_seq')" in
+      "SELECT CURRVAL('nw.pages_id_seq')" in
   let r = guarded_exec ~conn sql in
   int_of_string ((r#get_tuple 0).(0))
 
@@ -414,10 +415,10 @@ let save_wiki_page ~conn page_id ~user_id lines =
      users creating the same revision head. *)
   let sql = "
 BEGIN;
-SELECT * from pages WHERE id = "^page_id_s^";
+SELECT * from nw.pages WHERE id = "^page_id_s^";
 
 -- Set ID of next revision
-UPDATE pages SET head_revision = pages.head_revision+1 
+UPDATE nw.pages SET head_revision = nw.pages.head_revision+1 
   WHERE id = "^page_id_s^";
 
 -- Kill search vectors for previous version so that only
@@ -429,11 +430,11 @@ UPDATE pages SET head_revision = pages.head_revision+1
 -- more future proof and set it trigger on UPDATE as well,
 -- but I don't know how to NOT have tsearch2 trigger 
 -- overwrite the below UPDATE with its own index.
-UPDATE wikitext SET page_searchv = NULL WHERE page_id = "^page_id_s^";
+UPDATE nw.wikitext SET page_searchv = NULL WHERE page_id = "^page_id_s^";
 
-INSERT INTO wikitext (page_id, page_created_by_user_id, page_revision, page_text)
+INSERT INTO nw.wikitext (page_id, page_created_by_user_id, page_revision, page_text)
   VALUES ("^page_id_s^", "^user_id_s^",
-  (SELECT head_revision FROM pages where id = "^page_id_s^"),
+  (SELECT head_revision FROM nw.pages where id = "^page_id_s^"),
   E'"^escaped^"');
 
 COMMIT" in
@@ -441,7 +442,7 @@ COMMIT" in
 
 let find_page_id ~conn descr =
   let sql = 
-    "SELECT id FROM pages WHERE page_descr = '"^escape descr^"' LIMIT 1" in
+    "SELECT id FROM nw.pages WHERE page_descr = '"^escape descr^"' LIMIT 1" in
   let r = guarded_exec ~conn sql in
   if r#ntuples = 0 then None else Some (int_of_string (r#get_tuple 0).(0))
 
@@ -453,7 +454,7 @@ let wiki_page_exists ~conn page_descr =
 
 let is_legal_page_revision ~conn page_id_s rev_id =
   let sql = "
-SELECT page_id FROM wikitext 
+SELECT page_id FROM nw.wikitext 
  WHERE page_id="^page_id_s^" AND page_revision="^string_of_int rev_id in
   let r = guarded_exec ~conn sql in
   r#ntuples <> 0
@@ -463,7 +464,7 @@ SELECT page_id FROM wikitext
 let load_wiki_page ~conn ?(revision_id=None) page_id = 
   let page_id_s = string_of_int page_id in
   let head_rev_select = 
-    "(SELECT head_revision FROM pages WHERE id = "^page_id_s^")" in
+    "(SELECT head_revision FROM nw.pages WHERE id = "^page_id_s^")" in
   let revision_s = 
     match revision_id with
       None -> head_rev_select
@@ -473,7 +474,7 @@ let load_wiki_page ~conn ?(revision_id=None) page_id =
         else
           head_rev_select in
   let sql = "
-SELECT page_text FROM wikitext 
+SELECT page_text FROM nw.wikitext 
  WHERE page_id="^string_of_int page_id^" AND 
        page_revision="^revision_s^" LIMIT 1" in
   let r = guarded_exec ~conn sql in
@@ -486,8 +487,8 @@ let query_page_revisions ~conn page_descr =
       let option_of_empty s f = 
         if s = "" then None else Some (f s) in
       let sql = "
-SELECT page_revision,users.id,users.login,date_trunc('second', page_created) FROM wikitext
-  LEFT OUTER JOIN users on page_created_by_user_id = users.id
+SELECT page_revision,nw.users.id,nw.users.login,date_trunc('second', page_created) FROM nw.wikitext
+  LEFT OUTER JOIN nw.users on page_created_by_user_id = nw.users.id
   WHERE page_id = "^string_of_int page_id^"
   ORDER BY page_revision DESC" in
       let r = guarded_exec ~conn sql in
@@ -504,14 +505,14 @@ SELECT page_revision,users.id,users.login,date_trunc('second', page_created) FRO
 
 let query_past_activity ~conn ~min_id ~max_id =
   let sql =
-    "SELECT activity_log.id,activity_id,activity_timestamp,todos.descr,users.login
+    "SELECT nw.activity_log.id,activity_id,activity_timestamp,nw.todos.descr,nw.users.login
       FROM activity_log
-       LEFT OUTER JOIN todos ON activity_log.todo_id = todos.id
-       LEFT OUTER JOIN users ON activity_log.user_id = users.id
+       LEFT OUTER JOIN nw.todos ON nw.activity_log.todo_id = todos.id
+       LEFT OUTER JOIN nw.users ON nw.activity_log.user_id = users.id
       WHERE
-       activity_log.activity_timestamp < now()
-       AND (activity_log.id > "^string_of_int min_id^" 
-            AND activity_log.id <= "^string_of_int max_id^")
+       nw.activity_log.activity_timestamp < now()
+       AND (nw.activity_log.id > "^string_of_int min_id^" 
+            AND nw.activity_log.id <= "^string_of_int max_id^")
        ORDER BY activity_timestamp DESC" in
   let r = guarded_exec ~conn sql in
   r#get_all_lst >>
@@ -533,8 +534,8 @@ let query_past_activity ~conn ~min_id ~max_id =
 let search_wikipage ~conn str =
   let escaped_ss = escape str in
   let sql = 
-    "SELECT page_id,headline,page_descr FROM findwikipage('"^escaped_ss^"') "^
-      "LEFT OUTER JOIN pages on page_id = pages.id ORDER BY rank DESC" in
+    "SELECT page_id,headline,page_descr FROM nw.findwikipage('"^escaped_ss^"') "^
+      "LEFT OUTER JOIN nw.pages on page_id = nw.pages.id ORDER BY rank DESC" in
   let r = guarded_exec ~conn sql in
   r#get_all_lst >>
     List.map
@@ -548,7 +549,7 @@ let search_wikipage ~conn str =
 
 
 let user_query_string = 
-  "SELECT id,login,passwd,real_name,email FROM users"
+  "SELECT id,login,passwd,real_name,email FROM nw.users"
 
 let user_of_sql_row row =
   let id = int_of_string (List.nth row 0) in
@@ -577,7 +578,7 @@ let query_user ~conn username =
 
 let add_user ~conn ~login ~passwd ~real_name ~email =
   let sql =
-    "INSERT INTO users (login,passwd,real_name,email) "^
+    "INSERT INTO nw.users (login,passwd,real_name,email) "^
       "VALUES ("^(String.concat "," 
                     (List.map (fun s -> "'"^escape s^"'")
                        [login; passwd; real_name; email]))^")" in
@@ -585,7 +586,7 @@ let add_user ~conn ~login ~passwd ~real_name ~email =
 
 let update_user ~conn~user_id ~passwd ~real_name ~email =
   let sql =
-    "UPDATE users SET "^
+    "UPDATE nw.users SET "^
       (match passwd with
          None -> ""
        | Some passwd -> "passwd = '"^escape passwd^"',")^
@@ -629,6 +630,31 @@ let upgrade_schema_from_0 ~conn logmsg =
   logged_exec ~conn logmsg sql
 
 
+let table_exists ~conn ~schema ~table =
+  let sql = 
+    "SELECT * from pg_tables WHERE schemaname = '"^schema^"' 
+     AND tablename = '"^table^"'" in
+  let r = guarded_exec ~conn sql in
+  r#ntuples <> 0
+
+let function_exists ~conn fn =
+  let sql = 
+    "SELECT proname from pg_proc WHERE proname = '"^fn^"'" in
+  let r = guarded_exec ~conn sql in
+  r#ntuples <> 0
+
+let redefine_wikitext_search schema = 
+  "
+-- Redefine wikitext tsearch2 update trigger to not trigger
+-- on UPDATEs
+DROP TRIGGER wikitext_searchv_update ON "^schema^".wikitext;
+
+CREATE TRIGGER wikitext_searchv_update
+    BEFORE INSERT ON "^schema^".wikitext
+    FOR EACH ROW
+    EXECUTE PROCEDURE
+      tsvector_update_trigger(page_searchv, 'pg_catalog.english', page_text)"
+
 let upgrade_schema_from_1 ~conn logmsg =
   Buffer.add_string logmsg "Upgrading schema to version 2\n";
   let sql = 
@@ -648,36 +674,65 @@ let upgrade_schema_from_1 ~conn logmsg =
   logged_exec ~conn logmsg sql;
 
   (* Change various tsearch2 default behaviour: *)
-  let sql = "
+  if table_exists ~conn ~schema:"public" ~table:"pg_ts_cfg" then
+    let sql = "
 UPDATE pg_ts_cfg SET locale = current_setting('lc_collate') 
- WHERE ts_name = 'default';
-
--- Redefine wikitext tsearch2 update trigger to not trigger
--- on UPDATEs
-DROP TRIGGER wikitext_searchv_update ON wikitext;
-
-CREATE TRIGGER wikitext_searchv_update
-    BEFORE INSERT ON wikitext
-    FOR EACH ROW
-    EXECUTE PROCEDURE tsearch2('page_searchv', 'page_text')" in
-  logged_exec ~conn logmsg sql;
+ WHERE ts_name = 'default';"^redefine_wikitext_search "public" in
+    logged_exec ~conn logmsg sql
+  else 
+    ();
 
   logged_exec ~conn logmsg "UPDATE version SET schema_version = 2"
 
+let findwikipage_function_sql prfx =
+  "CREATE FUNCTION nw.findwikipage(text) RETURNS SETOF nw.findwikipage_t
+    AS $_$
+SELECT page_id, "^prfx^"headline(page_text, q), "^prfx^"rank(page_searchv, q) FROM nw.wikitext, to_tsquery($1) AS q WHERE page_searchv @@ q ORDER BY "^prfx^"rank(page_searchv, q) DESC$_$
+    LANGUAGE sql"
+
+(* Version 2 -> 3: move all tables under 'nw' schema *)
+let upgrade_schema_from_2 ~conn logmsg =
+  let tables = 
+    ["users"; "todos"; "activity_in_pages"; "activity_log"; 
+     "pages"; "version"; "wikitext"; "todos_in_pages"] in
+  logged_exec ~conn logmsg "CREATE SCHEMA nw";
+  List.iter
+    (fun tbl ->
+       let sql = "ALTER TABLE "^tbl^" SET SCHEMA nw" in
+       logged_exec ~conn logmsg sql) tables;
+
+  logged_exec ~conn logmsg (redefine_wikitext_search "nw");
+
+  logged_exec ~conn logmsg "ALTER TYPE findwikipage_t SET SCHEMA nw";
+  logged_exec ~conn logmsg "DROP FUNCTION findwikipage(text)";
+
+  let create_find_fn_sql = 
+    if function_exists ~conn "ts_rank" then
+      findwikipage_function_sql "ts_" 
+    else
+      if function_exists ~conn "rank" then
+        findwikipage_function_sql "" 
+      else
+        assert false in
+  logged_exec ~conn logmsg create_find_fn_sql;
+
+  (* TODO seqs, findwikipage *)
+  logged_exec ~conn logmsg "UPDATE nw.version SET schema_version = 3"
+
 (* Highest upgrade schema below must match this version *)
-let nurpawiki_schema_version = 2
+let nurpawiki_schema_version = 3
 
+(* TODO clean up *)
 let db_schema_version ~conn =
-  let sql = 
-    "SELECT * from pg_tables WHERE schemaname = 'public' AND "^
-      "tablename = 'version'" in
-  let r = guarded_exec ~conn sql in
-  if r#ntuples = 0 then
-    0
-  else 
-    let r = guarded_exec ~conn "SELECT (version.schema_version) FROM version" in
+  if table_exists ~conn ~schema:"nw" ~table:"version" then
+    let r = guarded_exec ~conn "SELECT (nw.version.schema_version) FROM nw.version" in
     int_of_string (r#get_tuple 0).(0)
-
+  else
+    if not (table_exists ~conn ~schema:"public" ~table:"version") then
+      0
+    else 
+      let r = guarded_exec ~conn "SELECT (version.schema_version) FROM version" in
+      int_of_string (r#get_tuple 0).(0)
 
 let upgrade_schema ~conn =
   (* First find out schema version.. *)
@@ -692,13 +747,21 @@ let upgrade_schema ~conn =
       Buffer.add_string logmsg "Schema is at version 1\n";
       upgrade_schema_from_1 ~conn logmsg
     end;
+  if db_schema_version ~conn = 2 then
+    begin
+      Buffer.add_string logmsg "Schema is at version 2\n";
+      upgrade_schema_from_2 ~conn logmsg
+    end;
+  Messages.errlog (Printf.sprintf "version %i\n" (db_schema_version ~conn));
+  Messages.errlog (Printf.sprintf "table version exists? %b" (table_exists ~conn ~schema:"public" ~table:"version"));
+
   assert (db_schema_version ~conn == nurpawiki_schema_version);
   Buffer.contents logmsg
 
 (** Check whether the nurpawiki schema is properly installed on Psql *)
 let is_schema_installed ~(conn : Psql.connection) =
   let sql = 
-    "SELECT * from pg_tables WHERE schemaname = 'public' AND "^
+    "SELECT * from pg_tables WHERE (schemaname = 'public' OR schemaname = 'nw') AND "^
       "tablename = 'todos'" in
   let r = guarded_exec ~conn sql in
   r#ntuples = 0
