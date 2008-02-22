@@ -752,9 +752,6 @@ let upgrade_schema ~conn =
       Buffer.add_string logmsg "Schema is at version 2\n";
       upgrade_schema_from_2 ~conn logmsg
     end;
-  Messages.errlog (Printf.sprintf "version %i\n" (db_schema_version ~conn));
-  Messages.errlog (Printf.sprintf "table version exists? %b" (table_exists ~conn ~schema:"public" ~table:"version"));
-
   assert (db_schema_version ~conn == nurpawiki_schema_version);
   Buffer.contents logmsg
 
