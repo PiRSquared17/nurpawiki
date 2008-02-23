@@ -1,5 +1,5 @@
 #summary Upgrading to a newer release.
-#labels Phase-Deploy,Docs-ReviewedFor-1.1
+#labels Phase-Deploy,Docs-ReviewedFor-1.2
 
 = How to upgrade to a newer release =
 *NOTE: always take a database backup before upgrading!*
