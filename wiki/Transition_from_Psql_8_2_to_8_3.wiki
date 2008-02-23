@@ -23,7 +23,9 @@ Upgrade your Postgresql installation.
 = Massage the DB dump to make it work on Postgresql 8.3 =
 The export from older Postgresql 8.2 version does not work as-is on 8.3.
 
- * Find `CREATE TABLE wikitext` and change `page_searchv public.tsvector` to `page_searchv tsvector` (i.e., remove `public.`)
+ * Find `CREATE TABLE wikitext` and change 
+  * `page_searchv public.tsvector` to 
+  * `page_searchv tsvector` (i.e., remove `public.`)
  * Find:
   * `CREATE INDEX wikitext_index ON wikitext USING gist (page_searchv public.gist_tsvector_ops);` and replace it by
   * `CREATE INDEX wikitext_index ON wikitext USING gist (page_searchv);`
