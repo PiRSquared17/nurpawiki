@@ -643,17 +643,30 @@ let function_exists ~conn fn =
   let r = guarded_exec ~conn sql in
   r#ntuples <> 0
 
-let redefine_wikitext_search schema = 
+let redefine_wikitext_search ~conn schema = 
+  let version = 
+    match function_exists ~conn "tsvector_update_trigger" with
+      true -> `Built_in_tsearch2
+    | false ->
+        if function_exists ~conn "tsearch2" then
+          `No_built_in_tsearch2
+        else (* TODO no tsearch2 installed, ISSUE ERROR! *)
+          assert false in
+  let proc = 
+    match version with
+      `No_built_in_tsearch2 ->
+        "tsearch2('page_searchv', 'page_text')"
+    | `Built_in_tsearch2 ->
+        "tsvector_update_trigger(page_searchv, 'pg_catalog.english', page_text)" in
   "
 -- Redefine wikitext tsearch2 update trigger to not trigger
 -- on UPDATEs
-DROP TRIGGER wikitext_searchv_update ON "^schema^".wikitext;
+DROP TRIGGER IF EXISTS wikitext_searchv_update ON "^schema^".wikitext;
 
 CREATE TRIGGER wikitext_searchv_update
     BEFORE INSERT ON "^schema^".wikitext
     FOR EACH ROW
-    EXECUTE PROCEDURE
-      tsvector_update_trigger(page_searchv, 'pg_catalog.english', page_text)"
+    EXECUTE PROCEDURE "^proc
 
 let upgrade_schema_from_1 ~conn logmsg =
   Buffer.add_string logmsg "Upgrading schema to version 2\n";
@@ -675,12 +688,13 @@ let upgrade_schema_from_1 ~conn logmsg =
 
   (* Change various tsearch2 default behaviour: *)
   if table_exists ~conn ~schema:"public" ~table:"pg_ts_cfg" then
-    let sql = "
-UPDATE pg_ts_cfg SET locale = current_setting('lc_collate') 
- WHERE ts_name = 'default';"^redefine_wikitext_search "public" in
+    let sql = "UPDATE pg_ts_cfg SET locale = current_setting('lc_collate') 
+ WHERE ts_name = 'default'" in
     logged_exec ~conn logmsg sql
   else 
     ();
+  let sql = redefine_wikitext_search ~conn "public" in
+  logged_exec ~conn logmsg sql;
 
   logged_exec ~conn logmsg "UPDATE version SET schema_version = 2"
 
@@ -701,7 +715,7 @@ let upgrade_schema_from_2 ~conn logmsg =
        let sql = "ALTER TABLE "^tbl^" SET SCHEMA nw" in
        logged_exec ~conn logmsg sql) tables;
 
-  logged_exec ~conn logmsg (redefine_wikitext_search "nw");
+  logged_exec ~conn logmsg (redefine_wikitext_search ~conn "nw");
 
   logged_exec ~conn logmsg "ALTER TYPE findwikipage_t SET SCHEMA nw";
   logged_exec ~conn logmsg "DROP FUNCTION findwikipage(text)";
