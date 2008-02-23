@@ -29,7 +29,7 @@ Note that only the contents of the DB schema `nw` are carried over to the new in
 Upgrade your Postgresql installation.
 
 == Massage the DB dump to make it work on Postgresql 8.3 ==
-The export from older Postgresql 8.2 version does not work as-is on 8.3.
+The export from older Postgresql 8.2 version does not work as-is on 8.3.  You need to manually edit it to make it run on 8.3.  Luckily this is pretty easy, so here's how to do it:
 
  * Find `CREATE TABLE wikitext` and change 
   * `page_searchv public.tsvector` to 
