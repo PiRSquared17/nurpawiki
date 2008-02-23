@@ -122,12 +122,6 @@ ALTER TABLE ONLY todos
 
 CREATE INDEX wikitext_index ON wikitext USING gist (page_searchv);
 
-CREATE TRIGGER wikitext_searchv_update
-    BEFORE INSERT OR UPDATE ON wikitext
-    FOR EACH ROW
-    EXECUTE PROCEDURE
-      tsvector_update_trigger(page_searchv, 'pg_catalog.english', page_text);
-
 ALTER TABLE ONLY todos_in_pages
     ADD CONSTRAINT "$1" FOREIGN KEY (todo_id) REFERENCES todos(id);
 
@@ -146,65 +140,3 @@ ALTER TABLE ONLY activity_in_pages
 ALTER TABLE ONLY wikitext
     ADD CONSTRAINT wikitext_page_id_fkey FOREIGN KEY (page_id) REFERENCES pages(id);
 
-
---
--- Schema concrete
--- 
--- Proceed with adding some initial data into the DB
---
-
--- Insert main page and WikiMarkup pages into the DB
-INSERT INTO pages (page_descr) VALUES ('WikiStart');
-INSERT INTO wikitext (page_id,page_text)
-       VALUES ((SELECT CURRVAL('pages_id_seq')), '
-= Nurpawiki =
-
-See WikiMarkup for help on getting started.
-');
-
-
-INSERT INTO pages (page_descr) VALUES ('WikiMarkup');
-INSERT INTO wikitext (page_id,page_text)
-       VALUES ((SELECT CURRVAL('pages_id_seq')), '
-= Wiki Markup Page =
-
-== Section heading ==
-
-=== Sub-section heading ===
-
-== Formatting ==
-=== Italic ===
-_Italic text_.  Single _italic_ word.  _Two_ _italic_ words.
-
-=== Bold ===
-*Bold faced text*. *Bold* word. *Bold* _with_ italic in same sentence.
-
-
-=== Preformatted ===
-
-Use `<pre></pre>` or `8<`:
-8<
-Preformatted text
-WikiLink
-[http://localhost/foo]
-8<
-
-== Bullet list ==
-
-Paragraph of text.
-
-Second paragraph of text.
-
-* Bullet list top-level
-* Another bullet on top-level
-** Sub bullet
-* Top-level again
-
-== Links ==
-
-A [wiki:WikiStart link] to the WikiStart main page.
-
-Another [http://www.google.com link], this time to [http://www.google.com].
-
-This !WikiText that does not become a link.  Write these as `!WikiText` to make Nurpawiki not regard it as a !WikiLink.  I.e., prefix it with a bang (!).
-');
