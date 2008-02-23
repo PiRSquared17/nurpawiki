@@ -7,7 +7,7 @@ Postgresql 8.3 has tsearch2 as a built-in feature which causes some gray hair wh
 This wiki page describes how to migrate from an older Postgresql over to 8.3 or later.
 
 == BACKUP! ==
- * Take backups of your DB before attempting to do anything.
+Take backups of your DB before attempting to do anything.
 
 == Upgrade Nurpawiki to latest version (1.2 at minimum) ==
 See [Upgrading upgrade instructions]
