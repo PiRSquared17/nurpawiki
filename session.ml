@@ -37,8 +37,9 @@ let login_table = Eliomsessions.create_volatile_table ()
    into 24h from now so that the user can even close his browser
    window, re-open it and still retain his logged in status. *)
 let set_password_in_session sp login_info =
-  ignore (set_global_volatile_session_timeout ~sp (Some seconds_in_day));
-  ignore (set_global_service_session_timeout ~sp (Some seconds_in_day));
+  ignore (set_service_session_timeout ~sp None);
+  ignore (set_global_volatile_session_timeout ~sp None);
+  ignore (set_global_service_session_timeout ~sp None);
 
   set_volatile_data_session_cookie_exp_date ~sp 
     (Some (seconds_in_day +. (Unix.time ())));
