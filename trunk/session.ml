@@ -27,20 +27,19 @@ open Types
 open Config
 
 module Db = Database
+module Dbu = Database_upgrade
 
 let seconds_in_day = 60.0 *. 60.0 *. 24.0
 
 let login_table = Eliomsessions.create_volatile_table ()
 
-(* Init sessions to timeout after 24 hours of inactivity. *)
-let _ =
-  ignore (set_global_volatile_session_timeout (Some seconds_in_day));
-  set_global_service_session_timeout (Some seconds_in_day)
-
 (* Set password & login into session.  We set the cookie expiration
    into 24h from now so that the user can even close his browser
    window, re-open it and still retain his logged in status. *)
 let set_password_in_session sp login_info =
+  ignore (set_global_volatile_session_timeout ~sp (Some seconds_in_day));
+  ignore (set_global_service_session_timeout ~sp (Some seconds_in_day));
+
   set_volatile_data_session_cookie_exp_date ~sp 
     (Some (seconds_in_day +. (Unix.time ())));
   set_volatile_session_data ~table:login_table ~sp login_info
@@ -127,9 +126,9 @@ let with_db_installed sp f =
   let r = 
     Db.with_conn
       (fun conn ->
-         if Db.is_schema_installed ~conn then
+         if Dbu.is_schema_installed ~conn then
            Some (Html_util.html_stub sp (db_installation_error sp))
-         else if Db.db_schema_version ~conn < Db.nurpawiki_schema_version then
+         else if Dbu.db_schema_version ~conn < Db.nurpawiki_schema_version then
            Some (Html_util.html_stub sp (db_upgrade_warning sp))
          else None) in
   match r with
@@ -190,7 +189,7 @@ let with_guest_login sp f =
    harmful. *)
 let action_with_user_login sp f =
   let db_version = 
-    Db.with_conn (fun conn -> Db.db_schema_version conn) in
+    Db.with_conn (fun conn -> Dbu.db_schema_version conn) in
   if db_version = Db.nurpawiki_schema_version then
     get_login_user sp >>= fun maybe_user ->
       (match maybe_user with
@@ -252,7 +251,7 @@ let () =
 let _ =
   register upgrade_page
     (fun sp () () ->
-       let msg = Db.with_conn (fun conn -> Db.upgrade_schema ~conn) in
+       let msg = Db.with_conn (fun conn -> Dbu.upgrade_schema ~conn) in
        Html_util.html_stub sp
          [h1 [pcdata "Upgrade DB schema"];
           (pre [pcdata msg]);
