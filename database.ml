@@ -160,7 +160,7 @@ let insert_todo_activity ~user_id todo_id ?(page_ids=None) activity =
         List.map
           (fun page_id -> 
              "INSERT INTO nw.activity_in_pages(activity_log_id,page_id) "^
-               "VALUES (CURRVAL('activity_log_id_seq'), "^string_of_int page_id^")")
+               "VALUES (CURRVAL('nw.activity_log_id_seq'), "^string_of_int page_id^")")
           pages in
       let page_act_insert = String.concat "; " insert_pages in
       "INSERT INTO nw.activity_log(activity_id,user_id,todo_id) VALUES ("^
