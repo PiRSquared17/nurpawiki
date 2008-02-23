@@ -1,5 +1,11 @@
 #summary How to move an existing Nurpawiki installation from Postgresql 8.2 base to 8.3
 
+= Migrating Nurpawiki installation from Postgresql 8.2 to 8.3 or later =
+
+Postgresql 8.3 has tsearch2 as a built-in feature which causes some gray hair when moving a Nurpawiki database over from 8.2 to a 8.3 installation.
+
+This wiki page describes how to migrate from an older Postgresql over to 8.3 or later.
+
 == BACKUP! ==
  * Take backups of your DB before attempting to do anything.
 
