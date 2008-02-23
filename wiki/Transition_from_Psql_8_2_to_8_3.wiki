@@ -3,7 +3,7 @@
 == BACKUP! ==
  * Take backups of your DB before attempting to do anything.
 
-= Upgrade Nurpawiki to latest version (1.2 at minimum) =
+== Upgrade Nurpawiki to latest version (1.2 at minimum) ==
 See [Upgrading upgrade instructions]
 
 Upgrading Nurpawiki to its latest version will modify the existing Nurpawiki database schema so that the data is easier carried over to a newer Postgresql version.
