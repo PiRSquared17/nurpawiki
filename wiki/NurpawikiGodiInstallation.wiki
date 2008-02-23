@@ -1,5 +1,5 @@
 #summary Installing Nurpawiki from GODI.
-#labels Phase-Deploy,Docs-ReviewedFor-1.1
+#labels Phase-Deploy,Docs-ReviewedFor-1.2
 
 = Nurpawiki installation through GODI package manager =
 
@@ -26,6 +26,7 @@ After installation you should have the following two files in `godi/share/nurpaw
  * `schema.psql` is a Postgresql script that you need to load into your `nurpawiki` database.  See database installation instructions on how to do that.
 
 === example.conf ===
+ * Take a copy of `example.conf` (say `nurpawiki.conf`) and modify your local copy and not the original.
  * Edit the `database` element's `password` attribute value to match your postgres user's database password.  Search for `insert_password_here`.
 
 === schema.psql ===
@@ -40,7 +41,7 @@ Load godi/share/nurpawiki/schema.psql into your database:
 
 Provided everything installed the right way and you configured everything the right way, you can now start Nurpawiki:
 
- * `ocsigen -v -c godi/share/nurpawiki/example.conf`
+ * `ocsigen -v -c path/to/your/local/nurpawiki.conf`
 
 === Trouble shooting ===
  * No database found?  Need to install database.  See DatabaseInstallationDebian.
