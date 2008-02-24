@@ -41,6 +41,7 @@ Load godi/share/nurpawiki/schema.psql into your database:
 
 Provided everything installed the right way and you configured everything the right way, you can now start Nurpawiki:
 
+ * `mkdir -p var/run var/lib var/log`
  * `ocsigen -v -c path/to/your/local/nurpawiki.conf`
 
 === Trouble shooting ===
