@@ -4,7 +4,7 @@
 = Release notes =
 
 == Nurpawiki 1.2.0 (r407) ==
-*Warning* Take a database backup before upgrading -- this release alters your DB schema. Once upgraded, you can't go back to the previous version.
+*Warning* Take a database backup before upgrading -- this release alters your DB schema. Once upgraded, you can't go back to the previous version.  Be sure to create "var/lib" directory in the server working directory when starting the server (see NurpawikiGodiInstallation), otherwise login might start failing.
 
  * Support for installing on Postgresql 8.3 (issue 51).  Postgresql 8.3 has tsearch2 built-in and that didn't play well with our schema installation script.
  * Set session timeouts to infinity so that users don't get logged out after a while of inactivity (issue 47).
