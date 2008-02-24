@@ -3,7 +3,7 @@
 
 = Release notes =
 
-== Nurpawiki 1.2.0 (head) ==
+== Nurpawiki 1.2.0 (r395) ==
 Modifies DB schema so a minor version upgrade is required.
 
  * Support for installing on Postgresql 8.3 (issue 51).
