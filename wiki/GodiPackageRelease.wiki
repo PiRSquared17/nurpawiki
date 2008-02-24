@@ -2,6 +2,9 @@
 
 = Updating the GODI package =
 
+== How to upgrade the GODI package ==
+ * Change VERSION to the latest version in apps-nurpawiki/Makefile
+
 == Testing the release candidate locally ==
 
 Take the release candidate and distinfo from the previous steps of the ReleaseProcess.
@@ -11,6 +14,7 @@ Copy the packages over to your *test* GODI installation (have a separate install
 {{{
 cp nurpawiki-$VERSION.tar.gz $GODIBASE/build/distfiles
 cp distinfo $GODIBASE/build/apps/apps-nurpawiki
+cp Makefile $GODIBASE/build/apps/apps-nurpawiki
 }}}
 
 Test it:
