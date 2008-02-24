@@ -31,21 +31,17 @@ module Dbu = Database_upgrade
 
 let seconds_in_day = 60.0 *. 60.0 *. 24.0
 
-let login_table = Eliomsessions.create_volatile_table ()
+let login_table = Eliomsessions.create_persistent_table "login_table"
 
 (* Set password & login into session.  We set the cookie expiration
    into 24h from now so that the user can even close his browser
    window, re-open it and still retain his logged in status. *)
 let set_password_in_session sp login_info =
   set_service_session_timeout ~sp None;
-  set_volatile_session_timeout ~sp None;
-  set_service_session_timeout ~sp None;
-  set_volatile_data_session_timeout sp None;
 
-  set_volatile_data_session_cookie_exp_date ~sp 
-    (Some 3153600000.0);
-  set_volatile_session_data ~table:login_table ~sp login_info
-
+  set_persistent_data_session_timeout ~sp None >>= fun () ->
+    set_persistent_data_session_cookie_exp_date ~sp (Some 3153600000.0) >>= fun () ->
+      set_persistent_session_data ~table:login_table ~sp login_info
 
 let upgrade_page = new_service ["upgrade"] unit ()
 
@@ -62,7 +58,7 @@ let link_to_nurpawiki_main sp =
 
 (* Get logged in user as an option *)
 let get_login_user sp =
-  Lwt.return (Eliomsessions.get_volatile_session_data login_table sp ()) >>=
+  Eliomsessions.get_persistent_session_data login_table sp () >>=
     fun session_data ->
       match session_data with
         Eliomsessions.Data user -> Lwt.return (Some user)
@@ -216,8 +212,7 @@ let action_with_user_login sp f =
 let update_session_password sp login new_password =
   ignore
     (Eliomsessions.close_session  ~sp () >>= fun () -> 
-       set_password_in_session sp (login,new_password);
-       return [])
+       set_password_in_session sp (login,new_password))
   
 
 (* Check session to see what happened during page servicing.  If any
@@ -243,8 +238,8 @@ let any_task_priority_changes sp =
 
 let connect_action_handler sp () login_nfo =
   Eliomsessions.close_session  ~sp () >>= fun () -> 
-    set_password_in_session sp login_nfo;
-    return []
+    set_password_in_session sp login_nfo >>= fun () ->
+      return []
 
 let () =
   Eliompredefmod.Actions.register ~service:connect_action connect_action_handler
