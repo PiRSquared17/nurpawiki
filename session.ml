@@ -40,6 +40,7 @@ let set_password_in_session sp login_info =
   ignore (set_service_session_timeout ~sp None);
   ignore (set_volatile_session_timeout ~sp None);
   ignore (set_service_session_timeout ~sp None);
+  ignore (set_volatile_data_session_timeout sp None);
 
   set_volatile_data_session_cookie_exp_date ~sp 
     (Some 3153600000.0);
