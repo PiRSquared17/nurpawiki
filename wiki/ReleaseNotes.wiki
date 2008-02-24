@@ -4,12 +4,11 @@
 = Release notes =
 
 == Nurpawiki 1.2.0 (r395) ==
-Modifies DB schema so a minor version upgrade is required.
+Minor version upgrade due to modified database schema.
 
- * Support for installing on Postgresql 8.3 (issue 51).
+ * Support for installing on Postgresql 8.3 (issue 51).  Postgresql 8.3 has tsearch2 built-in and that didn't play well with our schema installation script.
  * Set session timeouts to infinity so that users don't get logged out after a while of inactivity (issue 47).
- * Schema improvements and documentation changes to allow easy installation on both Postgresql 8.2 (tsearch2 separately installed) and Postgresql 8.3 (built-in tsearch2).
- * Furthermore, extend the schema to make migrating Nurpawiki installation from Postgresql 8.2 to Postgresql 8.3 easy (see [Transition_from_Psql_8_2_to_8_3])
+ * Extend the schema to make migrating Nurpawiki installation from Postgresql 8.2 to Postgresql 8.3 easy (see [Transition_from_Psql_8_2_to_8_3])
 
 == Nurpawiki 1.1.2 (r358) ==
  * Split /history view into multiple pages to make viewing recent changes snappier.
