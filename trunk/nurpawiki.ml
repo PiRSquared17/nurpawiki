@@ -591,11 +591,13 @@ let check_new_and_removed_todos ~conn ~cur_user page_id lines =
                      end
                  | None -> ()))
        | None -> ())  page_todos;
-
-  (* Update DB "todos in pages" relation *)
-  Db.update_page_todos ~conn page_id 
-    (List.map (fun e -> (int_of_string (fst e))) page_todos)
-
+  
+  List.filter_map
+    (fun e -> 
+       let id = int_of_string (fst e) in
+       if Db.todo_exists ~conn id then Some id else None) page_todos >>
+    (* Update DB "todos in pages" relation *)
+    Db.update_page_todos ~conn page_id
 
 let global_substitute ?groups pat subst s =
   Pcre.substitute_substrings ~rex:pat ~subst:(fun r -> subst r) s

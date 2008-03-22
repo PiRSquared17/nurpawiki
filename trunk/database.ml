@@ -194,6 +194,10 @@ let query_todo ~conn id =
   | [] -> None
   | _ -> None
 
+let todo_exists ~conn id = 
+  match query_todo ~conn id with Some _ -> true | None -> false
+
+
 let update_todo_activation_date ~conn todo_id new_date =
   let sql = 
     "UPDATE nw.todos SET activation_date = '"^new_date^"' WHERE id = "^
