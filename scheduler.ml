@@ -16,10 +16,10 @@
 
 open XHTML.M
 
-open Eliomsessions
-open Eliomparameters
-open Eliomservices
-open Eliompredefmod.Xhtml
+open Eliom_sessions
+open Eliom_parameters
+open Eliom_services
+open Eliom_predefmod.Xhtml
 
 open Lwt
 open ExtList
@@ -164,7 +164,7 @@ let _ =
 let scheduler_page_discard_todo_id = 
   register_new_service
     ~path:["scheduler"] 
-    ~get_params:((Eliomparameters.user_type 
+    ~get_params:((Eliom_parameters.user_type 
                    et_cont_of_string string_of_et_cont "src_service"))
     (fun sp (src_page_cont) () -> 
        Session.with_user_login sp

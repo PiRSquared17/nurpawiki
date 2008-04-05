@@ -15,10 +15,10 @@
  *)
 
 open XHTML.M
-open Eliomsessions
-open Eliomparameters
-open Eliomservices
-open Eliompredefmod.Xhtml
+open Eliom_sessions
+open Eliom_parameters
+open Eliom_services
+open Eliom_predefmod.Xhtml
 
 open Services
 open Types

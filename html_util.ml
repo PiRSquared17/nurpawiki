@@ -16,10 +16,10 @@
 
 open XHTML.M
 
-open Eliomsessions
-open Eliomparameters
-open Eliomservices
-open Eliompredefmod.Xhtml
+open Eliom_sessions
+open Eliom_parameters
+open Eliom_services
+open Eliom_predefmod.Xhtml
 
 open Lwt
 
@@ -31,7 +31,7 @@ let make_static_uri sp name =
   make_uri (static_dir sp) sp name
 
 let disconnect_box sp s = 
-  Eliompredefmod.Xhtml.a ~service:disconnect_page ~sp [pcdata s] ()
+  Eliom_predefmod.Xhtml.a ~service:disconnect_page ~sp [pcdata s] ()
 
 (* Use this as the basis for all pages.  Includes CSS etc. *)
 let html_stub sp ?(javascript=[]) body_html =
@@ -69,7 +69,7 @@ let navbar_html sp ~cur_user ?(top_info_bar=[]) ?(wiki_revisions_link=[]) ?(wiki
 
   let search_input =
     [get_form search_page sp
-       (fun (chain : ([`One of string] Eliomparameters.param_name)) -> 
+       (fun (chain : ([`One of string] Eliom_parameters.param_name)) -> 
           [p [string_input ~input_type:`Submit ~value:"Search" ();
               string_input ~input_type:`Text ~name:chain ()]])] in
 

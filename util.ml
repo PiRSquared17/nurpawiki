@@ -44,7 +44,7 @@ let date_of_date_time_string s =
       let day = int_of_string r.(3) in
       Date.make year month day
   | _ -> 
-      Messages.errlog ("invalid date '"^s^"'");
+      Ocsigen_messages.errlog ("invalid date '"^s^"'");
       assert false
 
 
