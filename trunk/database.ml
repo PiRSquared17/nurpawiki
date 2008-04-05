@@ -19,7 +19,7 @@ module Psql = Postgresql
 module P = Printf
 open XHTML.M
 
-open Eliomsessions
+open Eliom_sessions
 
 open Config
 
@@ -63,16 +63,16 @@ module ConnectionPool =
                   Ok ->
                     f c
                 | Bad ->
-                    Messages.errlog "Database connection bad.  Trying reset";
+                    Ocsigen_messages.errlog "Database connection bad.  Trying reset";
                     c#reset;
                     match c#status with
                       Ok ->
                         f c
                     | Bad ->
-                        Messages.errlog "Database connection still bad.  Bail out";
+                        Ocsigen_messages.errlog "Database connection still bad.  Bail out";
                         raise (Error (Psql.Connection_failure "bad connection")))
            | None ->
-               Messages.errlog "new connection!";
+               Ocsigen_messages.errlog "new connection!";
                let c = 
                  new Psql.connection ~host:"localhost"
                    ~dbname:dbcfg.db_name ~user:dbcfg.db_user 

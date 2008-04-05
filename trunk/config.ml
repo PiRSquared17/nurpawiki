@@ -16,7 +16,7 @@
 
 module P = Printf
 
-open Eliomsessions
+open Eliom_sessions
 open Simplexmlparser
 
 type db_config = 
@@ -40,7 +40,7 @@ let get_attr_opt attr attrs =
 let get_attr_with_err e attr attrs =
   try (List.assoc attr attrs)
   with Not_found -> 
-    raise (Extensions.Error_in_config_file 
+    raise (Ocsigen_extensions.Error_in_config_file 
              ("Expecting "^e^"."^attr^" attribute in Nurpawiki config"))
 
 let dbcfg =
@@ -54,7 +54,7 @@ let dbcfg =
     | x::xs -> 
         find_dbcfg xs
     | [] -> 
-        raise (Extensions.Error_in_config_file ("Couldn't find database element from config")) in
+        raise (Ocsigen_extensions.Error_in_config_file ("Couldn't find database element from config")) in
   let (dbname,dbuser,dbport,dbpass) = find_dbcfg (get_config ()) in
   { 
     db_name = dbname;
@@ -79,7 +79,7 @@ let site =
           cfg_homepage = homepage;
         }
     | (Element (x,_,_))::xs -> 
-        Messages.errlog x;
+        Ocsigen_messages.errlog x;
         find_site_cfg xs 
     | _ ->
         {
@@ -87,5 +87,5 @@ let site =
           cfg_homepage = "WikiStart";
         } in
   let cfg = find_site_cfg (get_config ()) in
-  Messages.warning (P.sprintf "read-only guests allowed %b" cfg.cfg_allow_ro_guests);
+  Ocsigen_messages.warning (P.sprintf "read-only guests allowed %b" cfg.cfg_allow_ro_guests);
   cfg

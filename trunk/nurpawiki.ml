@@ -16,10 +16,10 @@
 
 open XHTML.M
 
-open Eliomsessions
-open Eliomparameters
-open Eliomservices
-open Eliompredefmod.Xhtml
+open Eliom_sessions
+open Eliom_parameters
+open Eliom_services
+open Eliom_predefmod.Xhtml
 
 open Lwt
 open ExtList
@@ -82,11 +82,11 @@ let task_side_effect_mod_priority sp (task_id, dir) () =
              
 
 let () =
-  Eliompredefmod.Actions.register 
+  Eliom_predefmod.Actions.register 
     ~service:task_side_effect_complete_action task_side_effect_complete;
-  Eliompredefmod.Actions.register 
+  Eliom_predefmod.Actions.register 
     ~service:task_side_effect_undo_complete_action task_side_effect_undo_complete;
-  Eliompredefmod.Actions.register 
+  Eliom_predefmod.Actions.register 
     ~service:task_side_effect_mod_priority_action task_side_effect_mod_priority
 
 let make_static_uri = Html_util.make_static_uri
@@ -200,7 +200,7 @@ module WikiML =
           ("Lower priority!", "arrow_down.png", false) in
       let arrow_img =
         img ~alt:"Logo" ~src:(make_static_uri sp [arrow_img]) () in
-      Eliompredefmod.Xhtml.a
+      Eliom_predefmod.Xhtml.a
         ~a:[a_title title] ~service:task_side_effect_mod_priority_action
         ~sp [arrow_img] (id,dir)
 

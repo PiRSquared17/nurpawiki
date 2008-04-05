@@ -15,10 +15,10 @@
  *)
 
 open XHTML.M
-open Eliomsessions
-open Eliomparameters
-open Eliomservices
-open Eliompredefmod.Xhtml
+open Eliom_sessions
+open Eliom_parameters
+open Eliom_services
+open Eliom_predefmod.Xhtml
 
 open Config
 open Types
@@ -31,15 +31,15 @@ let wiki_view_page =
                         ** (opt (int "r"))
                         ** (opt (bool "force_login"))) ()
 
-let wiki_start = Eliompredefmod.Redirections.register_new_service [] unit
-    (fun sp _ _ -> return (make_string_uri wiki_view_page sp (Config.site.cfg_homepage, (None, (None, None)))))
+let wiki_start = Eliom_predefmod.Redirections.register_new_service [] unit
+    (fun sp _ _ -> make_full_string_uri wiki_view_page sp (Config.site.cfg_homepage, (None, (None, None))))
 
 let wiki_edit_page = new_service ["edit"] (string "p") ()
 
 let scheduler_page = new_service ["scheduler"] unit ()
 
 let edit_todo_get_page = new_service ["edit_todo"] 
-  ((Eliomparameters.user_type 
+  ((Eliom_parameters.user_type 
       et_cont_of_string string_of_et_cont "src_service") **
      (opt (int "tid"))) ()
 
@@ -66,12 +66,12 @@ let about_page = new_service ["about"] unit ()
 let page_revisions_page = new_service ["page_revisions"] (string "p") ()
 
 let task_side_effect_complete_action =
-  Eliomservices.new_coservice' ~get_params:(Eliomparameters.int "task_id") ()
+  Eliom_services.new_coservice' ~get_params:(Eliom_parameters.int "task_id") ()
 
 let task_side_effect_undo_complete_action =
-  Eliomservices.new_coservice' ~get_params:(Eliomparameters.int "task_id") ()
+  Eliom_services.new_coservice' ~get_params:(Eliom_parameters.int "task_id") ()
 
 let task_side_effect_mod_priority_action = 
-  Eliomservices.new_coservice' ~get_params:((Eliomparameters.int "task_id") **
-                                              Eliomparameters.bool "dir") ()
+  Eliom_services.new_coservice' ~get_params:((Eliom_parameters.int "task_id") **
+                                              Eliom_parameters.bool "dir") ()
 

@@ -16,10 +16,10 @@
 
 open Lwt
 open XHTML.M
-open Eliomservices
-open Eliomparameters
-open Eliomsessions
-open Eliompredefmod.Xhtml
+open Eliom_services
+open Eliom_parameters
+open Eliom_sessions
+open Eliom_predefmod.Xhtml
 
 open Services
 open Types
@@ -31,7 +31,7 @@ module Dbu = Database_upgrade
 
 let seconds_in_day = 60.0 *. 60.0 *. 24.0
 
-let login_table = Eliomsessions.create_persistent_table "login_table"
+let login_table = Eliom_sessions.create_persistent_table "login_table"
 
 (* Set password & login into session.  We set the cookie expiration
    into 24h from now so that the user can even close his browser
@@ -46,7 +46,7 @@ let set_password_in_session sp login_info =
 let upgrade_page = new_service ["upgrade"] unit ()
 
 let connect_action = 
-  Eliomservices.new_post_coservice'
+  Eliom_services.new_post_coservice'
     ~post_params:((string "login") ** (string "passwd"))
     ()
     
@@ -58,12 +58,12 @@ let link_to_nurpawiki_main sp =
 
 (* Get logged in user as an option *)
 let get_login_user sp =
-  Eliomsessions.get_persistent_session_data login_table sp () >>=
+  Eliom_sessions.get_persistent_session_data login_table sp () >>=
     fun session_data ->
       match session_data with
-        Eliomsessions.Data user -> Lwt.return (Some user)
-      | Eliomsessions.No_data 
-      | Eliomsessions.Data_session_expired -> Lwt.return None
+        Eliom_sessions.Data user -> Lwt.return (Some user)
+      | Eliom_sessions.No_data 
+      | Eliom_sessions.Data_session_expired -> Lwt.return None
 
 let db_upgrade_warning sp = 
   [h1 [pcdata "Database Upgrade Warning!"];
@@ -101,7 +101,7 @@ let login_html sp ~err =
   Html_util.html_stub sp 
     [div ~a:[a_id "login_outer"]
        [div ~a:[a_id "login_align_middle"]
-          [Eliompredefmod.Xhtml.post_form connect_action sp
+          [Eliom_predefmod.Xhtml.post_form connect_action sp
              (fun (loginname,passwd) ->
                 [table ~a:[a_class ["login_box"]]
                    (tr (td ~a:[a_class ["login_text"]] 
@@ -211,7 +211,7 @@ let action_with_user_login sp f =
 
 let update_session_password sp login new_password =
   ignore
-    (Eliomsessions.close_session  ~sp () >>= fun () -> 
+    (Eliom_sessions.close_session  ~sp () >>= fun () -> 
        set_password_in_session sp (login,new_password))
   
 
@@ -224,7 +224,7 @@ let any_complete_undos sp =
        match e with 
          Action_completed_task tid -> Some tid
        | _ -> acc)
-    None (Eliomsessions.get_exn sp)
+    None (Eliom_sessions.get_exn sp)
 
 (* Same as any_complete_undos except we check for changed task
    priorities. *)
@@ -234,15 +234,15 @@ let any_task_priority_changes sp =
        match e with 
          Action_task_priority_changed tid -> tid::acc
        | _ -> acc)
-    [] (Eliomsessions.get_exn sp)
+    [] (Eliom_sessions.get_exn sp)
 
 let connect_action_handler sp () login_nfo =
-  Eliomsessions.close_session  ~sp () >>= fun () -> 
+  Eliom_sessions.close_session  ~sp () >>= fun () -> 
     set_password_in_session sp login_nfo >>= fun () ->
       return []
 
 let () =
-  Eliompredefmod.Actions.register ~service:connect_action connect_action_handler
+  Eliom_predefmod.Actions.register ~service:connect_action connect_action_handler
 
 (* /upgrade upgrades the database schema (if needed) *)
 let _ =
@@ -258,7 +258,7 @@ let _ =
 let _ =
   register disconnect_page
     (fun sp () () ->
-       (Eliomsessions.close_session  ~sp () >>= fun () ->
+       (Eliom_sessions.close_session  ~sp () >>= fun () ->
           Html_util.html_stub sp 
             [h1 [pcdata "Logged out!"];
              p [br ();
