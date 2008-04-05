@@ -3,6 +3,10 @@
 
 = Release notes =
 
+== Nurpawiki 1.2.1 (xxx) ==
+ * Modify to work on Ocsigen 1.0.0.  Thanks to Stephane Glondu for his changes!
+ * Fixed issue 54 - if an unknown todo ID was specified in a wiki page, the server crashed and become unresponsive.
+
 == Nurpawiki 1.2.0 (r407) ==
 *Warning* Take a database backup before upgrading -- this release alters your DB schema. Once upgraded, you can't go back to the previous version.  
 *Caveats* Be sure to create "var/lib" directory in the server working directory when starting the server (see NurpawikiGodiInstallation), otherwise login might start failing.
