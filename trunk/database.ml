@@ -52,7 +52,7 @@ module ConnectionPool =
        programming error somewhere.  This case should go away if there
        are more than one DB connections available for with_conn.
        Currently there's only one connection though. *)
-    let with_conn (f : (Psql.connection -> 'a)) =
+    let with_conn_priv (f : (Psql.connection -> 'a)) =
       (* TODO the error handling here is not still very robust. *)
       with_mutex connection_mutex
         (fun () ->
@@ -83,6 +83,18 @@ module ConnectionPool =
                (* Search tables from nurpawiki schema first: *)
                f c)
         
+    let with_conn f = 
+      Ocsigen_messages.errlog "with_conn";
+      try 
+        with_conn_priv f
+      with 
+        (Psql.Error e) as ex ->
+          Ocsigen_messages.errlog (P.sprintf "psql failed : %s\n" (Psql.string_of_error e));
+          raise ex
+      | x ->
+          raise x
+        
+
   end
 
 let with_conn = ConnectionPool.with_conn
