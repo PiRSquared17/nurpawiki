@@ -48,6 +48,7 @@ Provided everything installed the right way and you configured everything the ri
  * No database found?  Need to install database.  See DatabaseInstallationDebian.
  * Cannot authenticate?  See above.
  * Can't find `var/log` or `var/run` directories?  You need to have them in whichever directory you choose to start nurpawiki/ocsigen from.  Creating:
+  * `mkdir -p var/lib`
   * `mkdir -p var/run`
   * `mkdir -p var/log`
   * Or you can edit your `nurpawiki.conf` to point these to an existing directory.
