@@ -29,6 +29,7 @@ open Services
 open Types
 
 open Util
+open CalendarLib
 
 module Db = Database
 

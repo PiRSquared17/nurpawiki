@@ -23,7 +23,7 @@
     <extension findlib-package="ocsigen_ext.ocsipersist-sqlite"/>
     <extension findlib-package="ocsigen_ext.eliom"/>
 
-    <host>  
+    <host defaulthostname="localhost">
       <site dir="" charset="UTF-8">
         <eliom module="%_NURPAWIKI_CMA_%">
 

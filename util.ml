@@ -14,6 +14,8 @@
  * If not, see <http://www.gnu.org/licenses/>. 
  *)
 
+open CalendarLib
+
 let match_pcre_option ?(charpos=0) rex s =
   (* Pcre's ~pos seems to work quite differently from Str's begin
      character.  The below sub string hack is to make Pcre extract

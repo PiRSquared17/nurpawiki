@@ -30,6 +30,8 @@ open Services
 open Types
 open Util
 
+open CalendarLib
+
 module Db = Database
 
 let n_log_items_per_page = 300
