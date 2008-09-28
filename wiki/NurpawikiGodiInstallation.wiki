@@ -11,7 +11,6 @@ First install the following Debian packages:
  * `apt-get install libpcre3-dev`
  * `apt-get install libgdbm-dev`
  * `apt-get install libsqlite3-dev`
- * `apt-get install libpq-dev`
 
 Then download [http://godi.ocaml-programming.de/ GODI bootstrap package] and follow GODI's installation instructions.
 
