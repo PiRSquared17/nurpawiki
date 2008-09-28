@@ -5,10 +5,8 @@
 These installation instructions apply to both Debian and Ubuntu.  Package versions may change depending on your distribution.
 
 == Install Postgresql and postgresql OCaml bindings ==
-  * `apt-get install postgresql-8.3` (I've only tested with 8.x versions, so if the default is 7.4, something might not wrong)
-   * Note that it's easier to make things work with 8.3 than 8.2 or older as 8.3 has tsearch2 built into it.
-  * `apt-get install postgresql-contrib` (for tsearch2, package name might also be postgresql-contrib-8.2) 
-  * `apt-get install libpq-dev` (for OCaml bindings, remember to install bindings package `godi-postgresql` from GODI)
+  * `apt-get install postgresql postgresql-client postgresql-contrib libpq-dev`
+   * Make sure your distro has Postgresql 8.3 or newer, otherwise things might not go so smoothly with installation.
 
 == Create DB & configure ==
 
