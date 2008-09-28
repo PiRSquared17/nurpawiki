@@ -84,7 +84,7 @@ cat ocsigen.conf.in | \
     sed -e "s|%_OCSIGEN_ROOT_%|$OCSIGEN_ROOT|g" | \
     sed -e "s|%_STR_CMA_%|${str_path}/str.cma|g" | \
     sed -e "s|%_NUMS_CMA_%|${nums_path}/nums.cma|g" | \
-    sed -e "s|%_CALENDAR_CMA_%|${calendar_path}/calendar.cma|g" | \
+    sed -e "s|%_CALENDAR_CMA_%|${calendar_path}/calendarLib.cmo|g" | \
     sed -e "s|%_PCRE_CMA_%|${pcre_path}/pcre.cma|g" | \
     sed -e "s|%_EXTLIB_CMA_%|${extlib_path}/extLib.cma|g" | \
     sed -e "s|%_POSTGRESQL_CMA_%|${postgresql_path}/postgresql.cma|g" | \
