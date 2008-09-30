@@ -18,6 +18,15 @@ Download the latest release from the [http://code.google.com/p/nurpawiki/downloa
 You can also go for the latest and greatest by getting the source from SVN
 (see [http://code.google.com/p/nurpawiki/source]).
 
+== Finish database installation ==
+In order for Nurpawiki to properly use Postgresql for storing the wiki, you need to create a database for Nurpawiki and initialize its schema.  See DatabaseInstallationDebian for instructions on creating the DB.
+
+=== Install Nurpawiki schema to the database ===
+Load nurpawiki/schema.psql into your database:
+
+As user `postgres`, run:
+ * `psql nurpawiki < nurpawiki/schema.psql`
+
 == Configuration ==
 Run `gen_ocsigen_config` like so:
 
