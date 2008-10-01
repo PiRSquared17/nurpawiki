@@ -214,3 +214,8 @@ table.login_box {
 	padding: 5px;
 	margin-left: 400px;
 }
+
+a#login_help_url {
+    color : Black;
+    font-weight:bold;
+}

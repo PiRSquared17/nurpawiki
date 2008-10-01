@@ -51,6 +51,9 @@ let html_stub sp ?(javascript=[]) body_html =
        (body 
           body_html))
 
+let is_guest user = 
+  user.user_login = "guest"
+
 let navbar_html sp ~cur_user ?(top_info_bar=[]) ?(wiki_revisions_link=[]) ?(wiki_page_links=[]) ?(todo_list_table=[]) content =
   let home_link link_text =
     a ~service:wiki_view_page 
@@ -76,7 +79,7 @@ let navbar_html sp ~cur_user ?(top_info_bar=[]) ?(wiki_revisions_link=[]) ?(wiki
   (* Greet user and offer Login link if guest *)
   let user_greeting = 
     pcdata ("Howdy "^cur_user.user_login^"!  ") ::
-      if cur_user.user_login = "guest" then
+      if is_guest cur_user then
         [br(); br ();
          pcdata "To login as an existing user, click ";
          a ~a:[a_class ["login_link_big"]]~sp ~service:wiki_view_page 
@@ -87,6 +90,16 @@ let navbar_html sp ~cur_user ?(top_info_bar=[]) ?(wiki_revisions_link=[]) ?(wiki
          pcdata "Guests cannot modify the site.  Ask the site admin for an account to be able to edit content."]
       else 
         [] in
+
+  let disconnect_link sp = 
+    if is_guest cur_user then [] else [disconnect_box sp "Logout"] in
+
+  let my_preferences_link sp =
+    if is_guest cur_user then 
+      [] 
+    else 
+      [a ~service:edit_user_page ~sp [pcdata "My Preferences"]
+         (None,cur_user.user_login)] in
 
   let edit_users_link = 
     if Privileges.can_view_users cur_user then
@@ -109,12 +122,11 @@ let navbar_html sp ~cur_user ?(top_info_bar=[]) ?(wiki_revisions_link=[]) ?(wiki
            [td ~a:[a_class ["top_menu_right_align"]]
               ([a ~service:about_page ~sp [pcdata "About"] ()] @
                  [pcdata " "] @
-                 [a ~service:edit_user_page ~sp [pcdata "My Preferences"]
-                    (None,cur_user.user_login)] @
+                 my_preferences_link sp @
                  [pcdata " "] @
                  edit_users_link @
                  [pcdata " "] @
-                 [disconnect_box sp "Logout"])]) []]]
+                 disconnect_link sp)]) []]]
   @
     (if top_info_bar = [] then [] else [div ~a:[a_id "top_action_bar"] top_info_bar])
   @
