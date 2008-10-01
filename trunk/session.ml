@@ -98,14 +98,21 @@ let db_installation_error sp =
      
 
 let login_html sp ~err =
+  let help_text = 
+    [br (); br (); 
+     strong [pcdata "Please read "];
+     XHTML.M.a ~a:[a_id "login_help_url"; a_href (uri_of_string "http://code.google.com/p/nurpawiki")] [pcdata "Nurpawiki documentation"]; 
+     pcdata " if you're logging in for the first time.";
+     br ()] in
+
   Html_util.html_stub sp 
     [div ~a:[a_id "login_outer"]
        [div ~a:[a_id "login_align_middle"]
           [Eliom_predefmod.Xhtml.post_form connect_action sp
              (fun (loginname,passwd) ->
                 [table ~a:[a_class ["login_box"]]
-                   (tr (td ~a:[a_class ["login_text"]] 
-                          [pcdata "Welcome to Nurpawiki!"]) [])
+                   (tr (td ~a:[a_class ["login_text"]]
+                          (pcdata "Welcome to Nurpawiki!"::help_text)) [])
                    [tr (td [pcdata ""]) [];
                     tr (td ~a:[a_class ["login_text_descr"]] 
                           [pcdata "Username:"]) [];
@@ -113,8 +120,7 @@ let login_html sp ~err =
                     tr (td ~a:[a_class ["login_text_descr"]] 
                           [pcdata "Password:"]) [];
                     tr (td [string_input ~input_type:`Password ~name:passwd ()]) [];
-                    tr (td [string_input ~input_type:`Submit ~value:"Login" ()]) [];
-                   ];
+                    tr (td [string_input ~input_type:`Submit ~value:"Login" ()]) []];
                  p err]) ()]]]
 
 
