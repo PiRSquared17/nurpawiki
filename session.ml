@@ -101,7 +101,7 @@ let login_html sp ~err =
   let help_text = 
     [br (); br (); 
      strong [pcdata "Please read "];
-     XHTML.M.a ~a:[a_id "login_help_url"; a_href (uri_of_string "http://code.google.com/p/nurpawiki")] [pcdata "Nurpawiki documentation"]; 
+     XHTML.M.a ~a:[a_id "login_help_url"; a_href (uri_of_string "http://code.google.com/p/nurpawiki/wiki/Tutorial")] [pcdata "Nurpawiki tutorial"]; 
      pcdata " if you're logging in for the first time.";
      br ()] in
 
