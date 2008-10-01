@@ -246,7 +246,8 @@ let rec render_todo_editor sp ~conn ~cur_user (src_page_cont, todos_to_edit) =
                   [td (todo_descr tv_descr todo.t_descr :: 
                          wiki_page_links sp todo_in_pages todo);
                    td ~a:[a_class ["no_break"]] 
-                     [string_input ~a:[a_id ("calendar_"^(string_of_int todo.t_id))]
+                     [string_input ~a:[a_readonly `Readonly;
+                                       a_id ("calendar_"^(string_of_int todo.t_id))]
                         ~input_type:`Text ~name:tv_act_date 
                         ~value:todo.t_activation_date ();
                       button ~a:[a_id ("cal_button_"^(string_of_int todo.t_id))]
