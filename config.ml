@@ -1,4 +1,4 @@
-(* Copyright (c) 2007 Janne Hellsten <jjhellst@gmail.com> *)
+(* Copyright (c) 2007-2008 Janne Hellsten <jjhellst@gmail.com> *)
 
 (* 
  * This program is free software: you can redistribute it and/or
