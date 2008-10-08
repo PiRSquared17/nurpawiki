@@ -1,5 +1,5 @@
 
-FILES=version.ml config.ml types.ml util.ml database.ml database_upgrade.ml services.ml privileges.ml html_util.ml session.ml user_editor.ml page_revisions.ml nurpawiki.ml scheduler.ml history.ml about.ml
+FILES=version.ml config.ml types.ml util.ml database.ml database_upgrade.ml database_schema.ml services.ml privileges.ml html_util.ml session.ml user_editor.ml page_revisions.ml nurpawiki.ml scheduler.ml history.ml about.ml
 
 CAMLC = ocamlfind ocamlc -thread -g $(LIB)
 CAMLOPT = ocamlfind ocamlopt -thread  $(LIB)

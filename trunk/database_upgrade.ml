@@ -253,4 +253,4 @@ let is_schema_installed ~(conn : Psql.connection) =
     "SELECT * from pg_tables WHERE (schemaname = 'public' OR schemaname = 'nw') AND "^
       "tablename = 'todos'" in
   let r = guarded_exec ~conn sql in
-  r#ntuples = 0
+  r#ntuples <> 0
