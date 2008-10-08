@@ -72,7 +72,6 @@ module ConnectionPool =
                         Ocsigen_messages.errlog "Database connection still bad.  Bail out";
                         raise (Error (Psql.Connection_failure "bad connection")))
            | None ->
-               Ocsigen_messages.errlog "new connection!";
                let c = 
                  new Psql.connection ~host:"localhost"
                    ~dbname:dbcfg.db_name ~user:dbcfg.db_user 
@@ -84,7 +83,6 @@ module ConnectionPool =
                f c)
         
     let with_conn f = 
-      Ocsigen_messages.errlog "with_conn";
       try 
         with_conn_priv f
       with 
