@@ -45,6 +45,8 @@ let set_password_in_session sp login_info =
 
 let upgrade_page = new_service ["upgrade"] unit ()
 
+let schema_install_page = new_service ["schema_install"] unit ()
+
 let connect_action = 
   Eliom_services.new_post_coservice'
     ~post_params:((string "login") ** (string "passwd"))
@@ -85,16 +87,12 @@ let db_upgrade_warning sp =
 
 let db_installation_error sp = 
   [div
-     [h1 [pcdata "Database not configured or database connection down!"];
+     [h1 [pcdata "Database schema not installed"];
       br ();
-      p [pcdata "When trying to access the Nurpawiki database an error occurred.";
-         br (); br ();
-         pcdata "The two most probable reasons for this are:"];
-      ul (li [pcdata "The Nurpawiki schema has not been installed on the database or the database settings are misconfigured.  Please see Nurpawiki documentation on database installation."])
-        [li [pcdata "The database connection was somehow disconnected.  This may happen due to network failures, SQL server restarts, etc."]];
-      p [pcdata "Try going back to the wiki: "; link_to_nurpawiki_main sp;
-         br (); br ();
-         pcdata "If the problem persists, talk to the site administrator."]]]
+      p [pcdata "It appears you're using your Nurpawiki installation for the first time. "; br (); br ();
+         pcdata "In order to complete Nurpawiki installation, your Nurpawiki database schema needs to be initialized."];
+      p [pcdata "Follow this link to complete installation:"; br (); br ();
+         a ~service:schema_install_page ~sp [pcdata "Install schema!"] ()]]]
      
 
 let login_html sp ~err =
@@ -130,7 +128,7 @@ let with_db_installed sp f =
   let r = 
     Db.with_conn
       (fun conn ->
-         if Dbu.is_schema_installed ~conn then
+         if not (Dbu.is_schema_installed ~conn) then
            Some (Html_util.html_stub sp (db_installation_error sp))
          else if Dbu.db_schema_version ~conn < Db.nurpawiki_schema_version then
            Some (Html_util.html_stub sp (db_upgrade_warning sp))
@@ -249,6 +247,16 @@ let connect_action_handler sp () login_nfo =
 
 let () =
   Eliom_predefmod.Actions.register ~service:connect_action connect_action_handler
+
+(* /schema_install initializes the database schema (if needed) *)
+let _ =
+  register schema_install_page
+    (fun sp () () ->
+       Db.with_conn (fun conn -> Database_schema.install_schema ~conn);
+       Html_util.html_stub sp
+         [h1 [pcdata "Database installation completed"];
+          p [br ();
+             link_to_nurpawiki_main sp]])
 
 (* /upgrade upgrades the database schema (if needed) *)
 let _ =
