@@ -1,5 +1,5 @@
 #summary Release notes
-#labels Docs-ReviewedFor-1.1
+#labels Docs-ReviewedFor-1.2
 
 = Release notes =
 
