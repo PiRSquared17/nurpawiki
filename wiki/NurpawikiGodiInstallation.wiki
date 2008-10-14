@@ -22,7 +22,6 @@ The package does not automatically configure everything to work and thus you nee
 After installation you should have the following two files in `godi/share/nurpawiki`:
 
  * `example.conf` is a configuration file for Nurpawiki/Ocsigen that needs to match your platform.
- * `schema.psql` is a Postgresql script that you need to load into your `nurpawiki` database.  See database installation instructions on how to do that.
 
 === example.conf ===
  * Take a copy of `example.conf` (say `nurpawiki.conf`) and modify your local copy and not the original.
