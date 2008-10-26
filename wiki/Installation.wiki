@@ -1,5 +1,5 @@
 #summary How to install Nurpawiki
-#labels Phase-Deploy,Docs-ReviewedFor-1.2
+#labels Phase-Deploy,Docs-ReviewedFor-1.2,Featured
 
 = Installation =
 
