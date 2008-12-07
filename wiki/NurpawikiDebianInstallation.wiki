@@ -10,8 +10,10 @@ Nurpawiki is currently only in Debian experimental, so it's likely that you need
 
 Install required Debian packages:
 
-`apt-get install postgresql`
-`apt-get install nurpawiki`
+{{{
+apt-get install postgresql
+apt-get install nurpawiki
+}}}
 
 == 2. Database setup ==
 With Lenny's PostgreSQL (version 8.3), the steps on the SQL server are (as user postgres):
