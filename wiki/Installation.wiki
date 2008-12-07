@@ -5,7 +5,7 @@
 
 Nurpawiki can be installed in various ways.  By far the simplest method is to use the Nurpawiki Debian package.
 
-== 1. Installation via Nurpawiki Debian package (recommended) ==
+== 1. Installation via the Nurpawiki Debian package (recommended) ==
 
 Debian installation: [NurpawikiDebianInstallation installing Nurpawiki on Debian].
 
