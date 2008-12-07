@@ -29,7 +29,7 @@ With Lenny's PostgreSQL (version 8.3), the steps on the SQL server are (as user 
 You can take, for example, DBUSER=ocsigen and DBNAME=nurpawiki (beware of commands executed in psql shell).
 
 == 3. Ocsigen configuration ==
-A sample template for a configuration file is available in `/usr/share/doc/nurpawiki/examples`. Filling it with proper database user, database name and password will give you a <file> that can be run with "ocsigen -c <file>" (as root). Ocsigen will then be listening on port 8080, as user ocsigen, and be serving Nurpawiki only (at /). If satisfied, and if you don't use any other Ocsigen-based service, you can directly use that configuration file as /etc/ocsigen/ocsigen.conf and use the initscript to launch ocsigen. Of course, Nurpawiki can be used with other Ocsigen-based services, but you'll have to edit /etc/ocsigen.conf yourself.
+A sample template for a configuration file is available in `/usr/share/doc/nurpawiki/examples`. Filling it with proper database user, database name and password will give you a `<file>` that can be run with `ocsigen -c <file>` (as root). Ocsigen will then be listening on port 8080, as user ocsigen, and be serving Nurpawiki only (at /). If satisfied, and if you don't use any other Ocsigen-based service, you can directly use that configuration file as /etc/ocsigen/ocsigen.conf and use the initscript to launch ocsigen. Of course, Nurpawiki can be used with other Ocsigen-based services, but you'll have to edit /etc/ocsigen.conf yourself.
 
 At installation, a wiki user "admin" with an empty password is created.
 
