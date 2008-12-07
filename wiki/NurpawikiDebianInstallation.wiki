@@ -18,7 +18,8 @@ apt-get install nurpawiki
 == 2. Database setup ==
 With Lenny's PostgreSQL (version 8.3), the steps on the SQL server are (as user postgres):
 
- # Switch to user `postgres`
+ # Switch to user postgres
+    {{{su postgres}}}
  # Create a user in the database: 
     {{{createuser ${DBUSER}}}}
  # Create the database for Nurpawiki: 
