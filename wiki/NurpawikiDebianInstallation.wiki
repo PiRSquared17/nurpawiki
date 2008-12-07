@@ -36,3 +36,6 @@ A sample template for a configuration file is available in `/usr/share/doc/nurpa
 At installation, a wiki user "admin" with an empty password is created.
 
 If everything went right and Ocsigen was properly started, you should be able to get into Nurpawiki by navigating to [http://localhost:8080]
+
+== More details ==
+More details available in `/usr/share/doc/nurpawiki/README.Debian`.
