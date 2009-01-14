@@ -73,11 +73,12 @@ module ConnectionPool =
                         Ocsigen_messages.errlog "Database connection still bad.  Bail out";
                         raise (Error (Psql.Connection_failure "bad connection")))
            | None ->
+               let host = Option.default "localhost" dbcfg.db_host in
+               let port = Option.default "" dbcfg.db_port in
+               let password = Option.default "" dbcfg.db_pass in
                let c = 
-                 new Psql.connection ~host:"localhost"
-                   ~dbname:dbcfg.db_name ~user:dbcfg.db_user 
-                   ~port:(Option.default "" dbcfg.db_port)
-                   ~password:(Option.default "" dbcfg.db_pass) 
+                 new Psql.connection ~host ~port ~password
+                   ~dbname:dbcfg.db_name ~user:dbcfg.db_user
                    () in
                connection := Some c;
                (* Search tables from nurpawiki schema first: *)

@@ -23,6 +23,7 @@ type db_config =
     {
       db_name : string;
       db_user : string;
+      db_host : string option;
       db_port : string option;
       db_pass : string option;
     }
@@ -48,20 +49,21 @@ let dbcfg =
       (Element ("database", attrs, _)::_) ->
         let dbname = get_attr_with_err "database" "name" attrs in
         let dbuser = get_attr_with_err "database" "user" attrs in
+        let dbhost = get_attr_opt "host" attrs in
         let dbport = get_attr_opt "port" attrs in
         let dbpass = get_attr_opt "password" attrs in
-        (dbname,dbuser,dbport,dbpass)
+        {
+          db_name = dbname;
+          db_user = dbuser;
+          db_host = dbhost;
+          db_port = dbport;
+          db_pass = dbpass;
+        }
     | x::xs -> 
         find_dbcfg xs
     | [] -> 
         raise (Ocsigen_extensions.Error_in_config_file ("Couldn't find database element from config")) in
-  let (dbname,dbuser,dbport,dbpass) = find_dbcfg (get_config ()) in
-  { 
-    db_name = dbname;
-    db_user = dbuser;
-    db_port = dbport;
-    db_pass = dbpass;
-  }
+  find_dbcfg (get_config ())
 
 let site =
   let rec find_site_cfg = function
