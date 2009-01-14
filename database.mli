@@ -16,7 +16,7 @@
 
 type connection
 
-val with_conn : (connection -> 'a) -> 'a
+val with_conn : (connection -> 'a) -> 'a Lwt.t
 val guarded_exec : conn:connection -> string -> Postgresql.result
 val insert_save_page_activity :
   conn:connection -> user_id:int -> int -> unit

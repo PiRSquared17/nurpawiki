@@ -125,42 +125,41 @@ let login_html sp ~err =
 let with_db_installed sp f =
   (* Check if the DB is installed.  If so, check that it doesn't need
      an upgrade. *)
-  let r = 
-    Db.with_conn
-      (fun conn ->
-         if not (Dbu.is_schema_installed ~conn) then
-           Some (Html_util.html_stub sp (db_installation_error sp))
-         else if Dbu.db_schema_version ~conn < Db.nurpawiki_schema_version then
-           Some (Html_util.html_stub sp (db_upgrade_warning sp))
-         else None) in
-  match r with
-    Some x -> x
-  | None -> f ()
-      
+  Db.with_conn
+    (fun conn ->
+       if not (Dbu.is_schema_installed ~conn) then
+         Some (Html_util.html_stub sp (db_installation_error sp))
+       else if Dbu.db_schema_version ~conn < Db.nurpawiki_schema_version then
+         Some (Html_util.html_stub sp (db_upgrade_warning sp))
+       else None)
+  >>= function
+    | Some x -> return x
+    | None -> f ()
+
 (** Wrap page service calls inside with_user_login to have them
     automatically check for user login and redirect to login screen if
     not logged in. *)
 let with_user_login ?(allow_read_only=false) sp f =
   let login () =
-    get_login_user sp >>= fun maybe_user ->
-      match maybe_user with
-        Some (login,passwd) ->
+    get_login_user sp
+    >>= function
+      | Some (login,passwd) ->
           begin
-            let u = 
-              Db.with_conn
-                (fun conn -> Db.query_user ~conn login) in
-            match u with
-              Some user ->
-                let passwd_md5 = Digest.to_hex (Digest.string passwd) in
-                (* Autheticate user against his password *)
-                if passwd_md5 <> user.user_passwd then
-                  login_html sp
-                    [Html_util.error ("Wrong password given for user '"^login^"'")]
-                else 
-                  f user sp
-            | None ->
-                login_html sp 
-                  [Html_util.error ("Unknown user '"^login^"'")]
+            Db.with_conn (fun conn -> Db.query_user ~conn login)
+            >>= function
+              | Some user ->
+                  let passwd_md5 = Digest.to_hex (Digest.string passwd) in
+                  (* Autheticate user against his password *)
+                  if passwd_md5 <> user.user_passwd then
+                    return
+                      (login_html sp
+                         [Html_util.error ("Wrong password given for user '"^login^"'")])
+                  else
+                    f user sp
+              | None ->
+                  return
+                    (login_html sp
+                       [Html_util.error ("Unknown user '"^login^"'")])
           end
       | None ->
           if allow_read_only && Config.site.cfg_allow_ro_guests then
@@ -174,7 +173,8 @@ let with_user_login ?(allow_read_only=false) sp f =
               } in
             f guest_user sp
           else 
-            login_html sp [] in
+            return (login_html sp [])
+  in
   with_db_installed sp login
 
 (* Either pretend to be logged in as 'guest' (if allowed by config
@@ -190,27 +190,27 @@ let with_guest_login sp f =
    there are any errors, just bail out without doing anything
    harmful. *)
 let action_with_user_login sp f =
-  let db_version = 
-    Db.with_conn (fun conn -> Dbu.db_schema_version conn) in
+  Db.with_conn (fun conn -> Dbu.db_schema_version conn) >>= fun db_version ->
   if db_version = Db.nurpawiki_schema_version then
-    get_login_user sp >>= fun maybe_user ->
-      (match maybe_user with
-         Some (login,passwd) ->
-           begin
-             match (Db.with_conn (fun conn -> Db.query_user ~conn login)) with
-               Some user ->
-                 let passwd_md5 = Digest.to_hex (Digest.string passwd) in
-                 (* Autheticate user against his password *)
-                 if passwd_md5 = user.user_passwd then
-                   return (f user)
-                 else 
-                   return []
-             | None ->
-                 return []
-           end
-       | None -> return [])
-  else
-    return []
+    get_login_user sp
+    >>= function
+      | Some (login,passwd) ->
+          begin
+            Db.with_conn (fun conn -> Db.query_user ~conn login)
+            >>= function
+              | Some user ->
+                  let passwd_md5 = Digest.to_hex (Digest.string passwd) in
+                  (* Autheticate user against his password *)
+                  if passwd_md5 = user.user_passwd then
+                    f user
+                  else
+                    return []
+              | None ->
+                  return []
+          end
+      | None -> return []
+ else
+   return []
 
 
 let update_session_password sp login new_password =
@@ -252,28 +252,31 @@ let () =
 let _ =
   register schema_install_page
     (fun sp () () ->
-       Db.with_conn (fun conn -> Database_schema.install_schema ~conn);
-       Html_util.html_stub sp
-         [h1 [pcdata "Database installation completed"];
-          p [br ();
-             link_to_nurpawiki_main sp]])
+       Db.with_conn (fun conn -> Database_schema.install_schema ~conn) >>= fun _ ->
+       return
+         (Html_util.html_stub sp
+            [h1 [pcdata "Database installation completed"];
+             p [br ();
+                link_to_nurpawiki_main sp]]))
 
 (* /upgrade upgrades the database schema (if needed) *)
 let _ =
   register upgrade_page
     (fun sp () () ->
-       let msg = Db.with_conn (fun conn -> Dbu.upgrade_schema ~conn) in
-       Html_util.html_stub sp
-         [h1 [pcdata "Upgrade DB schema"];
-          (pre [pcdata msg]);
-          p [br ();
-             link_to_nurpawiki_main sp]])
+       Db.with_conn (fun conn -> Dbu.upgrade_schema ~conn) >>= fun msg ->
+       return
+         (Html_util.html_stub sp
+            [h1 [pcdata "Upgrade DB schema"];
+             (pre [pcdata msg]);
+             p [br ();
+                link_to_nurpawiki_main sp]]))
 
 let _ =
   register disconnect_page
     (fun sp () () ->
        (Eliom_sessions.close_session  ~sp () >>= fun () ->
-          Html_util.html_stub sp 
-            [h1 [pcdata "Logged out!"];
-             p [br ();
-                link_to_nurpawiki_main sp]]))
+        return
+          (Html_util.html_stub sp 
+             [h1 [pcdata "Logged out!"];
+              p [br ();
+                 link_to_nurpawiki_main sp]])))

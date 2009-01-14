@@ -43,5 +43,6 @@ let _ =
     (fun sp () () ->
        Session.with_guest_login sp
          (fun cur_user sp ->
-            Html_util.html_stub sp
-              (Html_util.navbar_html sp ~cur_user about_page_html)))
+            return
+              (Html_util.html_stub sp
+                 (Html_util.navbar_html sp ~cur_user about_page_html))))

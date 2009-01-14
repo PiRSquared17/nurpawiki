@@ -96,7 +96,8 @@ module ConnectionPool =
 
   end
 
-let with_conn = ConnectionPool.with_conn
+let with_conn f =
+  Lwt_preemptive.detach ConnectionPool.with_conn f
 
 (* Escape a string for SQL query *)
 let escape s =
