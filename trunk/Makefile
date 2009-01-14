@@ -1,53 +1,49 @@
+LIB := -package threads,netstring,calendar,extlib,postgresql,ocsigen
+CAMLC := ocamlfind ocamlc -thread -g $(LIB)
+CAMLOPT := ocamlfind ocamlopt -thread  $(LIB)
+CAMLDOC := ocamlfind ocamldoc $(LIB)
+CAMLDEP := ocamlfind ocamldep
+CAMLBUILDOPTS := -ocamlc '$(CAMLC)' -ocamlopt '$(CAMLOPT)'
+CAMLBUILD := ocamlbuild $(CAMLBUILDOPTS)
 
-FILES=version.ml config.ml types.ml util.ml database.ml database_upgrade.ml database_schema.ml services.ml privileges.ml html_util.ml session.ml user_editor.ml page_revisions.ml nurpawiki.ml scheduler.ml history.ml about.ml
+CMA := nurpawiki.cma
+CMXA := nurpawiki.cmxa
+CMXS := nurpawiki.cmxs
 
-CAMLC = ocamlfind ocamlc -thread -g $(LIB)
-CAMLOPT = ocamlfind ocamlopt -thread  $(LIB)
-CAMLDOC = ocamlfind ocamldoc $(LIB)
-CAMLDEP = ocamlfind ocamldep
-LIB = -package threads,netstring,calendar,extlib,postgresql,ocsigen
+TARGETS := $(CMA)
+ifneq ($(shell which ocamlopt),)
+  TARGETS += $(CMXA)
+  ifneq ($(wildcard $(shell ocamlc -where)/dynlink.cmxa),)
+    TARGETS += $(CMXS)
+  endif
+endif
 
-OBJS = $(FILES:.ml=.cmo)
+all: $(TARGETS) META
 
-CMA = nurpawiki.cma
+$(CMA): version.ml
+	$(CAMLBUILD) -classic-display -ocamlc '$(CAMLC)' $@
 
-all: $(CMA) META
+$(CMXA): version.ml
+	$(CAMLBUILD) -classic-display -ocamlopt '$(CAMLOPT)' $@
 
-$(CMA): $(OBJS)
-	$(CAMLC) -a -o $(CMA) $(OBJS)
+%.cmxs: %.cmxa
+	$(CAMLOPT) -shared -linkall -o _build/$@ _build/$<
 
-.SUFFIXES:
-.SUFFIXES: .ml .mli .cmo .cmi .cmx
-
-.PHONY: doc install
+.PHONY: $(CMA) doc install
 
 NWIKI_VER=$(shell cat VERSION)
 version.ml:version.ml.in VERSION
 	echo $(NWIKI_VER)
-	cat version.ml.in | \
-	    sed -e "s|%_NURPAWIKI_VERSION_%|$(NWIKI_VER)|g" > version.ml
+	sed -e "s|%_NURPAWIKI_VERSION_%|$(NWIKI_VER)|g" version.ml.in > version.ml
 
 META:META.in VERSION
-	cat META.in | \
-	    sed -e "s|%_NURPAWIKI_VERSION_%|$(NWIKI_VER)|g" > META
-
-.ml.cmo:
-	$(CAMLC) -c $<
-
-.mli.cmi:
-	$(CAMLC) -c $<
-.ml.cmx:
-	$(CAMLOPT) $(PP) -c $<
+	sed -e "s|%_NURPAWIKI_VERSION_%|$(NWIKI_VER)|g" META.in > META
 
 doc:
 #	$(CAMLDOC) -d doc -html db.mli
 
 clean:
-	-rm -f *.cm[ioxa] *~ $(NAME)
+	-rm -Rf _build META version.ml
 
 install:
-	ocamlfind install nurpawiki META $(CMA)
-
-depend:
-	$(CAMLDEP) $(PP) $(LIB) $(FILES:.ml=.mli) $(FILES) > .depend
-
+	ocamlfind install nurpawiki META $(foreach T,$(TARGETS),_build/$(T))
