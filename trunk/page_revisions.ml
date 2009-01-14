@@ -31,8 +31,7 @@ open Types
 module Db = Database
 
 let revision_table sp page_descr =
-  let revisions = 
-    Db.with_conn (fun conn -> Db.query_page_revisions ~conn page_descr) in
+  Db.with_conn (fun conn -> Db.query_page_revisions ~conn page_descr) >>= fun revisions ->
 
   let page_link descr (rev:int) = 
     a ~sp ~service:wiki_view_page [pcdata ("Revision "^(string_of_int rev))]
@@ -46,17 +45,20 @@ let revision_table sp page_descr =
             td [pcdata (Option.default "" r.pr_owner_login)]])
       revisions in
 
-  [table
-     (tr (th [pcdata "Revision"]) [th [pcdata "When"]; th [pcdata "Changed by"]])
-     rows]
+  return
+    [table
+       (tr (th [pcdata "Revision"]) [th [pcdata "When"]; th [pcdata "Changed by"]])
+       rows]
 
 
 let view_page_revisions sp page_descr =
   Session.with_guest_login sp
-    (fun cur_user sp -> 
-       Html_util.html_stub sp
-         (Html_util.navbar_html sp ~cur_user
-            (h1 [pcdata (page_descr ^ " Revisions")] :: revision_table sp page_descr)))
+    (fun cur_user sp ->
+       revision_table sp page_descr >>= fun revisions ->
+       return
+         (Html_util.html_stub sp
+            (Html_util.navbar_html sp ~cur_user
+               (h1 [pcdata (page_descr ^ " Revisions")] :: revisions))))
 
 (* /page_revisions?page_id=<id> *)
 let _ =

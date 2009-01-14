@@ -790,12 +790,13 @@ let _ =
                       html_of_headline sr.sr_headline)]
             | SR_todo -> assert false) search_results) in
   let gen_search_page sp ~cur_user search_str =
-    let search_results = 
-      Db.with_conn (fun conn -> Db.search_wikipage ~conn search_str) in
-    Html_util.html_stub sp
-      (Html_util.navbar_html sp ~cur_user
-         ([h1 [pcdata "Search results"]] @ (render_results sp search_results))) in
-    
+    Db.with_conn (fun conn -> Db.search_wikipage ~conn search_str) >>= fun search_results ->
+    return
+      (Html_util.html_stub sp
+         (Html_util.navbar_html sp ~cur_user
+            ([h1 [pcdata "Search results"]] @ (render_results sp search_results))))
+  in
+
   register search_page
     (fun sp search_str () ->
        Session.with_guest_login sp

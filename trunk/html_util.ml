@@ -39,17 +39,15 @@ let html_stub sp ?(javascript=[]) body_html =
     js_script ~a:[a_defer `Defer] ~uri:(make_static_uri sp src) () in
   let scripts  = 
     script ["nurpawiki.js"] :: (List.map script javascript) in
-  return 
-    (html ~a:[a_xmlns `W3_org_1999_xhtml]
-       (head 
-          (title (pcdata "")) 
-          ((scripts) @ 
-             [css_link ~a:[] ~uri:(make_uri ~service:(static_dir sp) ~sp 
-                                     ["style.css"]) ();
-              css_link ~a:[] ~uri:(make_uri ~service:(static_dir sp) ~sp 
-                                     ["jscalendar"; "calendar-blue2.css"]) ()]))
-       (body 
-          body_html))
+  html ~a:[a_xmlns `W3_org_1999_xhtml]
+    (head
+       (title (pcdata ""))
+       ((scripts) @
+          [css_link ~a:[] ~uri:(make_uri ~service:(static_dir sp) ~sp
+                                  ["style.css"]) ();
+           css_link ~a:[] ~uri:(make_uri ~service:(static_dir sp) ~sp
+                                  ["jscalendar"; "calendar-blue2.css"]) ()]))
+    (body body_html)
 
 let is_guest user = 
   user.user_login = "guest"
