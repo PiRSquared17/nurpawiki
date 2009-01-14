@@ -23,6 +23,7 @@ open Eliom_sessions
 
 open Config
 
+type connection = Psql.connection
 let (>>) f g = g f
 
 module ConnectionPool =

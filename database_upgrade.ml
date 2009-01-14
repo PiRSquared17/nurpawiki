@@ -248,7 +248,7 @@ let upgrade_schema ~conn =
   Buffer.contents logmsg
 
 (** Check whether the nurpawiki schema is properly installed on Psql *)
-let is_schema_installed ~(conn : Psql.connection) =
+let is_schema_installed ~(conn : connection) =
   let sql = 
     "SELECT * from pg_tables WHERE (schemaname = 'public' OR schemaname = 'nw') AND "^
       "tablename = 'todos'" in
