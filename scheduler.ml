@@ -152,7 +152,7 @@ let render_edit_todo_cont_page sp ~conn ~cur_user = function
     ET_scheduler -> 
       view_scheduler_page sp ~conn ~cur_user
   | ET_view wiki_page ->
-      Nurpawiki.view_wiki_page sp ~conn ~cur_user (wiki_page,(None,(None,None)))
+      Main.view_wiki_page sp ~conn ~cur_user (wiki_page,(None,(None,None)))
 
 (* /scheduler *)
 let _ =
