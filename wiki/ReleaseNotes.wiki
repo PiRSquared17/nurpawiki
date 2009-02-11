@@ -4,7 +4,7 @@
 = Release notes =
 
 == Nurpawiki 1.2.2 (r444) ==
- * Automatic installation of the database schema on first use <issue 62>.  This simplifies installations as there are less manual steps to get Nurpawiki going.
+ * Automatic installation of the database schema on first use (issue 62).  This simplifies installations as there are less manual steps to get Nurpawiki going.
  * More logging in for diagnosing potential database installation problems.
  * Don't show Logout and My Preferences links when a user is not logged in.
  * Modify to work on Ocsigen 1.1.0 and latest OCaml Calendar.  Thanks again Stéphane for help.
