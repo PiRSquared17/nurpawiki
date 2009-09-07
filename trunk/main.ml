@@ -145,11 +145,11 @@ module WikiML =
     let wikilink_re = Pcre.regexp "^([!]?[A-Z][a-z]+([A-Z][a-z]+)+)"
       
     let wikilinkanum_re = 
-      Pcre.regexp ("^(\\[(wiki|file|http):("^accepted_chars_sans_ws^
+      Pcre.regexp ("^(\\[(wiki|file|http|https|ftp):("^accepted_chars_sans_ws^
                     ")[ ]+("^accepted_chars^")\\])")
 
     let wikilinkanum_no_text_re = 
-      Pcre.regexp ("^(\\[(wiki|file|http):("^accepted_chars_sans_ws^")\\])")
+      Pcre.regexp ("^(\\[(wiki|file|http|https|ftp):("^accepted_chars_sans_ws^")\\])")
 
     let todo_re = 
       Pcre.regexp ("\\[todo:([0-9]+)( "^accepted_chars^")?\\]")
