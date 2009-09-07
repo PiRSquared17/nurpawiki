@@ -50,6 +50,7 @@ _Attribute list_:
 || _user_ || Required || Database user for accessing the Nurpawiki database.  Example: "postgres". ||
 || _password_ || Required || Password used to let database _user_ access the database. ||
 || _port_ || Optional || Database is running on this port. ||
+|| _host_ || Optional || Host where the database is running.  Defaults to localhost. ||
 
 Example:
 {{{
