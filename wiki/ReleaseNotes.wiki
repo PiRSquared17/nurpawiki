@@ -3,7 +3,7 @@
 
 = Release notes =
 
-== Nurpawiki 1.2.3 (r467) ==
+== Nurpawiki 1.2.3 (r471) ==
  * Many good patches applied from various people.  Summary below.
  * Bunch of Ltwizations by Stéphane Glondu applied.
  * Bunch of build flow improvements from Stéphane Glondu
