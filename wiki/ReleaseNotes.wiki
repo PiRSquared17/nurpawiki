@@ -3,6 +3,12 @@
 
 = Release notes =
 
+== Nurpawiki 1.2.3 (r467) ==
+ * Many good patches applied from various people.  Summary below.
+ * Bunch of Ltwizations by Stéphane Glondu applied.
+ * Bunch of build flow improvements from Stéphane Glondu
+ * URL validation issues: issue 63, issue 64, issue 65 all fixed. Thanks Bjoern.Appel, vzapolskiy and animist for patches.
+
 == Nurpawiki 1.2.2 (r444) ==
  * Automatic installation of the database schema on first use (issue 62).  This simplifies installations as there are less manual steps to get Nurpawiki going.
  * More logging in for diagnosing potential database installation problems.
