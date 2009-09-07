@@ -128,7 +128,7 @@ module WikiML =
             ([], List.rev acc) in
       loop [] lines
 
-    let accepted_chars_ = "a-zA-Z\128-\2550-9_!\"§°#%&/()=?+.,;:{}'@\\$\\^\\*`´<>"
+    let accepted_chars_ = "a-zA-Z\128-\2550-9_!\"§°#%&/()=?+.,;:{}'@\\$\\^\\*`´<>~"
     let accepted_chars_sans_ws = "["^accepted_chars_^"-]+"
     let accepted_chars = "["^accepted_chars_^" -]+"
 
